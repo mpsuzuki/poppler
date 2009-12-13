@@ -240,6 +240,8 @@ void CairoOutputDev::endPage() {
     text->endPage();
     text->coalesce(gTrue, gFalse);
   }
+  if (this->cairo)
+    cairo_show_page( this->cairo );
 }
 
 void CairoOutputDev::drawLink(Link *link, Catalog *catalog) {

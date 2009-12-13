@@ -217,28 +217,15 @@ static int numberOfCharacters(unsigned int n)
 }
 
 static void savePageSliceCairo(PDFDoc *doc,
+                   CairoOutputDev *cairoOut,
                    int pg, int x, int y, int w, int h, 
-                   double pg_w, double pg_h, 
-                   char *ppmFile) {
+                   double pg_w, double pg_h) {
   if (w == 0) w = (int)ceil(pg_w);
   if (h == 0) h = (int)ceil(pg_h);
   w = (x+w > pg_w ? (int)ceil(pg_w-x) : w);
   h = (y+h > pg_h ? (int)ceil(pg_h-y) : h);
 
-  CairoOutputDev *cairoOut = new CairoOutputDev;
-  cairo_surface_t *surface = cairo_pdf_surface_create( ppmFile, w, h );
-  cairo_surface_set_fallback_resolution( surface, x_resolution, y_resolution );
-  cairo_t* cr = cairo_create( surface );
-  cairo_surface_destroy( surface );
-  cairoOut->setCairo( cr );
-  cairo_destroy( cr );
-
-  doc->displayPageSlice(cairoOut, 
-    pg, x_resolution, y_resolution, 
-    0,
-    !useCropBox, gFalse, gFalse,
-    x, y, w, h
-  );
+  doc->displayPageSlice(cairoOut, pg, x_resolution, y_resolution, 0, !useCropBox, gFalse, gFalse, x, y, w, h);
 }
 
 int main(int argc, char *argv[]) {
@@ -249,6 +236,11 @@ int main(int argc, char *argv[]) {
   GooString *ownerPW, *userPW;
   SplashColor paperColor;
   SplashOutputDev *splashOut;
+
+  cairo_surface_t *surface = NULL;
+  cairo_t* cr = NULL;
+  CairoOutputDev *cairoOut = NULL;
+
   GBool ok;
   int exitCode;
   int pg, pg_num_len;
@@ -339,8 +331,18 @@ int main(int argc, char *argv[]) {
   if (lastPage < 1 || lastPage > doc->getNumPages())
     lastPage = doc->getNumPages();
 
-  // write raster files, if not PDF
-  if (!pdf) {
+  if (pdf) {
+    // setup for cairo output device
+    snprintf(ppmFile, PPM_FILE_SZ, "%.*s.pdf", PPM_FILE_SZ - 32, ppmRoot );
+
+    surface = cairo_pdf_surface_create( ppmFile, w, h );
+    cr = cairo_create( surface );
+    cairoOut = new CairoOutputDev;
+    cairoOut->setCairo( cr );
+
+    cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
+  } else {
+    // setup raster output device, if not PDF
     paperColor[0] = 255;
     paperColor[1] = 255;
     paperColor[2] = 255;
@@ -381,22 +383,30 @@ int main(int argc, char *argv[]) {
       pg_w = pg_h;
       pg_h = tmp;
     }
-    if (ppmRoot != NULL) {
+    // for raster output, filename-per-page is required
+    if (ppmRoot != NULL && !pdf) {
       snprintf(ppmFile, PPM_FILE_SZ, "%.*s-%0*d.%s",
               PPM_FILE_SZ - 32, ppmRoot, pg_num_len, pg,
-              pdf ? "pdf" : png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm");
+              png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm");
     }
 
 
     if (pdf) {
-      savePageSliceCairo(doc, pg, x, y, w, h, pg_w, pg_h, ppmFile);
+      savePageSliceCairo(doc, cairoOut, pg, x, y, w, h, pg_w, pg_h);
     } else if (ppmRoot != NULL) {
       savePageSlice(doc, splashOut, pg, x, y, w, h, pg_w, pg_h, ppmFile);
     } else {
       savePageSlice(doc, splashOut, pg, x, y, w, h, pg_w, pg_h, NULL);
     }
   }
-  delete splashOut;
+  if (pdf) {
+    cairo_surface_destroy( surface );
+    cairo_destroy( cr );
+    cairoOut->setCairo( NULL );
+    delete cairoOut;
+  } else {
+    delete splashOut;
+  }
 
   exitCode = 0;
 
