@@ -4,10 +4,8 @@ pdftoppm_SOURCES =				\
 	pdftoppm.cc				\
 	$(common)
 
-pdftoppm_INCLUDES =				\
-	$(CAIRO_CFLAGS)
-
 pdftoppm_LDADD =				\
+	$(LDADD)				\
 	$(top_builddir)/poppler/libpoppler-cairo.la	\
 	$(CAIRO_LIBS)
 
@@ -24,6 +22,7 @@ INCLUDES =					\
 	-I$(top_srcdir)/poppler			\
 	$(UTILS_CFLAGS)				\
 	$(FONTCONFIG_CFLAGS)			\
+	$(CAIRO_CFLAGS)				\
 	$(ABIWORD_CFLAGS)
 
 LDADD =						\
