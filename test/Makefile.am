@@ -90,7 +90,12 @@ pdf_fullrewrite_SOURCES = \
 	pdf-fullrewrite.cc
 
 pdf_fullrewrite_LDADD = \
-	$(top_builddir)/poppler/libpoppler.la
+	$(top_builddir)/poppler/libpoppler-cairo.la \
+	$(top_builddir)/poppler/libpoppler.la \
+	$(CAIRO_LIBS)					\
+	$(FREETYPE_LIBS)				\
+	$(GTK_TEST_LIBS)				\
+	$(X_EXTRA_LIBS)
 
 EXTRA_DIST =					\
 	pdf-operators.c				\

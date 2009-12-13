@@ -11,6 +11,8 @@
 #include "Error.h"
 #include "PDFDoc.h"
 #include "goo/GooString.h"
+#include <cairo-pdf.h>
+#include "CairoOutputDev.h"
 
 int main (int argc, char *argv[])
 {
@@ -36,11 +38,27 @@ int main (int argc, char *argv[])
     return 1;
   }
 
+  int x = doc->getPageMediaWidth(1)  / 4;
+  int y = doc->getPageMediaHeight(1) / 4;
+  int w = doc->getPageMediaWidth(1)  / 10;
+  int h = doc->getPageMediaHeight(1) / 10;
 
-  int res = doc->saveAs(outputName, writeForceRewrite);
+  CairoOutputDev *cairoOut = new CairoOutputDev;
+  {
+    cairo_surface_t *surface = cairo_pdf_surface_create( argv[2], w, h );
+    cairo_t* cr = cairo_create( surface );
+    cairo_surface_destroy( surface );
+    cairoOut->setCairo( cr );
+    cairo_destroy( cr );
+  }
+  cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
+  // doc->displayPage( cairoOut, 1, 72, 72, 0, gFalse, gTrue, gTrue );
+  doc->displayPageSlice( cairoOut, 1, 72, 72, 0, gFalse, gTrue, gTrue, x, y, w, h );
+  cairoOut->setCairo( NULL );
 
+  delete cairoOut;
   delete doc;
   delete globalParams;
   delete outputName;
-  return res;
+  return 0;
 }
