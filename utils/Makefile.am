@@ -4,6 +4,13 @@ pdftoppm_SOURCES =				\
 	pdftoppm.cc				\
 	$(common)
 
+pdftoppm_INCLUDES =				\
+	$(CAIRO_CFLAGS)
+
+pdftoppm_LDADD =				\
+	$(top_builddir)/poppler/libpoppler-cairo.la	\
+	$(CAIRO_LIBS)
+
 pdftoppm_binary = pdftoppm
 
 pdftoppm_manpage = pdftoppm.1
