@@ -331,18 +331,9 @@ int main(int argc, char *argv[]) {
   if (lastPage < 1 || lastPage > doc->getNumPages())
     lastPage = doc->getNumPages();
 
-  if (pdf) {
-    // setup for cairo output device
-    snprintf(ppmFile, PPM_FILE_SZ, "%.*s.pdf", PPM_FILE_SZ - 32, ppmRoot );
-
-    surface = cairo_pdf_surface_create( ppmFile, w, h );
-    cr = cairo_create( surface );
-    cairoOut = new CairoOutputDev;
-    cairoOut->setCairo( cr );
-
-    cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
-  } else {
-    // setup raster output device, if not PDF
+  // CairoOutputDev is bound to output file,
+  // initialization for PDF is postponed.
+  if (!pdf) {
     paperColor[0] = 255;
     paperColor[1] = 255;
     paperColor[2] = 255;
@@ -383,30 +374,31 @@ int main(int argc, char *argv[]) {
       pg_w = pg_h;
       pg_h = tmp;
     }
-    // for raster output, filename-per-page is required
-    if (ppmRoot != NULL && !pdf) {
+
+    if (ppmRoot != NULL) {
       snprintf(ppmFile, PPM_FILE_SZ, "%.*s-%0*d.%s",
               PPM_FILE_SZ - 32, ppmRoot, pg_num_len, pg,
-              png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm");
+              pdf ? "pdf" : png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm");
     }
 
 
     if (pdf) {
+      // postponed initialization for cairo output device
+      surface = cairo_pdf_surface_create( ppmFile, w, h );
+      cr = cairo_create( surface );
+      cairo_surface_destroy( surface );
+      cairoOut = new CairoOutputDev;
+      cairoOut->setCairo( cr );
+      cairo_destroy( cr );
+      cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
       savePageSliceCairo(doc, cairoOut, pg, x, y, w, h, pg_w, pg_h);
-    } else if (ppmRoot != NULL) {
+      cairoOut->setCairo( NULL );
+      delete cairoOut;
+    } else
       savePageSlice(doc, splashOut, pg, x, y, w, h, pg_w, pg_h, ppmFile);
-    } else {
-      savePageSlice(doc, splashOut, pg, x, y, w, h, pg_w, pg_h, NULL);
-    }
   }
-  if (pdf) {
-    cairo_surface_destroy( surface );
-    cairo_destroy( cr );
-    cairoOut->setCairo( NULL );
-    delete cairoOut;
-  } else {
+  if (!pdf)
     delete splashOut;
-  }
 
   exitCode = 0;
 

@@ -38,22 +38,37 @@ int main (int argc, char *argv[])
     return 1;
   }
 
-  int x = doc->getPageMediaWidth(1)  / 4;
-  int y = doc->getPageMediaHeight(1) / 4;
+  int x = doc->getPageMediaWidth(1)  / 2;
+  int y = doc->getPageMediaHeight(1) / 2;
   int w = doc->getPageMediaWidth(1)  / 10;
   int h = doc->getPageMediaHeight(1) / 10;
 
   CairoOutputDev *cairoOut = new CairoOutputDev;
   {
-    cairo_surface_t *surface = cairo_pdf_surface_create( argv[2], w, h );
+    cairo_surface_t *surface = cairo_pdf_surface_create( argv[2], doc->getPageMediaWidth(1), doc->getPageMediaHeight(1) );
     cairo_t* cr = cairo_create( surface );
     cairo_surface_destroy( surface );
     cairoOut->setCairo( cr );
     cairo_destroy( cr );
   }
   cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
-  // doc->displayPage( cairoOut, 1, 72, 72, 0, gFalse, gTrue, gTrue );
-  doc->displayPageSlice( cairoOut, 1, 72, 72, 0, gFalse, gTrue, gTrue, x, y, w, h );
+
+  {
+    int page;
+
+#if 0
+    for ( page = 2; page < 10 && page < ( doc->getNumPages() + 1 ); page++ )
+    {
+      // cairoOut->startPage( page, NULL );
+      // doc->displayPageSlice( cairoOut, page, 72, 72, 0, gFalse, gTrue, gTrue, x, y, w, h );
+      doc->displayPage( cairoOut, page, 72, 72, 0, gFalse, gTrue, gTrue );
+      // cairoOut->endPage();
+    }
+#else
+    doc->displayPages( cairoOut, 1, 2, 72, 72, 0, gFalse, gTrue, gTrue );
+#endif
+  }
+
   cairoOut->setCairo( NULL );
 
   delete cairoOut;
