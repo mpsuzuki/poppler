@@ -225,7 +225,11 @@ static void savePageSliceCairo(PDFDoc *doc,
   w = (x+w > pg_w ? (int)ceil(pg_w-x) : w);
   h = (y+h > pg_h ? (int)ceil(pg_h-y) : h);
 
+#ifdef MODIFY_RESOLUTION_IN_PDF2CAIRO
   doc->displayPageSlice(cairoOut, pg, x_resolution, y_resolution, 0, !useCropBox, gFalse, gFalse, x, y, w, h);
+#else
+  doc->displayPageSlice(cairoOut, pg, 72, 72, 0, !useCropBox, gFalse, gFalse, x, y, w, h);
+#endif
 }
 
 int main(int argc, char *argv[]) {
@@ -384,14 +388,29 @@ int main(int argc, char *argv[]) {
 
     if (pdf) {
       // postponed initialization for cairo output device
+#ifdef MODIFY_RESOLUTION_IN_PDF2CAIRO
       surface = cairo_pdf_surface_create( ppmFile, w, h );
+#else
+      surface = cairo_pdf_surface_create( ppmFile,
+                                          72 * w / x_resolution,
+                                          72 * h / y_resolution );
+#endif
       cr = cairo_create( surface );
       cairo_surface_destroy( surface );
       cairoOut = new CairoOutputDev;
       cairoOut->setCairo( cr );
       cairo_destroy( cr );
       cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
+#ifdef MODIFY_RESOLUTION_IN_PDF2CAIRO
       savePageSliceCairo(doc, cairoOut, pg, x, y, w, h, pg_w, pg_h);
+#else
+      savePageSliceCairo(doc, cairoOut, pg,
+                         72 * x / x_resolution,
+                         72 * y / y_resolution,
+                         72 * w / x_resolution,
+                         72 * h / y_resolution,
+                         pg_w, pg_h);
+#endif
       cairoOut->setCairo( NULL );
       delete cairoOut;
     } else
