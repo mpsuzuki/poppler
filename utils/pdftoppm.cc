@@ -46,8 +46,11 @@
 #include "splash/SplashBitmap.h"
 #include "splash/Splash.h"
 #include "SplashOutputDev.h"
+#ifdef HAVE_CAIRO
 #include "CairoOutputDev.h"
 #include <cairo-pdf.h>
+#include <cairo-svg.h>
+#endif
 
 #define PPM_FILE_SZ 512
 
@@ -71,7 +74,10 @@ static GBool mono = gFalse;
 static GBool gray = gFalse;
 static GBool png = gFalse;
 static GBool jpeg = gFalse;
+#ifdef HAVE_CAIRO
 static GBool pdf = gFalse;
+static GBool svg = gFalse;
+#endif
 static char enableFreeTypeStr[16] = "";
 static char antialiasStr[16] = "";
 static char vectorAntialiasStr[16] = "";
@@ -132,6 +138,8 @@ static const ArgDesc argDesc[] = {
 #if HAVE_CAIRO
   {"-pdf",    argFlag,     &pdf,           0,
    "generate a PDF file"},
+  {"-svg",    argFlag,     &svg,           0,
+   "generate a SVG file"},
 #endif
 #if HAVE_FREETYPE_FREETYPE_H | HAVE_FREETYPE_H
   {"-freetype",   argString,      enableFreeTypeStr, sizeof(enableFreeTypeStr),
@@ -216,6 +224,7 @@ static int numberOfCharacters(unsigned int n)
   return charNum;
 }
 
+#ifdef HAVE_CAIRO
 static void savePageSliceCairo(PDFDoc *doc,
                    CairoOutputDev *cairoOut,
                    int pg, int x, int y, int w, int h, 
@@ -231,6 +240,7 @@ static void savePageSliceCairo(PDFDoc *doc,
   doc->displayPageSlice(cairoOut, pg, 72, 72, 0, !useCropBox, gFalse, gFalse, x, y, w, h);
 #endif
 }
+#endif
 
 int main(int argc, char *argv[]) {
   PDFDoc *doc;
@@ -240,10 +250,11 @@ int main(int argc, char *argv[]) {
   GooString *ownerPW, *userPW;
   SplashColor paperColor;
   SplashOutputDev *splashOut;
-
+#ifdef HAVE_CAIRO
   cairo_surface_t *surface = NULL;
   cairo_t* cr = NULL;
   CairoOutputDev *cairoOut = NULL;
+#endif
 
   GBool ok;
   int exitCode;
@@ -254,6 +265,11 @@ int main(int argc, char *argv[]) {
 
   // parse args
   ok = parseArgs(argDesc, &argc, argv);
+#if HAVE_CAIRO
+  GBool use_cairo = ( pdf || svg );
+#else
+  GBool use_cairo = gFalse;
+#endif
   if (mono && gray) {
     ok = gFalse;
   }
@@ -337,7 +353,7 @@ int main(int argc, char *argv[]) {
 
   // CairoOutputDev is bound to output file,
   // initialization for PDF is postponed.
-  if (!pdf) {
+  if (!use_cairo) {
     paperColor[0] = 255;
     paperColor[1] = 255;
     paperColor[2] = 255;
@@ -382,19 +398,34 @@ int main(int argc, char *argv[]) {
     if (ppmRoot != NULL) {
       snprintf(ppmFile, PPM_FILE_SZ, "%.*s-%0*d.%s",
               PPM_FILE_SZ - 32, ppmRoot, pg_num_len, pg,
-              pdf ? "pdf" : png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm");
+#ifdef HAVE_CAIRO
+              pdf ? "pdf" :
+              svg ? "svg" :
+#endif
+              png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm");
     }
 
 
-    if (pdf) {
+#ifdef HAVE_CAIRO
+    if (use_cairo) {
       // postponed initialization for cairo output device
 #ifdef MODIFY_RESOLUTION_IN_PDF2CAIRO
-      surface = cairo_pdf_surface_create( ppmFile, w, h );
+      if (pdf)
+        surface = cairo_pdf_surface_create( ppmFile, w, h );
+      if (svg)
+        surface = cairo_svg_surface_create( ppmFile, w, h );
 #else
-      surface = cairo_pdf_surface_create( ppmFile,
-                                          72 * w / x_resolution,
-                                          72 * h / y_resolution );
+      if (pdf)
+        surface = cairo_pdf_surface_create( ppmFile,
+                                            72 * w / x_resolution,
+                                            72 * h / y_resolution );
+      if (svg)
+        surface = cairo_svg_surface_create( ppmFile,
+                                            72 * w / x_resolution,
+                                            72 * h / y_resolution );
+
 #endif
+
       cr = cairo_create( surface );
       cairo_surface_destroy( surface );
       cairoOut = new CairoOutputDev;
@@ -414,9 +445,10 @@ int main(int argc, char *argv[]) {
       cairoOut->setCairo( NULL );
       delete cairoOut;
     } else
+#endif /* HAVE_CAIRO */
       savePageSlice(doc, splashOut, pg, x, y, w, h, pg_w, pg_h, ppmFile);
   }
-  if (!pdf)
+  if (!use_cairo)
     delete splashOut;
 
   exitCode = 0;

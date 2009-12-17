@@ -33,8 +33,12 @@ perf_test =				\
 
 endif
 
+if BUILD_CAIRO_OUTPUT
+
 pdf_fullrewrite = \
 	pdf-fullrewrite
+
+endif
 
 INCLUDES =					\
 	-I$(top_srcdir)				\

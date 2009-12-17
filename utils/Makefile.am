@@ -4,10 +4,15 @@ pdftoppm_SOURCES =				\
 	pdftoppm.cc				\
 	$(common)
 
-pdftoppm_LDADD =				\
-	$(LDADD)				\
+pdftoppm_LDADD = $(LDADD)
+
+if BUILD_CAIRO_OUTPUT
+
+pdftoppm_LDADD +=				\
 	$(top_builddir)/poppler/libpoppler-cairo.la	\
 	$(CAIRO_LIBS)
+
+endif
 
 pdftoppm_binary = pdftoppm
 
