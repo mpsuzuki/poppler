@@ -135,7 +135,7 @@ static const ArgDesc argDesc[] = {
   {"-jpeg",    argFlag,     &jpeg,           0,
    "generate a JPEG file"},
 #endif
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
   {"-pdf",    argFlag,     &pdf,           0,
    "generate a PDF file"},
   {"-svg",    argFlag,     &svg,           0,
@@ -261,10 +261,12 @@ int main(int argc, char *argv[]) {
 
   // parse args
   ok = parseArgs(argDesc, &argc, argv);
-#if HAVE_CAIRO
+#ifdef HAVE_CAIRO
   GBool use_cairo = ( pdf || svg );
+  GBool use_multipage = pdf;
 #else
   GBool use_cairo = gFalse;
+  GBool use_multipage = gFalse;
 #endif
   if (mono && gray) {
     ok = gFalse;
@@ -347,8 +349,26 @@ int main(int argc, char *argv[]) {
   if (lastPage < 1 || lastPage > doc->getNumPages())
     lastPage = doc->getNumPages();
 
-  // CairoOutputDev is bound to output file,
-  // initialization for PDF is postponed.
+#ifdef HAVE_CAIRO
+  // CairoOutputDev without paging feature is bound to output file,
+  // initialization for SVG is postponed.
+  if (pdf) {
+      snprintf(ppmFile, PPM_FILE_SZ, "%.*s.%s",
+              PPM_FILE_SZ - 32, ppmRoot, "pdf" );
+
+      surface = cairo_pdf_surface_create( ppmFile,
+                                          72 * w / x_resolution,
+                                          72 * h / y_resolution );
+
+      cr = cairo_create( surface );
+      cairo_surface_destroy( surface );
+      cairoOut = new CairoOutputDev;
+      cairoOut->setCairo( cr );
+      cairo_destroy( cr );
+      cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
+  }
+#endif
+
   if (!use_cairo) {
     paperColor[0] = 255;
     paperColor[1] = 255;
@@ -391,11 +411,10 @@ int main(int argc, char *argv[]) {
       pg_h = tmp;
     }
 
-    if (ppmRoot != NULL) {
+    if (ppmRoot != NULL && !use_multipage) {
       snprintf(ppmFile, PPM_FILE_SZ, "%.*s-%0*d.%s",
               PPM_FILE_SZ - 32, ppmRoot, pg_num_len, pg,
 #ifdef HAVE_CAIRO
-              pdf ? "pdf" :
               svg ? "svg" :
 #endif
               png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm");
@@ -404,36 +423,39 @@ int main(int argc, char *argv[]) {
 
 #ifdef HAVE_CAIRO
     if (use_cairo) {
-      // postponed initialization for cairo output device
-      if (pdf)
-        surface = cairo_pdf_surface_create( ppmFile,
-                                            72 * w / x_resolution,
-                                            72 * h / y_resolution );
-      if (svg)
-        surface = cairo_svg_surface_create( ppmFile,
-                                            72 * w / x_resolution,
-                                            72 * h / y_resolution );
+      if (!use_multipage) {
+        if (svg)
+          surface = cairo_svg_surface_create( ppmFile,
+                                              72 * w / x_resolution,
+                                              72 * h / y_resolution );
 
-      cr = cairo_create( surface );
-      cairo_surface_destroy( surface );
-      cairoOut = new CairoOutputDev;
-      cairoOut->setCairo( cr );
-      cairo_destroy( cr );
-      cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
+        cr = cairo_create( surface );
+        cairo_surface_destroy( surface );
+        cairoOut = new CairoOutputDev;
+        cairoOut->setCairo( cr );
+        cairo_destroy( cr );
+        cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
+      }
       savePageSliceCairo(doc, cairoOut, pg,
                          72 * x / x_resolution,
                          72 * y / y_resolution,
                          72 * w / x_resolution,
                          72 * h / y_resolution,
                          pg_w, pg_h);
-      cairoOut->setCairo( NULL );
-      delete cairoOut;
+      if (!use_multipage) {
+        cairoOut->setCairo( NULL );
+        delete cairoOut;
+      }
     } else
 #endif /* HAVE_CAIRO */
       savePageSlice(doc, splashOut, pg, x, y, w, h, pg_w, pg_h, ppmFile);
   }
   if (!use_cairo)
     delete splashOut;
+  else if (use_multipage) {
+    cairoOut->setCairo( NULL );
+    delete cairoOut;
+  }
 
   exitCode = 0;
 
