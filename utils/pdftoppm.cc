@@ -436,12 +436,14 @@ int main(int argc, char *argv[]) {
         cairo_destroy( cr );
         cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
       }
+      cairo_save( cr );
       savePageSliceCairo(doc, cairoOut, pg,
                          72 * x / x_resolution,
                          72 * y / y_resolution,
                          72 * w / x_resolution,
                          72 * h / y_resolution,
                          pg_w, pg_h);
+      cairo_restore( cr );
       if (!use_multipage) {
         cairoOut->setCairo( NULL );
         delete cairoOut;
