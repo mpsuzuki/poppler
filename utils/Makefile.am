@@ -47,6 +47,20 @@ pdftoabw_binary = pdftoabw
 
 endif
 
+if BUILD_CAIRO_OUTPUT
+
+pdftocairo_SOURCES =				\
+	pdftocairo.cc				\
+	$(common)
+
+pdftocairo_LDADD = $(LDADD) $(CAIRO_LIBS) \
+	$(top_builddir)/poppler/libpoppler-cairo.la
+
+
+pdftocairo_binary = pdftocairo
+
+endif
+
 AM_LDFLAGS = @auto_import_flags@
 
 bin_PROGRAMS =					\
@@ -57,7 +71,8 @@ bin_PROGRAMS =					\
 	pdftotext				\
 	pdftohtml				\
 	$(pdftoppm_binary)			\
-	$(pdftoabw_binary)
+	$(pdftoabw_binary)                      \
+	$(pdftocairo_binary)
 
 dist_man1_MANS =				\
 	pdffonts.1				\
