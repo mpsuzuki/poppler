@@ -10,6 +10,7 @@ if BUILD_CAIRO_OUTPUT
 
 pdftoppm_LDADD +=				\
 	$(top_builddir)/poppler/libpoppler-cairo.la	\
+	$(LDADD)				\
 	$(CAIRO_LIBS)
 
 endif
