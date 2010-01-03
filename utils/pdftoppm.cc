@@ -423,6 +423,11 @@ int main(int argc, char *argv[]) {
 
 #ifdef HAVE_CAIRO
     if (use_cairo) {
+      GfxState  *state = new GfxState( 72 * w / x_resolution,
+                                       72 * h / y_resolution,
+                                       doc->getCatalog()->getPage(pg)->getCropBox(),
+                                       doc->getCatalog()->getPage(pg)->getRotate(),
+                                       gTrue );
       if (!use_multipage) {
         if (svg)
           surface = cairo_svg_surface_create( ppmFile,
@@ -436,14 +441,14 @@ int main(int argc, char *argv[]) {
         cairo_destroy( cr );
         cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
       }
-      cairo_save( cr );
+      cairoOut->saveState( state );
       savePageSliceCairo(doc, cairoOut, pg,
                          72 * x / x_resolution,
                          72 * y / y_resolution,
                          72 * w / x_resolution,
                          72 * h / y_resolution,
                          pg_w, pg_h);
-      cairo_restore( cr );
+      cairoOut->restoreState( state );
       if (!use_multipage) {
         cairoOut->setCairo( NULL );
         delete cairoOut;
