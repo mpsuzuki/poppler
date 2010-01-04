@@ -398,6 +398,46 @@ else
   enable_poppler_glib="no"
   GLIB_REQ=""
 fi
+
+AC_ARG_ENABLE(readline,
+              AC_HELP_STRING([--enable-readline],
+                             [Add readline interface to poppler-utils.]),
+              enable_readline=$enableval,
+              enable_readline=no)
+if test x$enable_readline = xyes; then
+  AC_CHECK_HEADERS([readline/readline.h],
+    AC_CHECK_LIB([readline], [readline],
+      AC_DEFINE(HAVE_READLINE, [1], [GNU readline or compatible is available])
+      READLINE_LIBS="-lreadline"
+    )
+  )
+fi
+AC_SUBST(READLINE_LIBS)
+AM_CONDITIONAL(BUILD_READLINE, test x${READLINE_LIBS} != x)
+
+
+POPPLER_GLIB_DISABLE_DEPRECATED=""
+POPPLER_GLIB_DISABLE_SINGLE_INCLUDES=""
+
+GLIB_REQUIRED=2.18
+AC_ARG_ENABLE(poppler-glib,
+              AC_HELP_STRING([--disable-poppler-glib],
+	                     [Don't compile poppler glib wrapper.]),
+              enable_poppler_glib=$enableval,
+              enable_poppler_glib="try")
+if test x$enable_poppler_glib = xyes; then
+  PKG_CHECK_MODULES(POPPLER_GLIB, glib-2.0 >= $GLIB_REQUIRED gobject-2.0 >= $GLIB_REQUIRED)
+elif test x$enable_poppler_glib = xtry; then
+  PKG_CHECK_MODULES(POPPLER_GLIB, glib-2.0 >= $GLIB_REQUIRED gobject-2.0 >= $GLIB_REQUIRED, 
+                    [enable_poppler_glib="yes"],
+                    [enable_poppler_glib="no"])
+fi
+if test x$enable_poppler_glib = xyes; then
+  AC_PATH_PROG([GLIB_MKENUMS],[glib-mkenums])
+  POPPLER_GLIB_DISABLE_DEPRECATED="$POPPLER_GLIB_DISABLE_DEPRECATED -DG_DISABLE_DEPRECATED"
+  POPPLER_GLIB_DISABLE_SINGLE_INCLUDES="$POPPLER_GLIB_DISABLE_SINGLE_INCLUDES -DG_DISABLE_SINGLE_INCLUDES"
+fi
+
 AM_CONDITIONAL(BUILD_POPPLER_GLIB, test x$enable_poppler_glib = xyes)
 AM_CONDITIONAL(HAVE_INTROSPECTION, test "x$found_introspection" = "xyes")
 AC_SUBST(GLIB_REQ)
@@ -684,6 +724,7 @@ echo "  use libcurl:        $enable_libcurl"
 echo "  use libopenjpeg:    $enable_libopenjpeg"
 echo "  use cms:            $enable_cms"
 echo "  command line utils: $enable_utils"
+echo "    use readline:     $enable_readline"
 echo ""
 
 if test x$enable_splash_output = xno -a x$enable_cairo_output = xno; then

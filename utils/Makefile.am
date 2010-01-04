@@ -15,6 +15,12 @@ pdftoppm_LDADD +=				\
 
 endif
 
+if BUILD_READLINE
+
+pdftoppm_LDADD += $(READLINE_LIBS)
+
+endif
+
 pdftoppm_binary = pdftoppm
 
 pdftoppm_manpage = pdftoppm.1
