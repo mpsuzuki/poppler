@@ -243,6 +243,7 @@ int main(int argc, char *argv[]) {
   GooString *fileName = NULL;
   char *ppmRoot = NULL;
   char ppmFile[PPM_FILE_SZ];
+  GBool ppmFileIsNew;
   GooString *ownerPW, *userPW;
   SplashColor paperColor;
   SplashOutputDev *splashOut;
@@ -250,6 +251,7 @@ int main(int argc, char *argv[]) {
   cairo_surface_t *surface = NULL;
   cairo_t* cr = NULL;
   CairoOutputDev *cairoOut = NULL;
+  GfxState  *state;
 #endif
 
   GBool ok;
@@ -258,6 +260,7 @@ int main(int argc, char *argv[]) {
   double pg_w, pg_h, tmp;
 
   exitCode = 99;
+  memset( ppmFile, 0, PPM_FILE_SZ );
 
   // parse args
   ok = parseArgs(argDesc, &argc, argv);
@@ -268,15 +271,6 @@ int main(int argc, char *argv[]) {
   GBool use_cairo = gFalse;
   GBool use_multipage = gFalse;
 #endif
-  if (mono && gray) {
-    ok = gFalse;
-  }
-  if ( resolution != 0.0 &&
-       (x_resolution == 150.0 ||
-        y_resolution == 150.0)) {
-    x_resolution = resolution;
-    y_resolution = resolution;
-  }
   if (!ok || argc > 3 || printVersion || printHelp) {
     fprintf(stderr, "pdftoppm version %s\n", PACKAGE_VERSION);
     fprintf(stderr, "%s\n", popplerCopyright);
@@ -288,6 +282,22 @@ int main(int argc, char *argv[]) {
   }
   if (argc > 1) fileName = new GooString(argv[1]);
   if (argc == 3) ppmRoot = argv[2];
+
+  // check exclusive options
+  if (mono && gray) {
+    fprintf(stderr, "mono and gray cannot be specified at once.\n");
+    goto err0;
+  }
+
+  if ( 1 < ( ( png  ? 1 : 0 ) + ( jpeg ? 1 : 0 )
+#ifdef HAVE_CAIRO
+           + ( pdf  ? 1 : 0 ) + ( svg  ? 1 : 0 )
+#endif
+           ) ) {
+    fprintf(stderr, "only one file format can be specified for output.\n");
+    goto err0;
+  }
+
 
   // read config file
   globalParams = new GlobalParams();
@@ -349,26 +359,19 @@ int main(int argc, char *argv[]) {
   if (lastPage < 1 || lastPage > doc->getNumPages())
     lastPage = doc->getNumPages();
 
+  // set resolution parameters
+  if ( resolution != 0.0 &&
+       (x_resolution == 150.0 ||
+        y_resolution == 150.0)) {
+    x_resolution = resolution;
+    y_resolution = resolution;
+  }
 #ifdef HAVE_CAIRO
-  // CairoOutputDev without paging feature is bound to output file,
-  // initialization for SVG is postponed.
-  if (pdf) {
-      snprintf(ppmFile, PPM_FILE_SZ, "%.*s.%s",
-              PPM_FILE_SZ - 32, ppmRoot, "pdf" );
-
-      surface = cairo_pdf_surface_create( ppmFile,
-                                          72 * w / x_resolution,
-                                          72 * h / y_resolution );
-
-      cr = cairo_create( surface );
-      cairo_surface_destroy( surface );
+  if (use_cairo) {
       cairoOut = new CairoOutputDev;
-      cairoOut->setCairo( cr );
-      cairo_destroy( cr );
       cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
   }
 #endif
-
   if (!use_cairo) {
     paperColor[0] = 255;
     paperColor[1] = 255;
@@ -411,25 +414,38 @@ int main(int argc, char *argv[]) {
       pg_h = tmp;
     }
 
-    if (ppmRoot != NULL && !use_multipage) {
-      snprintf(ppmFile, PPM_FILE_SZ, "%.*s-%0*d.%s",
-              PPM_FILE_SZ - 32, ppmRoot, pg_num_len, pg,
+    if (ppmRoot != NULL) {
+      const char* suffix =
 #ifdef HAVE_CAIRO
-              svg ? "svg" :
+        pdf ? "pdf" : svg ? "svg" :
 #endif
-              png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm");
+        png ? "png" : jpeg ? "jpg" : mono ? "pbm" : gray ? "pgm" : "ppm";
+
+      ppmFileIsNew = gTrue;
+      if (use_multipage && strlen( ppmFile ) )
+        ppmFileIsNew = gFalse;
+      else if (use_multipage)
+        snprintf(ppmFile, PPM_FILE_SZ, "%.*s.%s", PPM_FILE_SZ - 32, ppmRoot, suffix );
+      else
+        snprintf(ppmFile, PPM_FILE_SZ, "%.*s-%0*d.%s", PPM_FILE_SZ - 32, ppmRoot, pg_num_len, pg, suffix );
     }
 
 
 #ifdef HAVE_CAIRO
     if (use_cairo) {
-      GfxState  *state = new GfxState( 72 * w / x_resolution,
-                                       72 * h / y_resolution,
-                                       doc->getCatalog()->getPage(pg)->getCropBox(),
-                                       doc->getCatalog()->getPage(pg)->getRotate(),
-                                       gTrue );
-      if (!use_multipage) {
-        if (svg)
+      if (ppmFileIsNew) {
+        state = new GfxState( 72 * w / x_resolution,
+                              72 * h / y_resolution,
+                              doc->getCatalog()->getPage(pg)->getCropBox(),
+                              doc->getCatalog()->getPage(pg)->getRotate(),
+                              gTrue );
+
+        if (pdf)
+          surface = cairo_pdf_surface_create( ppmFile,
+                                              72 * w / x_resolution,
+                                              72 * h / y_resolution );
+
+        else if (svg)
           surface = cairo_svg_surface_create( ppmFile,
                                               72 * w / x_resolution,
                                               72 * h / y_resolution );
