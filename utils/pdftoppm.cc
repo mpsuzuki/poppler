@@ -353,6 +353,14 @@ int main(int argc, char *argv[]) {
     goto err1;
   }
 
+  // prepare GfxState buffer for CairoOutputDev
+  if (use_cairo)
+    state = new GfxState( 72 * w / x_resolution,
+                          72 * h / y_resolution,
+                          doc->getCatalog()->getPage(1)->getCropBox(),
+                          doc->getCatalog()->getPage(1)->getRotate(),
+                          gTrue );
+
   // get page range
   if (firstPage < 1)
     firstPage = 1;
@@ -365,22 +373,6 @@ int main(int argc, char *argv[]) {
         y_resolution == 150.0)) {
     x_resolution = resolution;
     y_resolution = resolution;
-  }
-#ifdef HAVE_CAIRO
-  if (use_cairo) {
-      cairoOut = new CairoOutputDev;
-      cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
-  }
-#endif
-  if (!use_cairo) {
-    paperColor[0] = 255;
-    paperColor[1] = 255;
-    paperColor[2] = 255;
-    splashOut = new SplashOutputDev(mono ? splashModeMono1 :
-				    gray ? splashModeMono8 :
-				             splashModeRGB8, 4,
-				  gFalse, paperColor);
-    splashOut->startDoc(doc->getXRef());
   }
   if (sz != 0) w = h = sz;
   pg_num_len = numberOfCharacters(doc->getNumPages());
@@ -434,12 +426,6 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_CAIRO
     if (use_cairo) {
       if (ppmFileIsNew) {
-        state = new GfxState( 72 * w / x_resolution,
-                              72 * h / y_resolution,
-                              doc->getCatalog()->getPage(pg)->getCropBox(),
-                              doc->getCatalog()->getPage(pg)->getRotate(),
-                              gTrue );
-
         if (pdf)
           surface = cairo_pdf_surface_create( ppmFile,
                                               72 * w / x_resolution,
@@ -469,15 +455,32 @@ int main(int argc, char *argv[]) {
         cairoOut->setCairo( NULL );
         delete cairoOut;
       }
-    } else
+    }
 #endif /* HAVE_CAIRO */
+    if (!use_cairo) {
+      if (ppmFileIsNew) {
+        paperColor[0] = 255;
+        paperColor[1] = 255;
+        paperColor[2] = 255;
+        splashOut = new SplashOutputDev(mono ? splashModeMono1 :
+                                        gray ? splashModeMono8 :
+                                               splashModeRGB8,
+                                        4, gFalse, paperColor);
+        splashOut->startDoc(doc->getXRef());
+      }
       savePageSlice(doc, splashOut, pg, x, y, w, h, pg_w, pg_h, ppmFile);
+      if (!use_multipage)
+        delete splashOut;
+    }
   }
-  if (!use_cairo)
-    delete splashOut;
-  else if (use_multipage) {
-    cairoOut->setCairo( NULL );
-    delete cairoOut;
+
+  if (use_multipage) {
+    if (use_cairo)
+    {
+      cairoOut->setCairo( NULL );
+      delete cairoOut;
+    } else /* assume splashOut */
+      delete splashOut;
   }
 
   exitCode = 0;
