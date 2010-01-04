@@ -83,6 +83,15 @@ static GBool jpeg = gFalse;
 static GBool pdf = gFalse;
 static GBool svg = gFalse;
 #endif
+
+#ifdef HAVE_CAIRO
+#define  use_cairo  ( pdf || svg )
+#define  use_multipage ( pdf )
+#else
+#define  use_cairo     gFalse
+#define  use_multipage gFalse
+#endif
+
 #ifdef HAVE_READLINE
 #define MIN( a, b ) ( ( ( a ) < ( b ) ) ? ( a ) : ( b ) )
 #define MAX( a, b ) ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) )
@@ -156,7 +165,7 @@ static const ArgDesc argDesc[] = {
    "enable FreeType font rasterizer: yes, no"},
 #endif
 #ifdef HAVE_READLINE
-  {"--interactive", argFlag, &interactive, 0,
+  {"-interactive", argFlag, &interactive, 0,
    "run in interactive mode"},
 #endif
   
@@ -254,10 +263,9 @@ static void savePageSliceCairo(PDFDoc *doc,
 
 #ifdef HAVE_READLINE
 
-static void read_command_from_readline(int*     toknum_p,
-                                       char***  tok_p ) {
-  const char* prompt = "pdftoppm>";
-
+static char* read_command_from_readline(const char*  prompt,
+                                        int*         toknum_p,
+                                        char***      tok_p ) {
   for (;;)
   {
     char*  line;
@@ -343,8 +351,9 @@ find_a_delimiter:
       char *c;
       int i;
 
-      tok = (char **)malloc( sizeof( char* ) * sepnum );    
-      for ( i = 0, c = cmd, toknum = 0; i < sepnum; i++ )
+      tok = (char **)malloc( sizeof( char* ) * ( sepnum + 1 ) );    
+      tok[0] = (char *)prompt;
+      for ( i = 0, c = cmd, toknum = 1; i < sepnum; i++ )
       {
         if ( strlen( c ) > 0 )
         {
@@ -363,12 +372,12 @@ find_a_delimiter:
 
     *toknum_p = toknum;
     *tok_p = tok;
-    return;
+    return cmd;
   }
 
   *toknum_p = 0;
   *tok_p = NULL;
-  return;
+  return NULL;
 }
 #endif
 
@@ -389,6 +398,8 @@ int main(int argc, char *argv[]) {
 #endif
   int    toknum = argc;
   char** tok = argv;
+  char*  rlbuff;
+  const char*  prompt;
 
   GBool ok;
   int exitCode;
@@ -396,33 +407,10 @@ int main(int argc, char *argv[]) {
   double pg_w, pg_h, tmp;
 
   exitCode = 99;
-  memset( ppmFile, 0, PPM_FILE_SZ );
+  memset( ppmFile,  0, sizeof(ppmFile) );
 
   // parse args
   ok = parseArgs(argDesc, &toknum, tok);
-#ifdef HAVE_READLINE
-read_command_cleanly:
-  /* read command string if no PDF pathname is given */
-  if (interactive) {
-    if (2 < argc)
-    {
-      fprintf( stderr, "Entering interactive mode, ignore initial options:" );
-      for ( int i = 0; i < argc; i++ )
-        if ( 0 != strcmp( argv[i], "--interactive" ) )
-          fprintf( stderr, " %s", argv[i] );
-      fprintf( stderr, "\n" );
-    }
-    read_command_from_readline( &toknum, &tok );
-    ok = parseArgs(argDesc, &toknum, tok);
-  }
-#endif
-#ifdef HAVE_CAIRO
-  GBool use_cairo = ( pdf || svg );
-  GBool use_multipage = pdf;
-#else
-  GBool use_cairo = gFalse;
-  GBool use_multipage = gFalse;
-#endif
   if (!ok || toknum > 3 || printVersion || printHelp) {
     fprintf(stderr, "pdftoppm version %s\n", PACKAGE_VERSION);
     fprintf(stderr, "%s\n", popplerCopyright);
@@ -433,7 +421,37 @@ read_command_cleanly:
     goto err0;
   }
   if (toknum > 1) fileName = new GooString(tok[1]);
-  if (toknum == 3) ppmRoot = tok[2];
+
+#ifdef HAVE_READLINE
+  /* read command string if no PDF pathname is given */
+  if (interactive) {
+    {
+      char* prompt_buff = (char *)malloc( strlen( tok[0] ) + 2 );
+      memset( prompt_buff, 0, strlen( tok[0] ) + 2 );
+      strcpy( prompt_buff, tok[0] );
+      strcat( prompt_buff, ">" );
+      prompt = (const char*)prompt_buff;
+    }
+    rlbuff = read_command_from_readline( prompt, &toknum, &tok );
+    if (1 > toknum)
+    {
+      printUsage("pdftoppm", "[PDF-file [PPM-file-prefix]]", argDesc);
+      goto err0;
+    }
+    ok = parseArgs(argDesc, &toknum, tok);
+    if (!ok)
+    {
+      printUsage("pdftoppm", "[PDF-file [PPM-file-prefix]]", argDesc);
+      goto err0;
+    }
+  }
+#endif
+  if (interactive && toknum > 1 ) /* in interactive mode, fileName is fixed */
+    ppmRoot = tok[1];
+  else if (!interactive && toknum > 2)
+    ppmRoot = tok[2];
+  else
+    printUsage("pdftoppm", "[PDF-file [PPM-file-prefix]]", argDesc);
 
   // check exclusive options
   if (mono && gray) {
@@ -513,6 +531,7 @@ read_command_cleanly:
                           doc->getCatalog()->getPage(1)->getRotate(),
                           gTrue );
 
+process_a_command:
   // get page range
   if (firstPage < 1)
     firstPage = 1;
@@ -624,6 +643,28 @@ read_command_cleanly:
       if (!use_multipage)
         delete splashOut;
     }
+    ppmFileIsNew = gFalse;
+  }
+
+  if (!use_multipage) {
+    if (use_cairo)
+    {
+      cairoOut->setCairo( NULL );
+      delete cairoOut;
+    } else /* assume splashOut */
+      delete splashOut;
+  }
+
+  if (interactive) {
+    free( rlbuff );
+    rlbuff = read_command_from_readline( prompt, &toknum, &tok );
+    if (toknum > 0 && parseArgs(argDesc, &toknum, tok) )
+      if (toknum == 1)
+        ppmRoot = NULL;
+      goto process_a_command;
+    }
+    fprintf( stderr, "Exit interactive mode\n" );
+    free( rlbuff );
   }
 
   if (use_multipage) {
@@ -638,6 +679,7 @@ read_command_cleanly:
   exitCode = 0;
 
   // clean up
+  free( (char *)prompt );
  err1:
   delete doc;
   delete globalParams;
