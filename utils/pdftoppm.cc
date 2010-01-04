@@ -51,6 +51,11 @@
 #include <cairo-pdf.h>
 #include <cairo-svg.h>
 #endif
+#ifdef HAVE_READLINE
+#define _FUNCTION_DEF /* avoid conflict between readline/rltypedefs.h & poppler/Function.h */
+#include <stdlib.h>
+#include <readline/readline.h>
+#endif
 
 #define PPM_FILE_SZ 512
 
@@ -77,6 +82,11 @@ static GBool jpeg = gFalse;
 #ifdef HAVE_CAIRO
 static GBool pdf = gFalse;
 static GBool svg = gFalse;
+#endif
+#ifdef HAVE_READLINE
+#define MIN( a, b ) ( ( ( a ) < ( b ) ) ? ( a ) : ( b ) )
+#define MAX( a, b ) ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) )
+static GBool interactive = gFalse;
 #endif
 static char enableFreeTypeStr[16] = "";
 static char antialiasStr[16] = "";
@@ -144,6 +154,10 @@ static const ArgDesc argDesc[] = {
 #if HAVE_FREETYPE_FREETYPE_H | HAVE_FREETYPE_H
   {"-freetype",   argString,      enableFreeTypeStr, sizeof(enableFreeTypeStr),
    "enable FreeType font rasterizer: yes, no"},
+#endif
+#ifdef HAVE_READLINE
+  {"--interactive", argFlag, &interactive, 0,
+   "run in interactive mode"},
 #endif
   
   {"-aa",         argString,      antialiasStr,   sizeof(antialiasStr),
@@ -238,6 +252,126 @@ static void savePageSliceCairo(PDFDoc *doc,
 }
 #endif
 
+#ifdef HAVE_READLINE
+
+static void read_command_from_readline(int*     toknum_p,
+                                       char***  tok_p ) {
+  const char* prompt = "pdftoppm>";
+
+  for (;;)
+  {
+    char*  line;
+    char*  cmd;
+    int    cmdlen;
+    int    sepnum = 0;
+
+    char** tok;
+    int    toknum = 0;
+
+    line = readline( prompt );
+    if ( line == NULL || line[0] == 3 || line[0] == 4 )
+      break;
+
+    cmdlen = strlen( line ) + 1;
+    cmd = ( char * ) malloc( cmdlen );
+    if ( cmd == NULL )
+    {
+      perror( "malloc" );
+      *toknum_p = 0;
+      *tok_p = NULL;
+    }
+    strncpy( cmd, line, cmdlen );
+    free( line );
+
+    if ( line != NULL )
+    {
+      char* cs = '\0';
+      char* c  = cmd;
+      char* c_sep;
+      char* c_esc;
+
+find_a_delimiter:
+      c_sep = c + strlen( c ); /* addr points terminating NULL */
+
+      cs = strchr( c, ' ' );
+      if ( cs )
+        c_sep = MIN( c_sep, cs );
+
+      cs = strchr( c, '\t' );
+      if ( cs )
+        c_sep = MIN( c_sep, cs );
+
+      cs = strchr( c, '\r' );
+      if ( cs )
+        c_sep = MIN( c_sep, cs );
+
+      cs = strchr( c, '\n' );
+      if ( cs )
+        c_sep = MIN( c_sep, cs );
+
+      cs = strchr( c, '\v' );
+      if ( cs )
+        c_sep = MIN( c_sep, cs );
+
+      cs = strchr( c, '\f' );
+      if ( cs )
+        c_sep = MIN( c_sep, cs );
+
+      do
+      {
+        c_esc = strchr( c, '\\' );
+        if ( c_esc == NULL )
+          ;
+        else if ( ( c_esc + 1 ) == c_sep ) /* escaped delimiter. Jump to next delimiter */
+        {
+          c = c_esc + 2;
+          goto find_a_delimiter;
+        }
+        else
+          c_esc += 2; /* Skip escaped character */
+      } while ( c_esc != NULL && c_esc < c_sep );
+
+      *c_sep = '\0';
+      c = c_sep + 1;
+      sepnum ++;
+
+      if ( *c != '\0' )
+        goto find_a_delimiter;
+    }
+
+    {
+      char *c;
+      int i;
+
+      tok = (char **)malloc( sizeof( char* ) * sepnum );    
+      for ( i = 0, c = cmd, toknum = 0; i < sepnum; i++ )
+      {
+        if ( strlen( c ) > 0 )
+        {
+          tok[toknum] = c;
+          toknum ++;
+        }
+        c += strlen( c ) + 1;
+      }
+    }
+
+    {
+      int i;
+      for ( i = 0; i < toknum; i++ )
+        fprintf( stderr, "token #%02d:'%s'\n", i, tok[i] );
+    }
+
+    *toknum_p = toknum;
+    *tok_p = tok;
+    return;
+  }
+
+  *toknum_p = 0;
+  *tok_p = NULL;
+  return;
+}
+#endif
+
 int main(int argc, char *argv[]) {
   PDFDoc *doc;
   GooString *fileName = NULL;
@@ -253,6 +387,8 @@ int main(int argc, char *argv[]) {
   CairoOutputDev *cairoOut = NULL;
   GfxState  *state;
 #endif
+  int    toknum = argc;
+  char** tok = argv;
 
   GBool ok;
   int exitCode;
@@ -263,7 +399,23 @@ int main(int argc, char *argv[]) {
   memset( ppmFile, 0, PPM_FILE_SZ );
 
   // parse args
-  ok = parseArgs(argDesc, &argc, argv);
+  ok = parseArgs(argDesc, &toknum, tok);
+#ifdef HAVE_READLINE
+read_command_cleanly:
+  /* read command string if no PDF pathname is given */
+  if (interactive) {
+    if (2 < argc)
+    {
+      fprintf( stderr, "Entering interactive mode, ignore initial options:" );
+      for ( int i = 0; i < argc; i++ )
+        if ( 0 != strcmp( argv[i], "--interactive" ) )
+          fprintf( stderr, " %s", argv[i] );
+      fprintf( stderr, "\n" );
+    }
+    read_command_from_readline( &toknum, &tok );
+    ok = parseArgs(argDesc, &toknum, tok);
+  }
+#endif
 #ifdef HAVE_CAIRO
   GBool use_cairo = ( pdf || svg );
   GBool use_multipage = pdf;
@@ -271,7 +423,7 @@ int main(int argc, char *argv[]) {
   GBool use_cairo = gFalse;
   GBool use_multipage = gFalse;
 #endif
-  if (!ok || argc > 3 || printVersion || printHelp) {
+  if (!ok || toknum > 3 || printVersion || printHelp) {
     fprintf(stderr, "pdftoppm version %s\n", PACKAGE_VERSION);
     fprintf(stderr, "%s\n", popplerCopyright);
     fprintf(stderr, "%s\n", xpdfCopyright);
@@ -280,8 +432,8 @@ int main(int argc, char *argv[]) {
     }
     goto err0;
   }
-  if (argc > 1) fileName = new GooString(argv[1]);
-  if (argc == 3) ppmRoot = argv[2];
+  if (toknum > 1) fileName = new GooString(tok[1]);
+  if (toknum == 3) ppmRoot = tok[2];
 
   // check exclusive options
   if (mono && gray) {
