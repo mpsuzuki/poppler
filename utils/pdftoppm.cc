@@ -656,6 +656,16 @@ process_a_command:
     if (toknum > 1 && parseArgs(argDesc, &toknum, tok) ) {
       if (toknum == 1)
         ppmRoot = NULL;
+      else { /* toknum > 2, output file is changed */
+        ppmRoot = tok[1];
+        memset( ppmFile,  0, sizeof(ppmFile) );
+        if (use_cairo)
+        {
+          cairoOut->setCairo( NULL );
+          delete cairoOut;
+        } else /* assume splashOut */
+          delete splashOut;
+      }
       goto process_a_command;
     }
     fprintf( stderr, "\nExit interactive mode\n" );
