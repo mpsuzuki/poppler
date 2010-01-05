@@ -289,8 +289,6 @@ static char* read_command_from_readline(const char*  prompt,
       *tok_p = NULL;
     }
     strncpy( cmd, line, cmdlen );
-    free( line );
-
     if ( line != NULL )
     {
       char* cs = '\0';
@@ -346,6 +344,8 @@ find_a_delimiter:
       if ( *c != '\0' )
         goto find_a_delimiter;
     }
+    free( line );
+
 
     {
       char *c;
