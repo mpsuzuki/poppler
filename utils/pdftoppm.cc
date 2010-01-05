@@ -366,6 +366,7 @@ find_a_delimiter:
 
     {
       int i;
+      fprintf( stderr, "\n" );
       for ( i = 0; i < toknum; i++ )
         fprintf( stderr, "token #%02d:'%s'\n", i, tok[i] );
     }
@@ -657,7 +658,7 @@ process_a_command:
         ppmRoot = NULL;
       goto process_a_command;
     }
-    fprintf( stderr, "Exit interactive mode\n" );
+    fprintf( stderr, "\nExit interactive mode\n" );
     free( rlbuff );
   }
 
