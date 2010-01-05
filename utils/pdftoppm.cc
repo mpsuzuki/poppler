@@ -353,7 +353,7 @@ find_a_delimiter:
 
       tok = (char **)malloc( sizeof( char* ) * ( sepnum + 1 ) );    
       tok[0] = (char *)prompt;
-      for ( i = 0, c = cmd, toknum = 1; i < sepnum; i++ )
+      for ( i = 0, c = cmd, toknum = 1; i < sepnum && c < ( cmd + cmdlen ); i++ )
       {
         if ( strlen( c ) > 0 )
         {
