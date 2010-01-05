@@ -277,7 +277,7 @@ static char* read_command_from_readline(const char*  prompt,
     int    toknum = 0;
 
     line = readline( prompt );
-    if ( line == NULL || line[0] == 3 || line[0] == 4 )
+    if ( line == NULL || 1 > strlen( line ) || line[0] == 3 || line[0] == 4 )
       break;
 
     cmdlen = strlen( line ) + 1;
@@ -433,13 +433,7 @@ int main(int argc, char *argv[]) {
       prompt = (const char*)prompt_buff;
     }
     rlbuff = read_command_from_readline( prompt, &toknum, &tok );
-    if (1 > toknum)
-    {
-      printUsage("pdftoppm", "[PDF-file [PPM-file-prefix]]", argDesc);
-      goto err0;
-    }
-    ok = parseArgs(argDesc, &toknum, tok);
-    if (!ok)
+    if (2 > toknum || !parseArgs(argDesc, &toknum, tok))
     {
       printUsage("pdftoppm", "[PDF-file [PPM-file-prefix]]", argDesc);
       goto err0;
@@ -658,7 +652,7 @@ process_a_command:
   if (interactive) {
     free( rlbuff );
     rlbuff = read_command_from_readline( prompt, &toknum, &tok );
-    if (toknum > 0 && parseArgs(argDesc, &toknum, tok) )
+    if (toknum > 1 && parseArgs(argDesc, &toknum, tok) ) {
       if (toknum == 1)
         ppmRoot = NULL;
       goto process_a_command;
