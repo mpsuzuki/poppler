@@ -55,6 +55,7 @@
 #define _FUNCTION_DEF /* avoid conflict between readline/rltypedefs.h & poppler/Function.h */
 #include <stdlib.h>
 #include <readline/readline.h>
+#include <readline/history.h>
 #endif
 #ifdef HAVE_LIBGEN_H
 #include <libgen.h> /* POSIX.2 basename() */
@@ -99,6 +100,7 @@ static GBool svg = gFalse;
 #define MIN( a, b ) ( ( ( a ) < ( b ) ) ? ( a ) : ( b ) )
 #define MAX( a, b ) ( ( ( a ) > ( b ) ) ? ( a ) : ( b ) )
 static GBool interactive = gFalse;
+static const char* history_filename = NULL;
 #endif
 static char enableFreeTypeStr[16] = "";
 static char antialiasStr[16] = "";
@@ -283,6 +285,10 @@ static char* read_command_from_readline(const char*  prompt,
     if ( line == NULL || 1 > strlen( line ) || line[0] == 3 || line[0] == 4 )
       break;
 
+    add_history( line );
+    if ( history_filename && 0 != append_history( 1, history_filename ) )
+        fprintf( stderr, "Failed to append \"%s\" to %s\n", line, history_filename );
+
     cmdlen = strlen( line ) + 1;
     cmd = ( char * ) malloc( cmdlen );
     if ( cmd == NULL )
@@ -429,6 +435,25 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_READLINE
   /* read command string if no PDF pathname is given */
   if (interactive) {
+    {
+      size_t history_filename_buff_size = strlen( basename( tok[0] ) ) + strlen( "_history" ) + 2;
+      char*  history_filename_buff = (char *)malloc( history_filename_buff_size );
+      memset( history_filename_buff, 0, history_filename_buff_size );
+      strcpy( history_filename_buff, "." );
+      strcat( history_filename_buff, basename( tok[0] ) );
+      strcat( history_filename_buff, "_history" );
+      history_filename = (const char*)history_filename_buff;
+      using_history();
+      if ( 0 != read_history( history_filename ) )
+      {
+        fprintf( stderr, "Failed to read history file %s\n", history_filename );
+        if ( 0 != write_history( history_filename ) )
+          fprintf( stderr, "Failed to create history file %s\n", history_filename );
+      }
+      else if ( 1 != history_set_pos( history_length ) )
+        fprintf( stderr, "History list is broken\n" );
+    }
+
     {
       size_t prompt_buff_size = strlen( basename( tok[0] ) ) + 2;
       char*  prompt_buff = (char *)malloc( prompt_buff_size );
@@ -690,6 +715,8 @@ process_a_command:
   // clean up
   if ( prompt )
     free( (char *)prompt );
+  if ( history_filename )
+    free( (char*)history_filename );
  err1:
   delete doc;
   delete globalParams;
