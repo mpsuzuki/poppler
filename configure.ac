@@ -414,6 +414,7 @@ if test x$enable_readline = xyes; then
 fi
 AC_SUBST(READLINE_LIBS)
 AM_CONDITIONAL(BUILD_READLINE, test x${READLINE_LIBS} != x)
+AC_CHECK_HEADERS([libgen.h])
 
 
 POPPLER_GLIB_DISABLE_DEPRECATED=""

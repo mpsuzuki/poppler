@@ -56,6 +56,9 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #endif
+#ifdef HAVE_LIBGEN_H
+#include <libgen.h> /* POSIX.2 basename() */
+#endif
 
 #define PPM_FILE_SZ 512
 
@@ -427,9 +430,10 @@ int main(int argc, char *argv[]) {
   /* read command string if no PDF pathname is given */
   if (interactive) {
     {
-      char* prompt_buff = (char *)malloc( strlen( tok[0] ) + 2 );
-      memset( prompt_buff, 0, strlen( tok[0] ) + 2 );
-      strcpy( prompt_buff, tok[0] );
+      size_t prompt_buff_size = strlen( basename( tok[0] ) ) + 2;
+      char*  prompt_buff = (char *)malloc( prompt_buff_size );
+      memset( prompt_buff, 0, prompt_buff_size );
+      strcpy( prompt_buff, basename( tok[0] ) );
       strcat( prompt_buff, ">" );
       prompt = (const char*)prompt_buff;
     }
@@ -684,7 +688,8 @@ process_a_command:
   exitCode = 0;
 
   // clean up
-  free( (char *)prompt );
+  if ( prompt )
+    free( (char *)prompt );
  err1:
   delete doc;
   delete globalParams;
