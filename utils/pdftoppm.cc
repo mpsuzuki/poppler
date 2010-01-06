@@ -406,7 +406,7 @@ int main(int argc, char *argv[]) {
   cairo_surface_t *surface = NULL;
   cairo_t* cr = NULL;
   CairoOutputDev *cairoOut = NULL;
-  GfxState  *state;
+  GfxState  *state = NULL;
 #endif
   int    toknum = argc;
   char** tok = argv;
@@ -728,6 +728,8 @@ process_a_command:
   exitCode = 0;
 
   // clean up
+  if ( state )
+    delete state;
   if ( prompt )
     free( (char *)prompt );
   if ( history_filename )
