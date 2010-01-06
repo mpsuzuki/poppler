@@ -621,23 +621,30 @@ process_a_command:
 #ifdef HAVE_CAIRO
     if (use_cairo) {
       if (ppmFileIsNew) {
+        if (surface)
+          cairo_surface_destroy( surface );
+
         if (pdf)
           surface = cairo_pdf_surface_create( ppmFile,
                                               72 * w / x_resolution,
                                               72 * h / y_resolution );
-
         else if (svg)
           surface = cairo_svg_surface_create( ppmFile,
                                               72 * w / x_resolution,
                                               72 * h / y_resolution );
-
         cr = cairo_create( surface );
-        cairo_surface_destroy( surface );
         cairoOut = new CairoOutputDev;
         cairoOut->setCairo( cr );
         cairo_destroy( cr );
         cairoOut->startDoc( doc->getXRef(), doc->getCatalog() );
+
+      } else if (surface && use_multipage) {
+        if (pdf)
+          cairo_pdf_surface_set_size( surface,
+                                      72 * w / x_resolution,
+                                      72 * h / y_resolution );
       }
+
       cairoOut->saveState( state );
       savePageSliceCairo(doc, cairoOut, pg,
                          72 * x / x_resolution,
@@ -673,6 +680,8 @@ process_a_command:
   if (!use_multipage) {
     if (use_cairo)
     {
+      if (surface)
+        cairo_surface_destroy( surface );
       cairoOut->setCairo( NULL );
       delete cairoOut;
     } else /* assume splashOut */
@@ -690,6 +699,8 @@ process_a_command:
         memset( ppmFile,  0, sizeof(ppmFile) );
         if (use_cairo)
         {
+          if (surface)
+            cairo_surface_destroy( surface );
           cairoOut->setCairo( NULL );
           delete cairoOut;
         } else /* assume splashOut */
@@ -704,6 +715,8 @@ process_a_command:
   if (use_multipage) {
     if (use_cairo)
     {
+      if (surface)
+        cairo_surface_destroy( surface );
       cairoOut->setCairo( NULL );
       delete cairoOut;
     } else /* assume splashOut */
