@@ -350,7 +350,9 @@ find_a_delimiter:
       c = c_sep + 1;
       sepnum ++;
 
-      if ( *c != '\0' )
+      if ( c >= cmd + cmdlen )
+        ;
+      else if ( *c != '\0' )
         goto find_a_delimiter;
     }
     free( line );
