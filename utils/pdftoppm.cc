@@ -282,8 +282,16 @@ static char* read_command_from_readline(const char*  prompt,
     int    toknum = 0;
 
     line = readline( prompt );
-    if ( line == NULL || 1 > strlen( line ) || line[0] == 3 || line[0] == 4 )
+    fprintf( stderr, "readline() in %s:%d, got 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)line );
+
+    if ( line == NULL )
       break;
+    if ( !strlen( line ) || line[0] == 3 || line[0] == 4 )
+    {
+      free( line );
+      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)line );
+      break;
+    }
 
     add_history( line );
     if ( history_filename && 0 != append_history( 1, history_filename ) )
@@ -291,14 +299,18 @@ static char* read_command_from_readline(const char*  prompt,
 
     cmdlen = strlen( line ) + 1;
     cmd = ( char * ) malloc( cmdlen );
+    fprintf( stderr, "malloc() in %s:%d, got 0x%08lx - 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)cmd, (unsigned long)cmd + cmdlen );
     if ( cmd == NULL )
     {
       perror( "malloc" );
-      *toknum_p = 0;
-      *tok_p = NULL;
+      free( line );
+      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)line );
+      break;
     }
     strncpy( cmd, line, cmdlen );
-    if ( line != NULL )
+    free( line );
+    fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)line );
+
     {
       char* cs = '\0';
       char* c  = cmd;
@@ -355,14 +367,13 @@ find_a_delimiter:
       else if ( *c != '\0' )
         goto find_a_delimiter;
     }
-    free( line );
-
 
     {
       char *c;
       int i;
 
       tok = (char **)malloc( sizeof( char* ) * ( sepnum + 1 ) );    
+      fprintf( stderr, "malloc() in %s:%d, got 0x%08lx - 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)tok, (unsigned long)tok + sepnum + 1 );
       tok[0] = (char *)prompt;
       for ( i = 0, c = cmd, toknum = 1; i < sepnum && c < ( cmd + cmdlen ); i++ )
       {
@@ -440,6 +451,7 @@ int main(int argc, char *argv[]) {
     {
       size_t history_filename_buff_size = strlen( basename( tok[0] ) ) + strlen( "_history" ) + 2;
       char*  history_filename_buff = (char *)malloc( history_filename_buff_size );
+      fprintf( stderr, "malloc() in %s:%d, got 0x%08lx - 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)history_filename_buff, (unsigned long)history_filename_buff + history_filename_buff_size );
       memset( history_filename_buff, 0, history_filename_buff_size );
       strcpy( history_filename_buff, "." );
       strcat( history_filename_buff, basename( tok[0] ) );
@@ -459,6 +471,7 @@ int main(int argc, char *argv[]) {
     {
       size_t prompt_buff_size = strlen( basename( tok[0] ) ) + 2;
       char*  prompt_buff = (char *)malloc( prompt_buff_size );
+      fprintf( stderr, "malloc() in %s:%d, got 0x%08lx - 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)prompt_buff, (unsigned long)prompt_buff + prompt_buff_size );
       memset( prompt_buff, 0, prompt_buff_size );
       strcpy( prompt_buff, basename( tok[0] ) );
       strcat( prompt_buff, ">" );
@@ -468,7 +481,8 @@ int main(int argc, char *argv[]) {
     if (2 > toknum || !parseArgs(argDesc, &toknum, tok))
     {
       printUsage("pdftoppm", "[PDF-file [PPM-file-prefix]]", argDesc);
-      goto err0;
+      delete fileName;
+      goto err1;
     }
   }
 #endif
@@ -482,7 +496,8 @@ int main(int argc, char *argv[]) {
   // check exclusive options
   if (mono && gray) {
     fprintf(stderr, "mono and gray cannot be specified at once.\n");
-    goto err0;
+    delete fileName;
+    goto err1;
   }
 
   if ( 1 < ( ( png  ? 1 : 0 ) + ( jpeg ? 1 : 0 )
@@ -491,7 +506,8 @@ int main(int argc, char *argv[]) {
 #endif
            ) ) {
     fprintf(stderr, "only one file format can be specified for output.\n");
-    goto err0;
+    delete fileName;
+    goto err1;
   }
 
 
@@ -546,7 +562,7 @@ int main(int argc, char *argv[]) {
   }
   if (!doc->isOk()) {
     exitCode = 1;
-    goto err1;
+    goto err2;
   }
 
   // prepare GfxState buffer for CairoOutputDev
@@ -691,7 +707,14 @@ process_a_command:
   }
 
   if (interactive) {
-    free( rlbuff );
+    if ( tok ) {
+      free( tok );
+      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)tok );
+    }
+    if ( rlbuff ) {
+      free( rlbuff );
+      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)rlbuff );
+    }
     rlbuff = read_command_from_readline( prompt, &toknum, &tok );
     if (toknum > 1 && parseArgs(argDesc, &toknum, tok) ) {
       if (toknum == 1)
@@ -711,7 +734,15 @@ process_a_command:
       goto process_a_command;
     }
     fprintf( stderr, "\nExit interactive mode\n" );
-    free( rlbuff );
+    if ( tok ) {
+      free( tok );
+      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)tok );
+    }
+    if ( rlbuff )
+    {
+      free( rlbuff );
+      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)rlbuff );
+    }
   }
 
   if (use_multipage) {
@@ -728,15 +759,22 @@ process_a_command:
   exitCode = 0;
 
   // clean up
+ err2:
+  delete doc;
+  delete globalParams;
+ err1:
   if ( state )
     delete state;
   if ( prompt )
+  {
     free( (char *)prompt );
+    fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)prompt );
+  }
   if ( history_filename )
+  {
     free( (char*)history_filename );
- err1:
-  delete doc;
-  delete globalParams;
+    fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)history_filename );
+  }
  err0:
 
   // check for memory leaks
