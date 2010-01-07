@@ -282,14 +282,12 @@ static char* read_command_from_readline(const char*  prompt,
     int    toknum = 0;
 
     line = readline( prompt );
-    fprintf( stderr, "readline() in %s:%d, got 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)line );
 
     if ( line == NULL )
       break;
     if ( !strlen( line ) || line[0] == 3 || line[0] == 4 )
     {
       free( line );
-      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)line );
       break;
     }
 
@@ -299,17 +297,14 @@ static char* read_command_from_readline(const char*  prompt,
 
     cmdlen = strlen( line ) + 1;
     cmd = ( char * ) malloc( cmdlen );
-    fprintf( stderr, "malloc() in %s:%d, got 0x%08lx - 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)cmd, (unsigned long)cmd + cmdlen );
     if ( cmd == NULL )
     {
       perror( "malloc" );
       free( line );
-      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)line );
       break;
     }
     strncpy( cmd, line, cmdlen );
     free( line );
-    fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)line );
 
     {
       char* cs = '\0';
@@ -373,7 +368,6 @@ find_a_delimiter:
       int i;
 
       tok = (char **)malloc( sizeof( char* ) * ( sepnum + 1 ) );    
-      fprintf( stderr, "malloc() in %s:%d, got 0x%08lx - 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)tok, (unsigned long)tok + sepnum + 1 );
       tok[0] = (char *)prompt;
       for ( i = 0, c = cmd, toknum = 1; i < sepnum && c < ( cmd + cmdlen ); i++ )
       {
@@ -451,7 +445,6 @@ int main(int argc, char *argv[]) {
     {
       size_t history_filename_buff_size = strlen( basename( tok[0] ) ) + strlen( "_history" ) + 2;
       char*  history_filename_buff = (char *)malloc( history_filename_buff_size );
-      fprintf( stderr, "malloc() in %s:%d, got 0x%08lx - 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)history_filename_buff, (unsigned long)history_filename_buff + history_filename_buff_size );
       memset( history_filename_buff, 0, history_filename_buff_size );
       strcpy( history_filename_buff, "." );
       strcat( history_filename_buff, basename( tok[0] ) );
@@ -471,7 +464,6 @@ int main(int argc, char *argv[]) {
     {
       size_t prompt_buff_size = strlen( basename( tok[0] ) ) + 2;
       char*  prompt_buff = (char *)malloc( prompt_buff_size );
-      fprintf( stderr, "malloc() in %s:%d, got 0x%08lx - 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)prompt_buff, (unsigned long)prompt_buff + prompt_buff_size );
       memset( prompt_buff, 0, prompt_buff_size );
       strcpy( prompt_buff, basename( tok[0] ) );
       strcat( prompt_buff, ">" );
@@ -709,11 +701,9 @@ process_a_command:
   if (interactive) {
     if ( tok ) {
       free( tok );
-      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)tok );
     }
     if ( rlbuff ) {
       free( rlbuff );
-      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)rlbuff );
     }
     rlbuff = read_command_from_readline( prompt, &toknum, &tok );
     if (toknum > 1 && parseArgs(argDesc, &toknum, tok) ) {
@@ -736,12 +726,10 @@ process_a_command:
     fprintf( stderr, "\nExit interactive mode\n" );
     if ( tok ) {
       free( tok );
-      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)tok );
     }
     if ( rlbuff )
     {
       free( rlbuff );
-      fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)rlbuff );
     }
   }
 
@@ -768,12 +756,10 @@ process_a_command:
   if ( prompt )
   {
     free( (char *)prompt );
-    fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)prompt );
   }
   if ( history_filename )
   {
     free( (char*)history_filename );
-    fprintf( stderr, "free() in %s:%d, detach 0x%08lx\n", __FUNCTION__, __LINE__, (unsigned long)history_filename );
   }
  err0:
 
