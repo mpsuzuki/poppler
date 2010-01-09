@@ -714,8 +714,8 @@ process_a_command:
         memset( ppmFile,  0, sizeof(ppmFile) );
         if (use_cairo)
         {
-          if (surface)
-            cairo_surface_destroy( surface );
+          // if (surface)
+          //   cairo_surface_destroy( surface );
           cairoOut->setCairo( NULL );
           delete cairoOut;
         } else /* assume splashOut */
