@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
   int    toknum = argc;
   char** tok = argv;
   char*  rlbuff;
-  const char*  prompt;
+  const char*  prompt = NULL;
 
   GBool ok;
   int exitCode;
