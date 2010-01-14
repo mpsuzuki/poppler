@@ -46,6 +46,7 @@
 #include "splash/SplashBitmap.h"
 #include "splash/Splash.h"
 #include "SplashOutputDev.h"
+#include "TextOutputDev.h"
 #ifdef HAVE_CAIRO
 #include "CairoOutputDev.h"
 #include <cairo-pdf.h>
@@ -83,6 +84,9 @@ static GBool mono = gFalse;
 static GBool gray = gFalse;
 static GBool png = gFalse;
 static GBool jpeg = gFalse;
+static GBool text = gFalse;		/* TextOutputDev */
+static GBool physLayout = gFalse;	/* TextOutputDev */
+static GBool rawOrder = gFalse;		/* TextOutputDev */
 #ifdef HAVE_CAIRO
 static GBool pdf = gFalse;
 static GBool svg = gFalse;
@@ -90,10 +94,10 @@ static GBool svg = gFalse;
 
 #ifdef HAVE_CAIRO
 #define  use_cairo  ( pdf || svg )
-#define  use_multipage ( pdf )
+#define  use_multipage ( pdf || text )
 #else
 #define  use_cairo     gFalse
-#define  use_multipage gFalse
+#define  use_multipage text
 #endif
 
 #ifdef HAVE_READLINE
@@ -159,6 +163,12 @@ static const ArgDesc argDesc[] = {
   {"-jpeg",    argFlag,     &jpeg,           0,
    "generate a JPEG file"},
 #endif
+  {"-text",    argFlag,     &text,           0,
+   "generate a TEXT file"},
+  {"-layout",  argFlag,     &physLayout,    0,
+   "maintain original physical layout (for text output)"},
+  {"-raw",     argFlag,     &rawOrder,      0,
+   "keep strings in content stream order (for text output)"},
 #ifdef HAVE_CAIRO
   {"-pdf",    argFlag,     &pdf,           0,
    "generate a PDF file"},
@@ -407,10 +417,11 @@ int main(int argc, char *argv[]) {
   GooString *ownerPW, *userPW;
   SplashColor paperColor;
   SplashOutputDev *splashOut;
+  TextOutputDev *textOut;		/* initialize for multipage support */
 #ifdef HAVE_CAIRO
   cairo_surface_t *surface = NULL;
   cairo_t* cr = NULL;
-  CairoOutputDev *cairoOut = NULL;
+  CairoOutputDev *cairoOut = NULL;	/* initialize for multipage support */
   GfxState  *state = NULL;
 #endif
   int    toknum = argc;
@@ -492,7 +503,7 @@ int main(int argc, char *argv[]) {
     goto err1;
   }
 
-  if ( 1 < ( ( png  ? 1 : 0 ) + ( jpeg ? 1 : 0 )
+  if ( 1 < ( ( png  ? 1 : 0 ) + ( jpeg ? 1 : 0 ) + ( text ? 1 : 0 )
 #ifdef HAVE_CAIRO
            + ( pdf  ? 1 : 0 ) + ( svg  ? 1 : 0 )
 #endif
@@ -557,8 +568,8 @@ int main(int argc, char *argv[]) {
     goto err2;
   }
 
-  // prepare GfxState buffer for CairoOutputDev
-  if (use_cairo)
+  // prepare GfxState buffer for multipage output device
+  if (use_multipage)
     state = new GfxState( 72 * w / x_resolution,
                           72 * h / y_resolution,
                           doc->getCatalog()->getPage(1)->getCropBox(),
@@ -612,7 +623,7 @@ process_a_command:
     }
 
     if (ppmRoot != NULL) {
-      const char* suffix =
+      const char* suffix = text ? "txt" :
 #ifdef HAVE_CAIRO
         pdf ? "pdf" : svg ? "svg" :
 #endif
@@ -669,7 +680,16 @@ process_a_command:
       }
     }
 #endif /* HAVE_CAIRO */
-    if (!use_cairo) {
+    if (!use_cairo && text) {
+      if (ppmFileIsNew)
+        textOut = new TextOutputDev(ppmFile, physLayout, rawOrder, gFalse);
+      doc->displayPageSlice(textOut, pg, x_resolution, y_resolution,
+                            0,
+                            gTrue,
+                            gFalse,
+                            gFalse,
+                            x, y, w, h);
+    } else if (!use_cairo) {
       if (ppmFileIsNew) {
         paperColor[0] = 255;
         paperColor[1] = 255;
@@ -694,7 +714,9 @@ process_a_command:
         cairo_surface_destroy( surface );
       cairoOut->setCairo( NULL );
       delete cairoOut;
-    } else /* assume splashOut */
+    } else if (text)
+      delete textOut;
+    else /* assume splashOut */
       delete splashOut;
   }
 
@@ -718,7 +740,9 @@ process_a_command:
           //   cairo_surface_destroy( surface );
           cairoOut->setCairo( NULL );
           delete cairoOut;
-        } else /* assume splashOut */
+        } else if (text)
+          delete textOut;
+        else /* assume splashOut */
           delete splashOut;
       }
       goto process_a_command;
@@ -740,7 +764,9 @@ process_a_command:
         cairo_surface_destroy( surface );
       cairoOut->setCairo( NULL );
       delete cairoOut;
-    } else /* assume splashOut */
+    } else if (text)
+      delete textOut;
+    else /* assume splashOut */
       delete splashOut;
   }
 
