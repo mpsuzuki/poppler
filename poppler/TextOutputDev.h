@@ -682,6 +682,9 @@ public:
   // Check if file was successfully created.
   virtual GBool isOk() { return ok; }
 
+  // Flush the buffered data to the file.
+  virtual int flush();
+
   //---- get info about output device
 
   // Does this device use upside-down coordinates?

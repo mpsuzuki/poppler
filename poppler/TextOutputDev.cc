@@ -5190,6 +5190,16 @@ TextOutputDev::~TextOutputDev() {
   delete actualText;
 }
 
+int TextOutputDev::flush() {
+  if (outputFunc != &TextOutputDev_outputToFile)
+    return EOF;
+
+  if (!outputStream)
+    return EOF;
+
+  return fflush((FILE *)outputStream);
+}
+
 void TextOutputDev::startPage(int pageNum, GfxState *state) {
   text->startPage(state);
 }
