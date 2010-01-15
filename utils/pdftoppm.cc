@@ -689,6 +689,8 @@ process_a_command:
                             gFalse,
                             gFalse,
                             x, y, w, h);
+      if ( textOut->flush() )
+        fprintf( stderr, "Could not flush TextOutputDevice, some data might be buffered\n" );
     } else if (!use_cairo) {
       if (ppmFileIsNew) {
         paperColor[0] = 255;
