@@ -3915,11 +3915,17 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
     if (p == begin && style != selectionStyleLine) {
       child_selection.x1 = start_x;
       child_selection.y1 = start_y;
+    } else if (style == selectionStyleGlyph) {
+      child_selection.x1 = start_x;
+      child_selection.y1 = start_y;
     } else {
       child_selection.x1 = 0;
       child_selection.y1 = 0;
     }
     if (p->next == end && style != selectionStyleLine) {
+      child_selection.x2 = stop_x;
+      child_selection.y2 = stop_y;
+    } else if (style == selectionStyleGlyph) {
       child_selection.x2 = stop_x;
       child_selection.y2 = stop_y;
     } else {
@@ -3988,12 +3994,18 @@ void TextPage::visitSelection(TextSelectionVisitor *visitor,
 	blocks[i]->yMin < start_y && start_y < blocks[i]->yMax) {
       child_selection.x1 = start_x;
       child_selection.y1 = start_y;
+    } else if (style == selectionStyleGlyph) {
+      child_selection.x1 = start_x;
+      child_selection.y1 = start_y;
     } else {
       child_selection.x1 = 0;
       child_selection.y1 = 0;
     }
     if (blocks[i]->xMin < stop_x && stop_x < blocks[i]->xMax &&
 	blocks[i]->yMin < stop_y && stop_y < blocks[i]->yMax) {
+      child_selection.x2 = stop_x;
+      child_selection.y2 = stop_y;
+    } else if (style == selectionStyleGlyph) {
       child_selection.x2 = stop_x;
       child_selection.y2 = stop_y;
     } else {
