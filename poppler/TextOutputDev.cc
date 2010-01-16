@@ -3451,6 +3451,7 @@ public:
 			  TextWord *end,
 			  int edge_begin,
 			  int edge_end,
+			  double margin_prop_inused,
 			  PDFRectangle *selection,
 			  SelectionStyle style) = 0;
   virtual void visitWord (TextWord *word, int begin, int end,
@@ -3482,6 +3483,7 @@ public:
 			  TextWord *end,
 			  int edge_begin,
 			  int edge_end,
+			  double margin_prop_inused,
 			  PDFRectangle *selection,
 			  SelectionStyle style);
   virtual void visitWord (TextWord *word, int begin, int end,
@@ -3513,6 +3515,7 @@ void TextSelectionDumper::visitLine (TextLine *line,
 				     TextWord *end,
 				     int edge_begin,
 				     int edge_end,
+				     double margin_prop_inused,
 				     PDFRectangle *selection,
 				     SelectionStyle style)
 {
@@ -3611,6 +3614,7 @@ public:
 			  TextWord *end,
 			  int edge_begin,
 			  int edge_end,
+			  double margin_prop,
 			  PDFRectangle *selection,
 			  SelectionStyle style);
   virtual void visitWord (TextWord *word, int begin, int end,
@@ -3636,13 +3640,14 @@ void TextSelectionSizer::visitLine (TextLine *line,
 				    TextWord *end,
 				    int edge_begin,
 				    int edge_end,
+				    double margin_prop,
 				    PDFRectangle *selection,
 				    SelectionStyle style)
 {
   PDFRectangle *rect;
   double x1, y1, x2, y2, margin;
 
-  margin = (line->yMax - line->yMin) / 8;
+  margin = (line->yMax - line->yMin) * margin_prop;
   x1 = line->edge[edge_begin];
   y1 = line->yMin - margin;
   x2 = line->edge[edge_end];
@@ -3676,6 +3681,7 @@ public:
 			  TextWord *end,
 			  int edge_begin,
 			  int edge_end,
+			  double margin_prop,
 			  PDFRectangle *selection,
 			  SelectionStyle style);
   virtual void visitWord (TextWord *word, int begin, int end,
@@ -3723,6 +3729,7 @@ void TextSelectionPainter::visitLine (TextLine *line,
 				      TextWord *end,
 				      int edge_begin,
 				      int edge_end,
+				      double margin_prop,
 				      PDFRectangle *selection,
 				      SelectionStyle style)
 {
@@ -3732,7 +3739,7 @@ void TextSelectionPainter::visitLine (TextLine *line,
   state->setFillColor(box_color);
   out->updateFillColor(state);
 
-  margin = (line->yMax - line->yMin) / 8;
+  margin = (line->yMax - line->yMin) * margin_prop;
   x1 = floor (line->edge[edge_begin]);
   y1 = floor (line->yMin - margin);
   x2 = ceil (line->edge[edge_end]);
@@ -3865,7 +3872,7 @@ void TextLine::visitSelection(TextSelectionVisitor *visitor,
   if (edge_end <= edge_begin)
     return;
 
-  visitor->visitLine (this, begin, end, edge_begin, edge_end,
+  visitor->visitLine (this, begin, end, edge_begin, edge_end, 0.125,
 		      &child_selection, style);
 
   for (p = begin; p != end; p = p->next)
