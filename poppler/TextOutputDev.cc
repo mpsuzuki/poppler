@@ -3444,15 +3444,18 @@ public:
   virtual void visitBlock (TextBlock *block,
 			   TextLine *begin,
 			   TextLine *end,
-			   PDFRectangle *selection) = 0;
+			   PDFRectangle *selection,
+			   SelectionStyle style) = 0;
   virtual void visitLine (TextLine *line, 
 			  TextWord *begin,
 			  TextWord *end,
 			  int edge_begin,
 			  int edge_end,
-			  PDFRectangle *selection) = 0;
+			  PDFRectangle *selection,
+			  SelectionStyle style) = 0;
   virtual void visitWord (TextWord *word, int begin, int end,
-			  PDFRectangle *selection) = 0;
+			  PDFRectangle *selection,
+			  SelectionStyle style) = 0;
 
 protected:
   TextPage *page;
@@ -3472,15 +3475,18 @@ public:
   virtual void visitBlock (TextBlock *block, 
 			   TextLine *begin,
 			   TextLine *end,
-			   PDFRectangle *selection) { };
+			   PDFRectangle *selection,
+			   SelectionStyle style) { };
   virtual void visitLine (TextLine *line,
 			  TextWord *begin,
 			  TextWord *end,
 			  int edge_begin,
 			  int edge_end,
-			  PDFRectangle *selection);
+			  PDFRectangle *selection,
+			  SelectionStyle style);
   virtual void visitWord (TextWord *word, int begin, int end,
-			  PDFRectangle *selection) { };
+			  PDFRectangle *selection,
+			  SelectionStyle style) { };
 
   GooString *getText(void);
 
@@ -3507,7 +3513,8 @@ void TextSelectionDumper::visitLine (TextLine *line,
 				     TextWord *end,
 				     int edge_begin,
 				     int edge_end,
-				     PDFRectangle *selection)
+				     PDFRectangle *selection,
+				     SelectionStyle style)
 {
   if (nFrags == fragsSize) {
     fragsSize *= 2;
@@ -3597,15 +3604,18 @@ public:
   virtual void visitBlock (TextBlock *block,
 			   TextLine *begin,
 			   TextLine *end,
-			   PDFRectangle *selection) { };
+			   PDFRectangle *selection,
+			   SelectionStyle style) { };
   virtual void visitLine (TextLine *line, 
 			  TextWord *begin,
 			  TextWord *end,
 			  int edge_begin,
 			  int edge_end,
-			  PDFRectangle *selection);
+			  PDFRectangle *selection,
+			  SelectionStyle style);
   virtual void visitWord (TextWord *word, int begin, int end,
-			  PDFRectangle *selection) { };
+			  PDFRectangle *selection,
+			  SelectionStyle style) { };
 
   GooList *getRegion () { return list; }
 
@@ -3626,7 +3636,8 @@ void TextSelectionSizer::visitLine (TextLine *line,
 				    TextWord *end,
 				    int edge_begin,
 				    int edge_end,
-				    PDFRectangle *selection)
+				    PDFRectangle *selection,
+				    SelectionStyle style)
 {
   PDFRectangle *rect;
   double x1, y1, x2, y2, margin;
@@ -3658,15 +3669,18 @@ public:
   virtual void visitBlock (TextBlock *block,
 			   TextLine *begin,
 			   TextLine *end,
-			   PDFRectangle *selection) { };
+			   PDFRectangle *selection,
+			   SelectionStyle style) { };
   virtual void visitLine (TextLine *line, 
 			  TextWord *begin,
 			  TextWord *end,
 			  int edge_begin,
 			  int edge_end,
-			  PDFRectangle *selection);
+			  PDFRectangle *selection,
+			  SelectionStyle style);
   virtual void visitWord (TextWord *word, int begin, int end,
-			  PDFRectangle *selection);
+			  PDFRectangle *selection,
+			  SelectionStyle style);
 
 private:
   OutputDev *out;
@@ -3709,7 +3723,8 @@ void TextSelectionPainter::visitLine (TextLine *line,
 				      TextWord *end,
 				      int edge_begin,
 				      int edge_end,
-				      PDFRectangle *selection)
+				      PDFRectangle *selection,
+				      SelectionStyle style)
 {
   double x1, y1, x2, y2, margin;
   Matrix ctm, ictm;
@@ -3747,7 +3762,8 @@ void TextSelectionPainter::visitLine (TextLine *line,
 }
 
 void TextSelectionPainter::visitWord (TextWord *word, int begin, int end,
-				      PDFRectangle *selection)
+				      PDFRectangle *selection,
+				      SelectionStyle style)
 {
   GooString *string;
   int i;
@@ -3796,7 +3812,7 @@ void TextWord::visitSelection(TextSelectionVisitor *visitor,
   if (end <= begin)
     return;
 
-  visitor->visitWord (this, begin, end, selection);
+  visitor->visitWord (this, begin, end, selection, style);
 }
 
 void TextLine::visitSelection(TextSelectionVisitor *visitor,
@@ -3850,7 +3866,7 @@ void TextLine::visitSelection(TextSelectionVisitor *visitor,
     return;
 
   visitor->visitLine (this, begin, end, edge_begin, edge_end,
-		      &child_selection);
+		      &child_selection, style);
 
   for (p = begin; p != end; p = p->next)
     p->visitSelection (visitor, &child_selection, style);
@@ -3909,7 +3925,7 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
   if (end == begin)
     return;
 
-  visitor->visitBlock (this, begin, end, selection);
+  visitor->visitBlock (this, begin, end, selection, style);
 
   for (p = begin; p != end; p = p->next) {
     if (p == begin && style != selectionStyleLine) {
