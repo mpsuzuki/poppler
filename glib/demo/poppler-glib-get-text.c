@@ -34,7 +34,7 @@ extern int optind, optopt, opterr;
 
 int main (int argc, char **argv)
 {
-  double            resolution = 0;
+  double            resolution = 72;
   double            xoffset    = 0;
   double            yoffset    = 0;
   double            width      = 0;
@@ -43,6 +43,8 @@ int main (int argc, char **argv)
   int               lastpage   = 0;
 
   PopplerDocument  *document;
+  PopplerRectangle  rect;
+  PopplerRectangle *selection = &rect;
   GError           *error = NULL;
 
 
@@ -54,10 +56,10 @@ int main (int argc, char **argv)
       switch( c )
       {
       case 'f': /* first page */
-        firstpage = atoi( optarg );
+        firstpage = atoi( optarg ) - 1;
         break;
       case 'l': /* first page */
-        lastpage = atoi( optarg );
+        lastpage = atoi( optarg ) - 1;
         break;
       case 'r': /* resolution */
         resolution = atof( optarg );
@@ -79,6 +81,11 @@ int main (int argc, char **argv)
         exit( 1 );
       }
     }
+
+    rect.x1 = xoffset * 72 / resolution;
+    rect.y1 = yoffset * 72 / resolution;
+    rect.x2 = ( xoffset + width )  * 72 / resolution;
+    rect.y2 = ( yoffset + height ) * 72 / resolution;
 
     if ( 0 != access( argv[optind], R_OK ) )
     {
@@ -132,5 +139,30 @@ int main (int argc, char **argv)
     }
   }
 
+
+  {
+    int  pg, maxpage;
+
+
+    maxpage = poppler_document_get_n_pages( document );
+    if ( maxpage < firstpage || lastpage < firstpage )
+      exit( 6 );
+
+    if ( maxpage < lastpage )
+      lastpage = maxpage;
+
+    for ( pg = firstpage; pg <= lastpage; pg++ )
+    {
+      PopplerPage*  page;
+      char*         gottext;
+
+
+      page = poppler_document_get_page( document, pg );
+      if ( rect.x1 == 0 && rect.y1 == 0 && rect.x2 == 0 && rect.y2 == 0 )
+        poppler_page_get_size( page, &(rect.x2), &(rect.y2) );
+      gottext = poppler_page_get_text( page, POPPLER_SELECTION_GLYPH, selection );
+      printf( "[Page %d]:[%s]\n", pg, gottext );
+    }
+  }
   exit( 0 );
 }
