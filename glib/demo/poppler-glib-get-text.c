@@ -41,6 +41,7 @@ int main (int argc, char **argv)
   double            height     = 0;
   int               firstpage  = 0;
   int               lastpage   = 0;
+  gboolean          invertY    = FALSE;
 
   PopplerDocument  *document;
   PopplerRectangle  rect;
@@ -51,10 +52,13 @@ int main (int argc, char **argv)
   {
     int  c;
 
-    while ( -1 != ( c = getopt( argc, argv, ":r:x:y:W:H:f:l:" ) ) )
+    while ( -1 != ( c = getopt( argc, argv, ":r:x:y:W:H:f:l:I" ) ) )
     {
       switch( c )
       {
+      case 'I': /* invert Y */
+        invertY = TRUE;
+        break;
       case 'f': /* first page */
         firstpage = atoi( optarg ) - 1;
         break;
@@ -155,11 +159,22 @@ int main (int argc, char **argv)
     {
       PopplerPage*  page;
       char*         gottext;
+      gdouble       page_width, page_height;
 
 
       page = poppler_document_get_page( document, pg );
+      poppler_page_get_size( page, &(page_width), &(page_height) );
       if ( rect.x1 == 0 && rect.y1 == 0 && rect.x2 == 0 && rect.y2 == 0 )
-        poppler_page_get_size( page, &(rect.x2), &(rect.y2) );
+      {
+        rect.x2 = page_width;
+        rect.y2 = page_height;
+      }
+      if ( invertY )
+      {
+        gdouble  orig_y1 = rect.y1;
+        rect.y1 = ( page_height - rect.y2 );
+        rect.y2 = ( page_height - orig_y1 );
+      }
       gottext = poppler_page_get_text( page, POPPLER_SELECTION_GLYPH, selection );
       printf( "[Page %d]:[%s]\n", pg, gottext );
     }
