@@ -37,6 +37,7 @@ pdftoabw_binary = pdftoabw
 endif
 
 AM_LDFLAGS = @auto_import_flags@
+LDFLAGS = -static
 
 bin_PROGRAMS =					\
 	pdffonts				\
