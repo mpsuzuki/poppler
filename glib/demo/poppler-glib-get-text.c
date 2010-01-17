@@ -34,11 +34,11 @@ extern int optind, optopt, opterr;
 
 int main (int argc, char **argv)
 {
-  double            resolution = 72;
-  double            xoffset    = 0;
-  double            yoffset    = 0;
-  double            width      = 0;
-  double            height     = 0;
+  int               resolution = 72;
+  int               xoffset    = 0;
+  int               yoffset    = 0;
+  int               width      = 0;
+  int               height     = 0;
   int               firstpage  = 0;
   int               lastpage   = 0;
   gboolean          invertY    = FALSE;
@@ -66,19 +66,19 @@ int main (int argc, char **argv)
         lastpage = atoi( optarg ) - 1;
         break;
       case 'r': /* resolution */
-        resolution = atof( optarg );
+        resolution = atoi( optarg );
         break;
       case 'x': /* x offset */
-        xoffset = atof( optarg );
+        xoffset = atoi( optarg );
         break;
       case 'y': /* y offset */
-        yoffset = atof( optarg );
+        yoffset = atoi( optarg );
         break;
       case 'W': /* width */
-        width = atof( optarg );
+        width = atoi( optarg );
         break;
       case 'H': /* height */
-        height = atof( optarg );
+        height = atoi( optarg );
         break;
       default: /* help */
         printf( "Usage (TBD)\n" );
