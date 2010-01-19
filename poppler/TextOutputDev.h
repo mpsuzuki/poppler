@@ -60,7 +60,8 @@ typedef void (*TextOutputFunc)(void *stream, char *text, int len);
 enum SelectionStyle {
   selectionStyleGlyph,
   selectionStyleWord,
-  selectionStyleLine
+  selectionStyleLine,
+  selectionStyleGlyph_Baseline,
 };
 
 //------------------------------------------------------------------------

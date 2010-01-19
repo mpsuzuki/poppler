@@ -3837,8 +3837,15 @@ void TextLine::visitSelection(TextSelectionVisitor *visitor,
 	(selection->x2 < p->xMax && selection->y2 < p->yMax))
       if (begin == NULL) 
 	begin = p;
+    if (((selection->x1 > p->xMin && selection->y1 > p->yMax) ||
+	 (selection->x2 > p->xMin && selection->y2 > p->yMax)) &&
+         (begin != NULL) && (style == selectionStyleGlyph_Baseline)) {
+      end = p->next;
+      current = p;
+    }
     if (((selection->x1 > p->xMin && selection->y1 > p->yMin) ||
-	 (selection->x2 > p->xMin && selection->y2 > p->yMin)) && (begin != NULL)) {
+	 (selection->x2 > p->xMin && selection->y2 > p->yMin)) &&
+         (begin != NULL) && (style != selectionStyleGlyph_Baseline)) {
       end = p->next;
       current = p;
     }
@@ -3922,9 +3929,13 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
       stop_y = selection->y1;
     }
 
+    if (((selection->x1 > p->xMin && selection->y1 > p->yMax) ||
+	 (selection->x2 > p->xMin && selection->y2 > p->yMax))
+	&& (begin != NULL) && (style == selectionStyleGlyph_Baseline))
+      end = p->next;
     if (((selection->x1 > p->xMin && selection->y1 > p->yMin) ||
 	 (selection->x2 > p->xMin && selection->y2 > p->yMin))
-	&& (begin != NULL))
+	&& (begin != NULL) && (style != selectionStyleGlyph_Baseline))
       end = p->next;
   }
 
@@ -3941,6 +3952,9 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
     } else if (style == selectionStyleGlyph) {
       child_selection.x1 = start_x;
       child_selection.y1 = start_y;
+    } else if (style == selectionStyleGlyph_Baseline) {
+      child_selection.x1 = start_x;
+      child_selection.y1 = start_y;
     } else {
       child_selection.x1 = 0;
       child_selection.y1 = 0;
@@ -3949,6 +3963,9 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
       child_selection.x2 = stop_x;
       child_selection.y2 = stop_y;
     } else if (style == selectionStyleGlyph) {
+      child_selection.x2 = stop_x;
+      child_selection.y2 = stop_y;
+    } else if (style == selectionStyleGlyph_Baseline) {
       child_selection.x2 = stop_x;
       child_selection.y2 = stop_y;
     } else {
@@ -4020,6 +4037,9 @@ void TextPage::visitSelection(TextSelectionVisitor *visitor,
     } else if (style == selectionStyleGlyph) {
       child_selection.x1 = start_x;
       child_selection.y1 = start_y;
+    } else if (style == selectionStyleGlyph_Baseline) {
+      child_selection.x1 = start_x;
+      child_selection.y1 = start_y;
     } else {
       child_selection.x1 = 0;
       child_selection.y1 = 0;
@@ -4029,6 +4049,9 @@ void TextPage::visitSelection(TextSelectionVisitor *visitor,
       child_selection.x2 = stop_x;
       child_selection.y2 = stop_y;
     } else if (style == selectionStyleGlyph) {
+      child_selection.x2 = stop_x;
+      child_selection.y2 = stop_y;
+    } else if (style == selectionStyleGlyph_Baseline) {
       child_selection.x2 = stop_x;
       child_selection.y2 = stop_y;
     } else {

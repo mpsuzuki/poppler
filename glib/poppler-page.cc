@@ -736,6 +736,9 @@ poppler_page_render_selection (PopplerPage           *page,
       case POPPLER_SELECTION_LINE:
         selection_style = selectionStyleLine;
 	break;
+      case POPPLER_SELECTION_GLYPH_BASELINE:
+        selection_style = selectionStyleGlyph_Baseline;
+	break;
     }
 
   output_dev = page->document->output_dev;
@@ -943,6 +946,9 @@ poppler_page_render_selection_to_pixbuf (PopplerPage           *page,
       case POPPLER_SELECTION_LINE:
         selection_style = selectionStyleLine;
 	break;
+      case POPPLER_SELECTION_GLYPH_BASELINE:
+        selection_style = selectionStyleGlyph_Baseline;
+	break;
     }
 
   output_dev = page->document->output_dev;
@@ -1069,6 +1075,9 @@ poppler_page_get_selection_region (PopplerPage           *page,
       case POPPLER_SELECTION_LINE:
         selection_style = selectionStyleLine;
 	break;
+      case POPPLER_SELECTION_GLYPH_BASELINE:
+        selection_style = selectionStyleGlyph_Baseline;
+	break;
     }
 
 #if defined (HAVE_CAIRO)
@@ -1157,6 +1166,9 @@ poppler_page_get_text (PopplerPage          *page,
 	break;
       case POPPLER_SELECTION_LINE:
         selection_style = selectionStyleLine;
+	break;
+      case POPPLER_SELECTION_GLYPH_BASELINE:
+        selection_style = selectionStyleGlyph_Baseline;
 	break;
     }
 
