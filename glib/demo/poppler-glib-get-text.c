@@ -16,6 +16,7 @@
  * Foundation, Inc., 51 Franklin Street - Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include "config.h"
 #include <poppler.h>
 #include <string.h>
 #include <stdlib.h>
@@ -175,7 +176,11 @@ int main (int argc, char **argv)
         rect.y1 = ( page_height - rect.y2 );
         rect.y2 = ( page_height - orig_y1 );
       }
+#ifdef HAVE_POPPLER_SELECTION_GLYPH_BASELINE_IN_GLIB
+      gottext = poppler_page_get_text( page, POPPLER_SELECTION_GLYPH_BASELINE, selection );
+#else
       gottext = poppler_page_get_text( page, POPPLER_SELECTION_GLYPH, selection );
+#endif
       printf( "[Page %d]:[%s]\n", pg, gottext );
     }
   }

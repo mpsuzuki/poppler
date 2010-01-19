@@ -571,6 +571,33 @@ if test "x$enable_cms" = "xyes"; then
 fi
 AM_CONDITIONAL(USE_CMS, test x$enable_cms = xyes)
 
+dnl
+dnl    experimental text selection style "glyph_baseline" in source
+dnl    ugly check!
+dnl
+
+AC_MSG_CHECKING([TextOutputDev of current source supports selectionStyleGlyph_Baseline])
+if test `${GREP} selectionStyleGlyph_Baseline poppler/TextOutputDev.h | wc -l` = 0
+then
+  AC_MSG_RESULT([no])
+else
+  AC_MSG_RESULT([yes])
+  AC_DEFINE([HAVE_POPPLER_SELECTION_GLYPH_BASELINE], [1], [TextOutputDev.h includes selectionStyleGlyph_Baseline])
+
+  AC_MSG_CHECKING([poppler-glib of current source supports HAVE_POPPLER_SELECTION_GLYPH_BASELINE_IN_GLIB])
+  if test `${GREP} POPPLER_SELECTION_GLYPH_BASELINE glib/poppler.h | wc -l` = 0
+  then
+    AC_MSG_RESULT([no])
+  else
+    AC_MSG_RESULT([yes])
+    AC_DEFINE([HAVE_POPPLER_SELECTION_GLYPH_BASELINE_IN_GLIB], [1], [poppler.h includes POPPLER_SELECTION_GLYPH_BASELINE])
+  fi
+fi
+
+AC_SUBST(HAVE_POPPLER_SELECTION_GLYPH_BASELINE)
+AC_SUBST(HAVE_POPPLER_SELECTION_GLYPH_BASELINE_IN_GLIB)
+
+
 if test "x$GCC" != xyes; then
   enable_compile_warnings=no
 fi
