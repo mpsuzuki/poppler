@@ -116,7 +116,7 @@ _poppler_document_new_from_pdfdoc (PDFDoc  *newDoc,
 
   document->doc = newDoc;
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   document->output_dev = new CairoOutputDev ();
   document->output_dev->startDoc(document->doc->getXRef (), document->doc->getCatalog ());
 #elif defined (HAVE_SPLASH)

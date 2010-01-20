@@ -38,7 +38,7 @@ typedef struct {
 	GtkWidget       *treeview;
 	GtkWidget       *darea;
 	
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 	cairo_surface_t *surface;
 #else
 	GdkPixbuf       *pixbuf;
@@ -56,7 +56,7 @@ pgd_layers_free (PgdLayersDemo *demo)
 		demo->doc = NULL;
 	}
 	
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 	if (demo->surface) {
 		cairo_surface_destroy (demo->surface);
 		demo->surface = NULL;
@@ -156,7 +156,7 @@ pgd_layers_create_model (PopplerDocument *document)
 	return model;
 }
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 static cairo_surface_t *
 pgd_layers_render_page (PgdLayersDemo *demo)
 {
@@ -223,7 +223,7 @@ pgd_layers_viewer_drawing_area_expose (GtkWidget      *area,
 				       GdkEventExpose *event,
 				       PgdLayersDemo  *demo)
 {
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 	cairo_t *cr;
 	
 	if (!demo->surface) {
@@ -242,7 +242,7 @@ pgd_layers_viewer_drawing_area_expose (GtkWidget      *area,
 
 	gdk_window_clear (area->window);
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 	cr = gdk_cairo_create (area->window);
 	cairo_set_source_surface (cr, demo->surface, 0, 0);
 	cairo_paint (cr);
@@ -265,7 +265,7 @@ pgd_layers_viewer_drawing_area_expose (GtkWidget      *area,
 static gboolean
 pgd_layers_viewer_redraw (PgdLayersDemo *demo)
 {
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 	cairo_surface_destroy (demo->surface);
 	demo->surface = NULL;
 #else

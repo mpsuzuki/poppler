@@ -71,9 +71,10 @@ void                poppler_page_render_selection_to_pixbuf (
 							  GdkColor           *background_color);
 #endif /* POPPLER_WITH_GDK */
 
-#ifdef POPPLER_HAS_CAIRO
+/* poppler_page_render() is directly referred by gtk-cairo-test */
 void                   poppler_page_render               (PopplerPage        *page,
 							  cairo_t            *cairo);
+#ifdef POPPLER_HAS_CAIRO
 void                   poppler_page_render_for_printing  (PopplerPage        *page,
 							  cairo_t            *cairo);
 cairo_surface_t       *poppler_page_get_thumbnail        (PopplerPage        *page);

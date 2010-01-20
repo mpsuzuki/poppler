@@ -392,6 +392,21 @@ if test x$enable_poppler_glib = xyes; then
 fi
 AM_CONDITIONAL(BUILD_POPPLER_GLIB, test x$enable_poppler_glib = xyes)
 
+AC_ARG_ENABLE(cairo-in-poppler-glib,
+              AC_HELP_STRING([--enable-cairo-in-poppler-glib],
+                             [allow poppler-GLib to use CairoOutputDev.]),
+              enable_cairo_in_poppler_glib=$enableval,
+              enable_cairo_in_poppler_glib="try")
+if test x$enable_cairo_in_poppler_glib = xno; then
+  AC_MSG_WARN([poppler-GLib uses TextOutputDev and SplashOutputDev instead of CairoOutputDev])
+else  
+  if test x$enable_poppler_glib = xyes -a x$enable_cairo_output = xyes; then
+    AC_DEFINE([USE_CAIRO_IN_POPPLER_GLIB], [1], [poppler-GLib uses CairoOutputDev])
+  else
+    AC_MSG_WARN([Cannot make poppler-GLib using CairoOutputDev])
+  fi
+fi
+
 GTK_DOC_CHECK([1.0])
 
 dnl

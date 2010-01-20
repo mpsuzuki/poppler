@@ -71,7 +71,7 @@ poppler_page_finalize (GObject *object)
 
   if (page->annots != NULL)
     delete page->annots;
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   if (page->text != NULL) 
     page->text->decRefCnt();
 #else
@@ -235,7 +235,7 @@ poppler_page_get_transition (PopplerPage *page)
   return transition;
 }
 
-#if !defined (HAVE_CAIRO)
+#if !defined (USE_CAIRO_IN_POPPLER_GLIB)
 static TextOutputDev *
 poppler_page_get_text_output_dev (PopplerPage *page)
 {
@@ -260,9 +260,9 @@ poppler_page_get_text_output_dev (PopplerPage *page)
 
   return page->text_dev;
 }
-#endif /* !defined (HAVE_CAIRO) */
+#endif /* !defined (USE_CAIRO_IN_POPPLER_GLIB) */
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 
 static TextPage *
 poppler_page_get_text_page (PopplerPage *page)
@@ -527,7 +527,7 @@ poppler_print_annot_cb (Annot *annot, void *user_data)
   return (annot->getType() == Annot::typeWidget);
 }
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 
 static void
 _poppler_page_render (PopplerPage *page,
@@ -563,6 +563,7 @@ _poppler_page_render (PopplerPage *page,
   output_dev->setCairo (NULL);
   output_dev->setTextPage (NULL);
 }
+#endif
 
 /**
  * poppler_page_render:
@@ -578,12 +579,14 @@ void
 poppler_page_render (PopplerPage *page,
 		     cairo_t *cairo)
 {
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   g_return_if_fail (POPPLER_IS_PAGE (page));
 
   if (!page->text)
     page->text = new TextPage(gFalse);
 
   _poppler_page_render (page, cairo, gFalse);
+#endif
 }
 
 /**
@@ -597,11 +600,14 @@ void
 poppler_page_render_for_printing (PopplerPage *page,
 				  cairo_t *cairo)
 {
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   g_return_if_fail (POPPLER_IS_PAGE (page));
   
   _poppler_page_render (page, cairo, gTrue);	
+#endif
 }
 
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 static cairo_surface_t *
 create_surface_from_thumbnail_data (guchar *data,
 				    gint    width,
@@ -752,7 +758,7 @@ poppler_page_render_selection (PopplerPage           *page,
   output_dev->setCairo (NULL);
 }
 
-#endif /* HAVE_CAIRO */
+#endif /* USE_CAIRO_IN_POPPLER_GLIB */
 
 #ifdef POPPLER_WITH_GDK
 static void
@@ -955,7 +961,7 @@ poppler_page_render_selection_to_pixbuf (PopplerPage           *page,
 
   poppler_page_prepare_output_dev (page, scale, rotation, TRUE, &data);
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   TextPage *text;
 
   text = poppler_page_get_text_page (page);
@@ -1080,7 +1086,7 @@ poppler_page_get_selection_region (PopplerPage           *page,
 	break;
     }
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   TextPage *text;
 
   text = poppler_page_get_text_page (page);
@@ -1172,7 +1178,7 @@ poppler_page_get_text (PopplerPage          *page,
 	break;
     }
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   TextPage *text;
 
   text = poppler_page_get_text_page (page);
@@ -1210,7 +1216,7 @@ poppler_page_find_text (PopplerPage *page,
   gunichar *ucs4;
   glong ucs4_len;
   double height;
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   TextPage *text_dev;
 #else
   TextOutputDev *text_dev;
@@ -1219,7 +1225,7 @@ poppler_page_find_text (PopplerPage *page,
   g_return_val_if_fail (POPPLER_IS_PAGE (page), FALSE);
   g_return_val_if_fail (text != NULL, FALSE);
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
   text_dev = poppler_page_get_text_page (page);
 #else
   text_dev = new TextOutputDev (NULL, gTrue, gFalse, gFalse);
@@ -1249,7 +1255,7 @@ poppler_page_find_text (PopplerPage *page,
       matches = g_list_prepend (matches, match);
     }
 
-#if !defined (HAVE_CAIRO)
+#if !defined (USE_CAIRO_IN_POPPLER_GLIB)
   delete text_dev;
 #endif
   
@@ -1258,7 +1264,7 @@ poppler_page_find_text (PopplerPage *page,
   return g_list_reverse (matches);
 }
 
-#if defined (HAVE_CAIRO)
+#if defined (USE_CAIRO_IN_POPPLER_GLIB)
 
 static CairoImageOutputDev *
 poppler_page_get_image_output_dev (PopplerPage *page,
@@ -1400,7 +1406,7 @@ poppler_page_free_image_mapping (GList *list)
   g_list_free (list);
 }
 
-#else /* HAVE_CAIRO */
+#else /* USE_CAIRO_IN_POPPLER_GLIB */
 
 GList *
 poppler_page_get_image_mapping (PopplerPage *page)
@@ -1413,7 +1419,7 @@ poppler_page_free_image_mapping (GList *list)
 {
 }
 
-#endif /* HAVE_CAIRO */
+#endif /* USE_CAIRO_IN_POPPLER_GLIB */
 
 /**
  * poppler_page_render_to_ps:
