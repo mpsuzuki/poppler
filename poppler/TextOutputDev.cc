@@ -2011,6 +2011,12 @@ void TextPage::addChar(GfxState *state, double x, double y,
   // throw away chars that aren't inside the page bounds
   // (and also do a sanity check on the character size)
   state->transform(x, y, &x1, &y1);
+  fprintf( stderr, "TextPage::addChar c=" );
+  if ( 0x20 < c && c < 0x7f)
+    fprintf( stderr, "[ %c]", c );
+  else
+    fprintf( stderr, "0x%02x", c );
+  fprintf( stderr, "Unicode=0x%04X x1=%6.2f y1=%6.2f w1=%6.2f h1=%6.2f in (%6.2f x %6.2f)\n", u ? u[0] : 0, x1, y1, w1, h1, pageWidth, pageHeight );
   if (x1 + w1 < 0 || x1 > pageWidth ||
       y1 + h1 < 0 || y1 > pageHeight ||
       w1 > pageWidth || h1 > pageHeight) {
@@ -3525,6 +3531,25 @@ void TextSelectionDumper::visitLine (TextLine *line,
   }
 
   frags[nFrags].init(line, edge_begin, edge_end - edge_begin);
+  for ( int i = 0; i < edge_begin; i++ )
+    if ( 0x20 < (short)line->text[i] && (short)line->text[i] < 0x7F )
+      fprintf( stderr, "[     %c]", (char)line->text[i] );
+    else
+      fprintf( stderr, "[0x%04x]", (short)line->text[i] );
+
+  for ( int i = edge_begin; i < edge_end; i++ )
+    if ( 0x20 < (short)line->text[i] && (short)line->text[i] < 0x7F )
+      fprintf( stderr, "[     %c]", (char)line->text[i] );
+    else
+      fprintf( stderr, "[0x%04x]", (short)line->text[i] );
+
+  for ( int i = edge_end; i < line->len; i++ )
+    if ( 0x20 < (short)line->text[i] && (short)line->text[i] < 0x7F )
+      fprintf( stderr, "[     %c]", (char)line->text[i] );
+    else
+      fprintf( stderr, "[0x%04x]", (short)line->text[i] );
+
+  fprintf( stderr, "\n" );
   ++nFrags;
 
 }
@@ -3892,6 +3917,7 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
   TextLine *p, *begin, *end;
   PDFRectangle child_selection;
   double start_x, start_y, stop_x, stop_y;
+  int i;
 
   begin = NULL;
   end = NULL;
@@ -3900,28 +3926,39 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
   stop_x = selection->x2;
   stop_y = selection->y2;
   
-  for (p = lines; p != NULL; p = p->next) {
+  fprintf( stderr, "TextBlock::visitSelection() step1: scanning all lines\n" );
+  for (p = lines, i = 0; p != NULL; p = p->next, i++ ) {
+    fprintf( stderr,   "selection:             (%6.2f, %6.2f) - (%6.2f, %6.2f)\n", selection->x1, selection->y1, selection->x2, selection->y2 );
+    fprintf( stderr, "  line %d @ 0x%08lx: (%6.2f, %6.2f) - (%6.2f, %6.2f)", i, (long)p, p->xMin, p->yMin, p->xMax, p->yMax );
+    if ( 0x20 < p->text[0] && p->text[0] < 0x7F )
+      fprintf( stderr, " %c...", p->text[0] );
+    else
+      fprintf( stderr, " 0x%04x, ...", p->text[0] );
     if (selection->x1 < p->xMax && selection->y1 < p->yMax && 
 	selection->x2 < p->xMax && selection->y2 < p->yMax && begin == NULL) {
       begin = p;
       if (selection->x1 < selection->x2) {
+        fprintf( stderr, ", case 1" );
 	start_x = selection->x1;
 	start_y = selection->y1;
 	stop_x = selection->x2;
 	stop_y = selection->y2;
       } else {
+        fprintf( stderr, ", case 2" );
 	start_x = selection->x2;
 	start_y = selection->y2;
 	stop_x = selection->x1;
 	stop_y = selection->y1;
       }
     } else if (selection->x1 < p->xMax && selection->y1 < p->yMax && begin == NULL) {
+      fprintf( stderr, ", case 3" );
       begin = p;
       start_x = selection->x1;
       start_y = selection->y1;
       stop_x = selection->x2;
       stop_y = selection->y2;
     } else if (selection->x2 < p->xMax && selection->y2 < p->yMax && begin == NULL) {
+      fprintf( stderr, ", case 4" );
       begin = p;
       start_x = selection->x2;
       start_y = selection->y2;
@@ -3932,20 +3969,35 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
     if (((selection->x1 > p->xMin && selection->y1 > p->yMax) ||
 	 (selection->x2 > p->xMin && selection->y2 > p->yMax))
 	&& (begin != NULL) && (style == selectionStyleGlyph_Baseline))
+    {
+      fprintf( stderr, ", case 5" );
       end = p->next;
+    }
     if (((selection->x1 > p->xMin && selection->y1 > p->yMin) ||
 	 (selection->x2 > p->xMin && selection->y2 > p->yMin))
 	&& (begin != NULL) && (style != selectionStyleGlyph_Baseline))
+    {
+      fprintf( stderr, ", case 6" );
       end = p->next;
+    }
+    fprintf( stderr, "\n" );
   }
 
   /* Skip empty selection. */
   if (end == begin)
     return;
 
+  fprintf( stderr, "TextBlock::visitSelection() step2: invoke visitBlock()\n" );
   visitor->visitBlock (this, begin, end, selection, style);
 
-  for (p = begin; p != end; p = p->next) {
+  fprintf( stderr, "TextBlock::visitSelection() step3: scanning hitting lines\n" );
+  fprintf( stderr,   "selection:             (%6.2f, %6.2f) - (%6.2f, %6.2f)\n", selection->x1, selection->y1, selection->x2, selection->y2 );
+  for (p = begin, i = 0; p != end; p = p->next, i ++) {
+    fprintf( stderr, "  line %d @ 0x%08lx: (%6.2f, %6.2f) - (%6.2f, %6.2f)", i, (long)p, p->xMin, p->yMin, p->xMax, p->yMax );
+    if ( 0x20 < p->text[0] && p->text[0] < 0x7F )
+      fprintf( stderr, " %c...\n", p->text[0] );
+    else
+      fprintf( stderr, " 0x%04x, ...\n", p->text[0] );
     if (p == begin && style != selectionStyleLine) {
       child_selection.x1 = start_x;
       child_selection.y1 = start_y;
@@ -3975,6 +4027,7 @@ void TextBlock::visitSelection(TextSelectionVisitor *visitor,
 
     p->visitSelection(visitor, &child_selection, style);
   }
+  fprintf( stderr, "\n" );
 }
 
 void TextPage::visitSelection(TextSelectionVisitor *visitor,
@@ -3996,6 +4049,10 @@ void TextPage::visitSelection(TextSelectionVisitor *visitor,
   for (i = 0; i < nBlocks; i++) {
     b = blocks[i];
 
+    fprintf( stderr, "select(%6.2f, %6.2f)-(%6.2f, %6.2f): block(%6.2f, %6.2f) - (%6.2f, %6.2f) %d lines, %d columns)\n",
+             selection->x1, selection->y1, selection->x2, selection->y2,
+             b->xMin, b->yMin, b->xMax, b->yMax, b->nLines, b->nColumns
+           );
     if (selection->x1 < b->xMax && selection->y1 < b->yMax &&
 	selection->x2 < b->xMax && selection->y2 < b->yMax && i < begin) {
       begin = i;
