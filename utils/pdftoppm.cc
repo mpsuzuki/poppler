@@ -673,7 +673,8 @@ process_a_command:
                          72 * w / x_resolution,
                          72 * h / y_resolution,
                          pg_w, pg_h);
-      cairoOut->restoreState( state );
+      if (!svg)
+        cairoOut->restoreState( state );
       if (!use_multipage) {
         cairoOut->setCairo( NULL );
         delete cairoOut;
@@ -715,11 +716,10 @@ process_a_command:
       if (surface)
         cairo_surface_destroy( surface );
       cairoOut->setCairo( NULL );
-      delete cairoOut;
+      if (!svg)
+        delete cairoOut;
     } else if (text)
       delete textOut;
-    else /* assume splashOut */
-      delete splashOut;
   }
 
   if (interactive) {
@@ -741,11 +741,10 @@ process_a_command:
           // if (surface)
           //   cairo_surface_destroy( surface );
           cairoOut->setCairo( NULL );
+          if (!svg)
           delete cairoOut;
         } else if (text)
           delete textOut;
-        else /* assume splashOut */
-          delete splashOut;
       }
       goto process_a_command;
     }

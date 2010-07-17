@@ -32,6 +32,7 @@
 #include <cairo.h>
 #include <cairo-ps.h>
 #include <cairo-pdf.h>
+#include <cairo-svg.h>
 #include "parseargs.h"
 #include "goo/gmem.h"
 #include "goo/GooString.h"
@@ -59,6 +60,7 @@ static GBool useCropBox = gFalse;
 static GBool png = gFalse;
 static GBool ps = gFalse;
 static GBool pdf = gFalse;
+static GBool svg = gFalse;
 static char ownerPassword[33] = "";
 static char userPassword[33] = "";
 static GBool quiet = gFalse;
@@ -103,6 +105,8 @@ static const ArgDesc argDesc[] = {
    "generate PostScript file"},
   {"-pdf",   argFlag,     &pdf,          0,
    "generate a PDF file"},
+  {"-svg",   argFlag,     &svg,          0,
+   "generate a SVG file"},
 
 
   {"-opw",    argString,   ownerPassword,  sizeof(ownerPassword),
@@ -143,6 +147,10 @@ static void create_surface(char *outFile, cairo_surface_t **surface_out,
     strcat(file, ".pdf");
     *surface_out = cairo_pdf_surface_create (file, w, h);
     *printing_out = gTrue;
+  } else if (svg) {
+    strcat(file, ".svg");
+    *surface_out = cairo_svg_surface_create (file, w, h);
+    *printing_out = gTrue;
   }
 }
 
@@ -167,7 +175,7 @@ static void end_page(cairo_surface_t *surface, char *outFile)
   if (png) {
     strcat(file, ".png");
     cairo_surface_write_to_png (surface, file);
-  } else if (ps || pdf) {
+  } else if (ps || pdf || svg) {
     cairo_surface_show_page(surface);
   }
 }
@@ -270,8 +278,8 @@ int main(int argc, char *argv[]) {
     goto err0;
   }
 
-  if (!png && !ps && !pdf) {
-    fprintf(stderr, "One of -png, -ps, or -pdf must be specified\n");
+  if (!png && !ps && !pdf && !svg) {
+    fprintf(stderr, "One of -png, -svg, -ps, or -pdf must be specified\n");
     goto err0;
   }
 
