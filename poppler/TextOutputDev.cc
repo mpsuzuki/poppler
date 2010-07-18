@@ -63,6 +63,8 @@
 #include "ICSupport.h"
 #endif
 
+#define DEBUG_TEXTOUTPUTDEV 1
+
 //------------------------------------------------------------------------
 // parameters
 //------------------------------------------------------------------------
@@ -1699,7 +1701,7 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
 
   blk1 = this;
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("visited: %d %.2f..%.2f %.2f..%.2f\n",
 	 sortPos, blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
 #endif
@@ -1733,7 +1735,7 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
       if (blk2->isBeforeByRule1(blk1)) {
         // Rule (1) blk1 and blk2 overlap, and blk2 is above blk1.
         before = gTrue;
-#if 0   // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
         printf("rule1: %.2f..%.2f %.2f..%.2f %.2f..%.2f %.2f..%.2f\n",
 	       blk2->ExMin, blk2->ExMax, blk2->EyMin, blk2->EyMax,
 	       blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
@@ -1753,7 +1755,7 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
 	    break;
 	  }
         }
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
         if (before) {
 	  printf("rule2: %.2f..%.2f %.2f..%.2f %.2f..%.2f %.2f..%.2f\n",
 	         blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax,
@@ -1768,7 +1770,7 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
       sortPos = blk2->visitDepthFirst(blkList, pos2, sorted, sortPos, visited);
     }
   }
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("sorted: %d %.2f..%.2f %.2f..%.2f\n",
 	 sortPos, blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
 #endif
@@ -2369,17 +2371,22 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   nBlocks = 0;
   primaryRot = -1;
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("*** initial words ***\n");
   for (rot = 0; rot < 4; ++rot) {
     pool = pools[rot];
     for (baseIdx = pool->minBaseIdx; baseIdx <= pool->maxBaseIdx; ++baseIdx) {
       for (word0 = pool->getPool(baseIdx); word0; word0 = word0->next) {
-	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f fontSize=%.2f rot=%d link=%p '",
+	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f rot=%d link=%p '",
 	       word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-	       word0->base, word0->fontSize, rot*90, word0->link);
+               word0->base,
+               word0->font->fontName->getCString(),
+               word0->fontSize, rot*90, word0->link);
 	for (i = 0; i < word0->len; ++i) {
-	  fputc(word0->text[i] & 0xff, stdout);
+          if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
+            fputc(word0->text[i], stdout);
+          else
+            printf( "<%02X>", word0->text[i] );
 	}
 	printf("'\n");
       }
@@ -2388,7 +2395,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   printf("\n");
 #endif
 
-#if 0 //~ for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   for (i = 0; i < underlines->getLength(); ++i) {
     underline = (TextUnderline *)underlines->get(i);
     printf("underline: x=%g..%g y=%g..%g horiz=%d\n",
@@ -2846,7 +2853,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("*** rotation ***\n");
   for (rot = 0; rot < 4; ++rot) {
     printf("  %d: %6d\n", rot, count[rot]);
@@ -2855,7 +2862,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   printf("\n");
 #endif
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("*** blocks ***\n");
   for (blk = blkList; blk; blk = blk->next) {
     printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f\n",
@@ -2864,11 +2871,16 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
       printf("  line: x=%.2f..%.2f y=%.2f..%.2f base=%.2f\n",
 	     line->xMin, line->xMax, line->yMin, line->yMax, line->base);
       for (word0 = line->words; word0; word0 = word0->next) {
-	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f fontSize=%.2f space=%d: '",
+	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
 	       word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-	       word0->base, word0->fontSize, word0->spaceAfter);
+	       word0->base,
+               word0->font->fontName->getCString(),
+               word0->fontSize, word0->spaceAfter);
 	for (i = 0; i < word0->len; ++i) {
-	  fputc(word0->text[i] & 0xff, stdout);
+          if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
+            fputc(word0->text[i], stdout);
+          else
+            printf( "<%02X>", word0->text[i] );
 	}
 	printf("'\n");
       }
@@ -2894,7 +2906,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   }
   primaryLR = lrCount >= 0;
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("*** direction ***\n");
   printf("lrCount = %d\n", lrCount);
   printf("primaryLR = %d\n", primaryLR);
@@ -2976,7 +2988,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("*** blocks, after column assignment ***\n");
   for (blk = blkList; blk; blk = blk->next) {
     printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f col=%d nCols=%d\n",
@@ -2985,11 +2997,16 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     for (line = blk->lines; line; line = line->next) {
       printf("  line:\n");
       for (word0 = line->words; word0; word0 = word0->next) {
-	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f fontSize=%.2f space=%d: '",
+	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
 	       word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-	       word0->base, word0->fontSize, word0->spaceAfter);
+	       word0->base,
+               word0->font->fontName->getCString(),
+               word0->fontSize, word0->spaceAfter);
 	for (i = 0; i < word0->len; ++i) {
-	  fputc(word0->text[i] & 0xff, stdout);
+          if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
+            fputc(word0->text[i], stdout);
+          else
+            printf( "<%02X>", word0->text[i] );
 	}
 	printf("'\n");
       }
@@ -3011,7 +3028,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("PAGE\n");
 #endif
 
@@ -3289,7 +3306,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     gfree(visited);
   }
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("*** blocks, after ro sort ***\n");
   for (i = 0; i < nBlocks; ++i) {
     blk = blocks[i];
@@ -3299,11 +3316,16 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     for (line = blk->lines; line; line = line->next) {
       printf("  line:\n");
       for (word0 = line->words; word0; word0 = word0->next) {
-	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f fontSize=%.2f space=%d: '",
+	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
 	       word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-	       word0->base, word0->fontSize, word0->spaceAfter);
+	       word0->base,
+	       word0->font->fontName->getCString(),
+               word0->fontSize, word0->spaceAfter);
 	for (j = 0; j < word0->len; ++j) {
-	  fputc(word0->text[j] & 0xff, stdout);
+          if ( 0x1F < word0->text[j] && word0->text[j] < 0x7F )
+            fputc(word0->text[j], stdout);
+          else
+            printf( "<%02X>", word0->text[j] );
 	}
 	printf("'\n");
       }
@@ -3347,7 +3369,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     lastFlow = flow;
   }
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
   printf("*** flows ***\n");
   for (flow = flows; flow; flow = flow->next) {
     printf("flow: x=%.2f..%.2f y=%.2f..%.2f pri:%.2f..%.2f\n",
@@ -3360,11 +3382,16 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
       for (line = blk->lines; line; line = line->next) {
 	printf("    line:\n");
 	for (word0 = line->words; word0; word0 = word0->next) {
-	  printf("      word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f fontSize=%.2f space=%d: '",
+	  printf("      word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
 		 word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-		 word0->base, word0->fontSize, word0->spaceAfter);
+		 word0->base,
+                 word0->font->fontName->getCString(),
+                 word0->fontSize, word0->spaceAfter);
 	  for (i = 0; i < word0->len; ++i) {
-	    fputc(word0->text[i] & 0xff, stdout);
+          if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
+              fputc(word0->text[i], stdout);
+            else
+              printf( "<%02X>", word0->text[i] );
 	  }
 	  printf("'\n");
 	}
@@ -4739,7 +4766,7 @@ void TextPage::dump(void *outputStream, TextOutputFunc outputFunc,
       i = j;
     }
 
-#if 0 // for debugging
+#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
     printf("*** line fragments ***\n");
     for (i = 0; i < nFrags; ++i) {
       frag = &frags[i];
