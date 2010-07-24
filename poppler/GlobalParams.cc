@@ -1416,6 +1416,15 @@ GBool GlobalParams::getTextKeepTinyChars() {
   return tiny;
 }
 
+GBool GlobalParams::getTextKeepBroken8Bit() {
+  GBool keepBroken8Bit;
+
+  lockGlobalParams;
+  keepBroken8Bit = textKeepBroken8Bit;
+  unlockGlobalParams;
+  return keepBroken8Bit;
+}
+
 GooString *GlobalParams::findFontFile(GooString *fontName, char **exts) {
   GooString *dir, *fileName;
   char **ext;
@@ -1769,6 +1778,12 @@ void GlobalParams::setTextPageBreaks(GBool pageBreaks) {
 void GlobalParams::setTextKeepTinyChars(GBool keep) {
   lockGlobalParams;
   textKeepTinyChars = keep;
+  unlockGlobalParams;
+}
+
+void GlobalParams::setTextKeepBroken8Bit(GBool keep) {
+  lockGlobalParams;
+  textKeepBroken8Bit = keep;
   unlockGlobalParams;
 }
 

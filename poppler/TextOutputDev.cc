@@ -2161,6 +2161,18 @@ void TextPage::addChar(GfxState *state, double x, double y,
   GBool overlap;
   int i;
 
+#if 1
+  Unicode fake_ucs = 0x0;
+  {
+    if (globalParams->getTextKeepBroken8Bit()   &&
+        sizeof( Unicode ) == sizeof( CharCode ) &&
+        c < 0xFF && 0 == uLen ) {
+      fake_ucs = c;
+      uLen = 1;
+      u = &fake_ucs;
+    }
+  }
+#endif
   // subtract char and word spacing from the dx,dy values
   sp = state->getCharSpace();
   if (c == (CharCode)0x20) {

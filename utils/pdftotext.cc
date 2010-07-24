@@ -63,6 +63,7 @@ static int w = 0;
 static int h = 0;
 static GBool physLayout = gFalse;
 static GBool rawOrder = gFalse;
+static GBool keepBroken8Bit = gFalse;
 static GBool htmlMeta = gFalse;
 static char textEncName[128] = "";
 static char textEOL[16] = "";
@@ -99,6 +100,8 @@ static const ArgDesc argDesc[] = {
    "output text encoding name"},
   {"-listenc",argFlag,     &printEnc,      0,
    "list available encodings"},
+  {"-keep-broken-8bit", argFlag, &keepBroken8Bit, 0,
+   "keep broken 8bit characters out of ToUnicode map"},
   {"-eol",     argString,   textEOL,        sizeof(textEOL),
    "output end-of-line convention (unix, dos, or mac)"},
   {"-nopgbrk", argFlag,     &noPageBreaks,  0,
@@ -167,6 +170,9 @@ int main(int argc, char *argv[]) {
     if (!globalParams->setTextEOL(textEOL)) {
       fprintf(stderr, "Bad '-eol' value on command line\n");
     }
+  }
+  if (keepBroken8Bit) {
+    globalParams->setTextKeepBroken8Bit(keepBroken8Bit);
   }
   if (noPageBreaks) {
     globalParams->setTextPageBreaks(gFalse);

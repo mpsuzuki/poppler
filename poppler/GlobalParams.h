@@ -203,6 +203,7 @@ public:
   EndOfLineKind getTextEOL();
   GBool getTextPageBreaks();
   GBool getTextKeepTinyChars();
+  GBool getTextKeepBroken8Bit();
   GooString *findFontFile(GooString *fontName, char **exts);
   GBool getEnableFreeType();
   GBool getAntialias();
@@ -248,6 +249,7 @@ public:
   GBool setTextEOL(char *s);
   void setTextPageBreaks(GBool pageBreaks);
   void setTextKeepTinyChars(GBool keep);
+  void setTextKeepBroken8Bit(GBool keep);
   GBool setEnableFreeType(char *s);
   GBool setAntialias(char *s);
   GBool setVectorAntialias(char *s);
@@ -331,6 +333,7 @@ private:
 				//   output
   GBool textPageBreaks;		// insert end-of-page markers?
   GBool textKeepTinyChars;	// keep all characters in text output
+  GBool textKeepBroken8Bit;	// allow 8bit characters not listed in ToUnicode.
   GooList *fontDirs;		// list of font dirs [GooString]
   GBool enableFreeType;		// FreeType enable flag
   GBool antialias;		// anti-aliasing enable flag
