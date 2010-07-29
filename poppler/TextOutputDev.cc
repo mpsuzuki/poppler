@@ -1701,7 +1701,7 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
 
   blk1 = this;
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 10 // for debugging
   printf("visited: %d %.2f..%.2f %.2f..%.2f\n",
 	 sortPos, blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
 #endif
@@ -1735,7 +1735,7 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
       if (blk2->isBeforeByRule1(blk1)) {
         // Rule (1) blk1 and blk2 overlap, and blk2 is above blk1.
         before = gTrue;
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 10 // for debugging
         printf("rule1: %.2f..%.2f %.2f..%.2f %.2f..%.2f %.2f..%.2f\n",
 	       blk2->ExMin, blk2->ExMax, blk2->EyMin, blk2->EyMax,
 	       blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
@@ -1755,7 +1755,7 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
 	    break;
 	  }
         }
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 10 // for debugging
         if (before) {
 	  printf("rule2: %.2f..%.2f %.2f..%.2f %.2f..%.2f %.2f..%.2f\n",
 	         blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax,
@@ -1770,7 +1770,7 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
       sortPos = blk2->visitDepthFirst(blkList, pos2, sorted, sortPos, visited);
     }
   }
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 1 // for debugging
   printf("sorted: %d %.2f..%.2f %.2f..%.2f\n",
 	 sortPos, blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
 #endif
@@ -2073,6 +2073,10 @@ void TextPage::updateFont(GfxState *state) {
 
   // adjust the font size
   gfxFont = state->getFont();
+#if 1
+  if (gfxFont)
+    printf("  TextPage::updateFont() %s\n", gfxFont->getName()->getCString() );
+#endif
   curFontSize = state->getTransformedFontSize();
   if (gfxFont && gfxFont->getType() == fontType3) {
     // This is a hack which makes it possible to deal with some Type 3
@@ -2190,6 +2194,7 @@ void TextPage::addChar(GfxState *state, double x, double y,
       y1 + h1 < 0 || y1 > pageHeight ||
       w1 > pageWidth || h1 > pageHeight) {
     charPos += nBytes;
+    printf("    TextPage::addChar() ignore this character because out of page boundary\n" );
     return;
   }
 
@@ -2198,6 +2203,7 @@ void TextPage::addChar(GfxState *state, double x, double y,
       fabs(w1) < 3 && fabs(h1) < 3) {
     if (++nTinyChars > 50000) {
       charPos += nBytes;
+      printf("    TextPage::addChar() ignore this character because too small\n" );
       return;
     }
   }
@@ -2209,6 +2215,7 @@ void TextPage::addChar(GfxState *state, double x, double y,
     }
     charPos += nBytes;
     endWord();
+    printf("    TextPage::addChar() break this string character because space (0x20)\n" );
     return;
   }
 
@@ -2383,7 +2390,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   nBlocks = 0;
   primaryRot = -1;
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 0 // for debugging
   printf("*** initial words ***\n");
   for (rot = 0; rot < 4; ++rot) {
     pool = pools[rot];
@@ -2394,20 +2401,58 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
                word0->base,
                word0->font->fontName->getCString(),
                word0->fontSize, rot*90, word0->link);
-	for (i = 0; i < word0->len; ++i) {
-          if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
-            fputc(word0->text[i], stdout);
+        for (i = 0; i < word0->len; ++i) {
+          if ( 0x20 < word0->text[i] && word0->text[i] < 0x7F )
+            fputc(word0->text[i] & 0xff, stdout);
           else
-            printf( "<%02X>", word0->text[i] );
-	}
-	printf("'\n");
+            printf("<%X>", word0->text[i] );
+        }
+        printf("'\n");
+
+        if ( !word0->font->gfxFont || !word0->font->gfxFont->isOk())
+          continue;
+
+        GfxFontType gfxFontType = word0->font->gfxFont->getType();
+        if( word0->font->gfxFont->isCIDFont() )
+        {
+          GfxCIDFont*  gfxCIDFont = (GfxCIDFont*)(word0->font);
+          Gushort*     cid2gid = NULL;
+          unsigned int cid2gid_len = 0;
+
+          if ( gfxFontType == fontCIDType2 || gfxFontType == fontCIDType2OT )
+            cid2gid_len = gfxCIDFont->getCIDToGIDLen();
+          if ( cid2gid_len > 0 )
+            cid2gid = gfxCIDFont->getCIDToGID();
+
+          for ( i = 0 ; i < word0->len ; i ++ )
+          {
+            printf("        <%05X> -> % 5d",
+                            word0->text[i],
+                            word0->charcode[i] );
+            if ( cid2gid && word0->charcode[i] < cid2gid_len )
+              printf(" -> % 5d",
+                            cid2gid[word0->charcode[i]] );
+            printf("\n");
+          }
+        }
+        else
+        {
+          char** enc = ((Gfx8BitFont *)(word0->font->gfxFont))->getEncoding();
+          if ( enc )
+            for ( i = 0; i < word0->len ; i ++ )
+              if ( enc[word0->charcode[i]] )
+                printf("        <%05X> -> <%02X> -> /%s\n",
+                                word0->text[i],
+                                word0->charcode[i],
+                                enc[word0->charcode[i]] );
+        }
       }
     }
   }
   printf("\n");
 #endif
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 1 // for debugging
   for (i = 0; i < underlines->getLength(); ++i) {
     underline = (TextUnderline *)underlines->get(i);
     printf("underline: x=%g..%g y=%g..%g horiz=%d\n",
@@ -2865,7 +2910,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 2 // for debugging
   printf("*** rotation ***\n");
   for (rot = 0; rot < 4; ++rot) {
     printf("  %d: %6d\n", rot, count[rot]);
@@ -2874,7 +2919,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   printf("\n");
 #endif
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 3 // for debugging
   printf("*** blocks ***\n");
   for (blk = blkList; blk; blk = blk->next) {
     printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f\n",
@@ -2918,7 +2963,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   }
   primaryLR = lrCount >= 0;
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 4 // for debugging
   printf("*** direction ***\n");
   printf("lrCount = %d\n", lrCount);
   printf("primaryLR = %d\n", primaryLR);
@@ -3000,7 +3045,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 5 // for debugging
   printf("*** blocks, after column assignment ***\n");
   for (blk = blkList; blk; blk = blk->next) {
     printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f col=%d nCols=%d\n",
@@ -3040,7 +3085,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 6 // for debugging
   printf("PAGE\n");
 #endif
 
@@ -3318,7 +3363,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     gfree(visited);
   }
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 7 // for debugging
   printf("*** blocks, after ro sort ***\n");
   for (i = 0; i < nBlocks; ++i) {
     blk = blocks[i];
@@ -3381,7 +3426,7 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     lastFlow = flow;
   }
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 8 // for debugging
   printf("*** flows ***\n");
   for (flow = flows; flow; flow = flow->next) {
     printf("flow: x=%.2f..%.2f y=%.2f..%.2f pri:%.2f..%.2f\n",
@@ -4778,7 +4823,7 @@ void TextPage::dump(void *outputStream, TextOutputFunc outputFunc,
       i = j;
     }
 
-#ifdef DEBUG_TEXTOUTPUTDEV // for debugging
+#if DEBUG_TEXTOUTPUTDEV > 9 // for debugging
     printf("*** line fragments ***\n");
     for (i = 0; i < nFrags; ++i) {
       frag = &frags[i];
