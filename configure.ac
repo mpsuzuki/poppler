@@ -168,7 +168,7 @@ AH_TEMPLATE([ENABLE_LIBOPENJPEG],
 
 
 dnl ##### Checks for library functions.
-AC_CHECK_FUNCS(popen mkstemp mkstemps)
+AC_CHECK_FUNCS(popen mkstemp mkstemps getenv)
 
 dnl ##### Back to C for the library tests.
 AC_LANG_C
