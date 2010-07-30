@@ -58,12 +58,18 @@
 #include "Page.h"
 #include "PDFDocEncoding.h"
 
+#ifdef HAVE_GETENV
+#define debug_env "POPPLER_DEBUG_TEXTOUTPUTDEV"
+#define POPPLER_DEBUG_LEVEL( n ) ( getenv(debug_env) && strtol( getenv(debug_env), (char**)NULL, 10) > ( n ) )
+#else
+#warn Debugging messages in TextOutputDev.c are disabled.
+#define POPPLER_DEBUG_LEVEL( n ) 0
+#endif
+
 #ifdef MACOS
 // needed for setting type/creator of MacOS files
 #include "ICSupport.h"
 #endif
-
-#define DEBUG_TEXTOUTPUTDEV 1
 
 //------------------------------------------------------------------------
 // parameters
@@ -1701,10 +1707,11 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
 
   blk1 = this;
 
-#if DEBUG_TEXTOUTPUTDEV > 10 // for debugging
-  printf("visited: %d %.2f..%.2f %.2f..%.2f\n",
-	 sortPos, blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
-#endif
+  if (POPPLER_DEBUG_LEVEL( 10 )) {
+    printf("visited: %d %.2f..%.2f %.2f..%.2f\n",
+	   sortPos, blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
+  }
+
   visited[pos1] = gTrue;
   pos2 = -1;
   for (blk2 = blkList; blk2; blk2 = blk2->next) {
@@ -1735,11 +1742,11 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
       if (blk2->isBeforeByRule1(blk1)) {
         // Rule (1) blk1 and blk2 overlap, and blk2 is above blk1.
         before = gTrue;
-#if DEBUG_TEXTOUTPUTDEV > 10 // for debugging
-        printf("rule1: %.2f..%.2f %.2f..%.2f %.2f..%.2f %.2f..%.2f\n",
-	       blk2->ExMin, blk2->ExMax, blk2->EyMin, blk2->EyMax,
-	       blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
-#endif
+        if (POPPLER_DEBUG_LEVEL( 10 )) {
+          printf("rule1: %.2f..%.2f %.2f..%.2f %.2f..%.2f %.2f..%.2f\n",
+	         blk2->ExMin, blk2->ExMax, blk2->EyMin, blk2->EyMax,
+	         blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
+        }
       } else if (blk2->isBeforeByRule2(blk1)) {
         // Rule (2) blk2 left of blk1, and no intervening blk3
         //          such that blk1 is before blk3 by rule 1,
@@ -1755,13 +1762,13 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
 	    break;
 	  }
         }
-#if DEBUG_TEXTOUTPUTDEV > 10 // for debugging
-        if (before) {
-	  printf("rule2: %.2f..%.2f %.2f..%.2f %.2f..%.2f %.2f..%.2f\n",
-	         blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax,
-	         blk2->ExMin, blk2->ExMax, blk2->EyMin, blk2->EyMax);
+        if (POPPLER_DEBUG_LEVEL( 10 )) {
+          if (before) {
+	    printf("rule2: %.2f..%.2f %.2f..%.2f %.2f..%.2f %.2f..%.2f\n",
+	           blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax,
+	           blk2->ExMin, blk2->ExMax, blk2->EyMin, blk2->EyMax);
+          }
         }
-#endif
       }
     }
     if (before) {
@@ -1770,10 +1777,10 @@ int TextBlock::visitDepthFirst(TextBlock *blkList, int pos1,
       sortPos = blk2->visitDepthFirst(blkList, pos2, sorted, sortPos, visited);
     }
   }
-#if DEBUG_TEXTOUTPUTDEV > 1 // for debugging
-  printf("sorted: %d %.2f..%.2f %.2f..%.2f\n",
-	 sortPos, blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
-#endif
+  if (POPPLER_DEBUG_LEVEL( 1 )) {
+    printf("sorted: %d %.2f..%.2f %.2f..%.2f\n",
+            sortPos, blk1->ExMin, blk1->ExMax, blk1->EyMin, blk1->EyMax);
+  }
   sorted[sortPos++] = blk1;
   return sortPos;
 }
@@ -2073,10 +2080,10 @@ void TextPage::updateFont(GfxState *state) {
 
   // adjust the font size
   gfxFont = state->getFont();
-#if 1
-  if (gfxFont)
-    printf("  TextPage::updateFont() %s\n", gfxFont->getName()->getCString() );
-#endif
+  if (POPPLER_DEBUG_LEVEL( 1 )) {
+    if (gfxFont)
+      printf("  TextPage::updateFont() %s\n", gfxFont->getName()->getCString() );
+  }
   curFontSize = state->getTransformedFontSize();
   if (gfxFont && gfxFont->getType() == fontType3) {
     // This is a hack which makes it possible to deal with some Type 3
@@ -2194,7 +2201,9 @@ void TextPage::addChar(GfxState *state, double x, double y,
       y1 + h1 < 0 || y1 > pageHeight ||
       w1 > pageWidth || h1 > pageHeight) {
     charPos += nBytes;
-    printf("    TextPage::addChar() ignore this character because out of page boundary\n" );
+    if (POPPLER_DEBUG_LEVEL( 1 )) {
+      printf("    TextPage::addChar() ignore this character because out of page boundary\n" );
+    }
     return;
   }
 
@@ -2203,7 +2212,9 @@ void TextPage::addChar(GfxState *state, double x, double y,
       fabs(w1) < 3 && fabs(h1) < 3) {
     if (++nTinyChars > 50000) {
       charPos += nBytes;
-      printf("    TextPage::addChar() ignore this character because too small\n" );
+      if (POPPLER_DEBUG_LEVEL( 1 )) {
+        printf("    TextPage::addChar() ignore this character because too small\n" );
+      }
       return;
     }
   }
@@ -2215,7 +2226,9 @@ void TextPage::addChar(GfxState *state, double x, double y,
     }
     charPos += nBytes;
     endWord();
-    printf("    TextPage::addChar() break this string character because space (0x20)\n" );
+    if (POPPLER_DEBUG_LEVEL( 1 )) {
+      printf("    TextPage::addChar() break this string character because space (0x20)\n" );
+    }
     return;
   }
 
@@ -2390,76 +2403,76 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   nBlocks = 0;
   primaryRot = -1;
 
-#if DEBUG_TEXTOUTPUTDEV > 0 // for debugging
-  printf("*** initial words ***\n");
-  for (rot = 0; rot < 4; ++rot) {
-    pool = pools[rot];
-    for (baseIdx = pool->minBaseIdx; baseIdx <= pool->maxBaseIdx; ++baseIdx) {
-      for (word0 = pool->getPool(baseIdx); word0; word0 = word0->next) {
-	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f rot=%d link=%p '",
-	       word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-               word0->base,
-               word0->font->fontName->getCString(),
-               word0->fontSize, rot*90, word0->link);
-        for (i = 0; i < word0->len; ++i) {
-          if ( 0x20 < word0->text[i] && word0->text[i] < 0x7F )
-            fputc(word0->text[i] & 0xff, stdout);
-          else
-            printf("<%X>", word0->text[i] );
-        }
-        printf("'\n");
-
-        if ( !word0->font->gfxFont || !word0->font->gfxFont->isOk())
-          continue;
-
-        GfxFontType gfxFontType = word0->font->gfxFont->getType();
-        if( word0->font->gfxFont->isCIDFont() )
-        {
-          GfxCIDFont*  gfxCIDFont = (GfxCIDFont*)(word0->font);
-          Gushort*     cid2gid = NULL;
-          unsigned int cid2gid_len = 0;
-
-          if ( gfxFontType == fontCIDType2 || gfxFontType == fontCIDType2OT )
-            cid2gid_len = gfxCIDFont->getCIDToGIDLen();
-          if ( cid2gid_len > 0 )
-            cid2gid = gfxCIDFont->getCIDToGID();
-
-          for ( i = 0 ; i < word0->len ; i ++ )
-          {
-            printf("        <%05X> -> % 5d",
-                            word0->text[i],
-                            word0->charcode[i] );
-            if ( cid2gid && word0->charcode[i] < cid2gid_len )
-              printf(" -> % 5d",
-                            cid2gid[word0->charcode[i]] );
-            printf("\n");
+  if (POPPLER_DEBUG_LEVEL( 0 )) {
+    printf("*** initial words ***\n");
+    for (rot = 0; rot < 4; ++rot) {
+      pool = pools[rot];
+      for (baseIdx = pool->minBaseIdx; baseIdx <= pool->maxBaseIdx; ++baseIdx) {
+        for (word0 = pool->getPool(baseIdx); word0; word0 = word0->next) {
+	  printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f rot=%d link=%p '",
+	         word0->xMin, word0->xMax, word0->yMin, word0->yMax,
+                 word0->base,
+                 word0->font->fontName->getCString(),
+                 word0->fontSize, rot*90, word0->link);
+          for (i = 0; i < word0->len; ++i) {
+            if ( 0x20 < word0->text[i] && word0->text[i] < 0x7F )
+              fputc(word0->text[i] & 0xff, stdout);
+            else
+              printf("<%X>", word0->text[i] );
           }
-        }
-        else
-        {
-          char** enc = ((Gfx8BitFont *)(word0->font->gfxFont))->getEncoding();
-          if ( enc )
-            for ( i = 0; i < word0->len ; i ++ )
-              if ( enc[word0->charcode[i]] )
-                printf("        <%05X> -> <%02X> -> /%s\n",
-                                word0->text[i],
-                                word0->charcode[i],
-                                enc[word0->charcode[i]] );
+          printf("'\n");
+  
+          if ( !word0->font->gfxFont || !word0->font->gfxFont->isOk())
+            continue;
+  
+          GfxFontType gfxFontType = word0->font->gfxFont->getType();
+          if( word0->font->gfxFont->isCIDFont() )
+          {
+            GfxCIDFont*  gfxCIDFont = (GfxCIDFont*)(word0->font);
+            Gushort*     cid2gid = NULL;
+            unsigned int cid2gid_len = 0;
+  
+            if ( gfxFontType == fontCIDType2 || gfxFontType == fontCIDType2OT )
+              cid2gid_len = gfxCIDFont->getCIDToGIDLen();
+            if ( cid2gid_len > 0 )
+              cid2gid = gfxCIDFont->getCIDToGID();
+  
+            for ( i = 0 ; i < word0->len ; i ++ )
+            {
+              printf("        <%05X> -> % 5d",
+                              word0->text[i],
+                              word0->charcode[i] );
+              if ( cid2gid && word0->charcode[i] < cid2gid_len )
+                printf(" -> % 5d",
+                              cid2gid[word0->charcode[i]] );
+              printf("\n");
+            }
+          }
+          else
+          {
+            char** enc = ((Gfx8BitFont *)(word0->font->gfxFont))->getEncoding();
+            if ( enc )
+              for ( i = 0; i < word0->len ; i ++ )
+                if ( enc[word0->charcode[i]] )
+                  printf("        <%05X> -> <%02X> -> /%s\n",
+                                  word0->text[i],
+                                  word0->charcode[i],
+                                  enc[word0->charcode[i]] );
+          }
         }
       }
     }
+    printf("\n");
   }
-  printf("\n");
-#endif
 
-#if DEBUG_TEXTOUTPUTDEV > 1 // for debugging
-  for (i = 0; i < underlines->getLength(); ++i) {
-    underline = (TextUnderline *)underlines->get(i);
-    printf("underline: x=%g..%g y=%g..%g horiz=%d\n",
-	   underline->x0, underline->x1, underline->y0, underline->y1,
-	   underline->horiz);
+  if (POPPLER_DEBUG_LEVEL( 1 )) {
+    for (i = 0; i < underlines->getLength(); ++i) {
+      underline = (TextUnderline *)underlines->get(i);
+      printf("underline: x=%g..%g y=%g..%g horiz=%d\n",
+	      underline->x0, underline->x1, underline->y0, underline->y1,
+	      underline->horiz);
+    }
   }
-#endif
 
   if (doHTML) {
 
@@ -2910,41 +2923,41 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#if DEBUG_TEXTOUTPUTDEV > 2 // for debugging
-  printf("*** rotation ***\n");
-  for (rot = 0; rot < 4; ++rot) {
-    printf("  %d: %6d\n", rot, count[rot]);
+  if (POPPLER_DEBUG_LEVEL( 2 )) {
+    printf("*** rotation ***\n");
+    for (rot = 0; rot < 4; ++rot) {
+      printf("  %d: %6d\n", rot, count[rot]);
+    }
+    printf("  primary rot = %d\n", primaryRot);
+    printf("\n");
   }
-  printf("  primary rot = %d\n", primaryRot);
-  printf("\n");
-#endif
 
-#if DEBUG_TEXTOUTPUTDEV > 3 // for debugging
-  printf("*** blocks ***\n");
-  for (blk = blkList; blk; blk = blk->next) {
-    printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f\n",
-	   blk->rot, blk->xMin, blk->xMax, blk->yMin, blk->yMax);
-    for (line = blk->lines; line; line = line->next) {
-      printf("  line: x=%.2f..%.2f y=%.2f..%.2f base=%.2f\n",
-	     line->xMin, line->xMax, line->yMin, line->yMax, line->base);
-      for (word0 = line->words; word0; word0 = word0->next) {
-	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
-	       word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-	       word0->base,
-               word0->font->fontName->getCString(),
-               word0->fontSize, word0->spaceAfter);
-	for (i = 0; i < word0->len; ++i) {
-          if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
-            fputc(word0->text[i], stdout);
-          else
-            printf( "<%02X>", word0->text[i] );
-	}
-	printf("'\n");
+  if (POPPLER_DEBUG_LEVEL( 3 )) {
+    printf("*** blocks ***\n");
+    for (blk = blkList; blk; blk = blk->next) {
+      printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f\n",
+	     blk->rot, blk->xMin, blk->xMax, blk->yMin, blk->yMax);
+      for (line = blk->lines; line; line = line->next) {
+        printf("  line: x=%.2f..%.2f y=%.2f..%.2f base=%.2f\n",
+	       line->xMin, line->xMax, line->yMin, line->yMax, line->base);
+        for (word0 = line->words; word0; word0 = word0->next) {
+	  printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
+	         word0->xMin, word0->xMax, word0->yMin, word0->yMax,
+	         word0->base,
+                 word0->font->fontName->getCString(),
+                 word0->fontSize, word0->spaceAfter);
+	  for (i = 0; i < word0->len; ++i) {
+            if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
+              fputc(word0->text[i], stdout);
+            else
+              printf( "<%02X>", word0->text[i] );
+	  }
+	  printf("'\n");
+        }
       }
     }
+    printf("\n");
   }
-  printf("\n");
-#endif
 
   // determine the primary direction
   lrCount = 0;
@@ -2963,11 +2976,11 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
   }
   primaryLR = lrCount >= 0;
 
-#if DEBUG_TEXTOUTPUTDEV > 4 // for debugging
-  printf("*** direction ***\n");
-  printf("lrCount = %d\n", lrCount);
-  printf("primaryLR = %d\n", primaryLR);
-#endif
+  if (POPPLER_DEBUG_LEVEL( 4 )) {
+    printf("*** direction ***\n");
+    printf("lrCount = %d\n", lrCount);
+    printf("primaryLR = %d\n", primaryLR);
+  }
 
   //----- column assignment
 
@@ -3045,32 +3058,32 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#if DEBUG_TEXTOUTPUTDEV > 5 // for debugging
-  printf("*** blocks, after column assignment ***\n");
-  for (blk = blkList; blk; blk = blk->next) {
-    printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f col=%d nCols=%d\n",
-	   blk->rot, blk->xMin, blk->xMax, blk->yMin, blk->yMax, blk->col,
-	   blk->nColumns);
-    for (line = blk->lines; line; line = line->next) {
-      printf("  line:\n");
-      for (word0 = line->words; word0; word0 = word0->next) {
-	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
-	       word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-	       word0->base,
-               word0->font->fontName->getCString(),
-               word0->fontSize, word0->spaceAfter);
-	for (i = 0; i < word0->len; ++i) {
-          if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
-            fputc(word0->text[i], stdout);
-          else
-            printf( "<%02X>", word0->text[i] );
-	}
-	printf("'\n");
+  if (POPPLER_DEBUG_LEVEL( 5 )) {
+    printf("*** blocks, after column assignment ***\n");
+    for (blk = blkList; blk; blk = blk->next) {
+      printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f col=%d nCols=%d\n",
+	     blk->rot, blk->xMin, blk->xMax, blk->yMin, blk->yMax, blk->col,
+	     blk->nColumns);
+      for (line = blk->lines; line; line = line->next) {
+        printf("  line:\n");
+        for (word0 = line->words; word0; word0 = word0->next) {
+	  printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
+	         word0->xMin, word0->xMax, word0->yMin, word0->yMax,
+	         word0->base,
+                 word0->font->fontName->getCString(),
+                 word0->fontSize, word0->spaceAfter);
+	  for (i = 0; i < word0->len; ++i) {
+            if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
+              fputc(word0->text[i], stdout);
+            else
+              printf( "<%02X>", word0->text[i] );
+	  }
+	  printf("'\n");
+        }
       }
     }
+    printf("\n");
   }
-  printf("\n");
-#endif
 
   //----- reading order sort
 
@@ -3085,9 +3098,9 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     }
   }
 
-#if DEBUG_TEXTOUTPUTDEV > 6 // for debugging
-  printf("PAGE\n");
-#endif
+  if (POPPLER_DEBUG_LEVEL( 6 )) {
+    printf("PAGE\n");
+  }
 
   int sortPos = 0;
   GBool *visited = (GBool *)gmallocn(nBlocks, sizeof(GBool));
@@ -3363,34 +3376,34 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     gfree(visited);
   }
 
-#if DEBUG_TEXTOUTPUTDEV > 7 // for debugging
-  printf("*** blocks, after ro sort ***\n");
-  for (i = 0; i < nBlocks; ++i) {
-    blk = blocks[i];
-    printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f space=%.2f..%.2f\n",
-	   blk->rot, blk->xMin, blk->xMax, blk->yMin, blk->yMax,
-	   blk->priMin, blk->priMax);
-    for (line = blk->lines; line; line = line->next) {
-      printf("  line:\n");
-      for (word0 = line->words; word0; word0 = word0->next) {
-	printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
-	       word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-	       word0->base,
-	       word0->font->fontName->getCString(),
-               word0->fontSize, word0->spaceAfter);
-	for (j = 0; j < word0->len; ++j) {
-          if ( 0x1F < word0->text[j] && word0->text[j] < 0x7F )
-            fputc(word0->text[j], stdout);
-          else
-            printf( "<%02X>", word0->text[j] );
-	}
-	printf("'\n");
+  if (POPPLER_DEBUG_LEVEL( 7 )) {
+    printf("*** blocks, after ro sort ***\n");
+    for (i = 0; i < nBlocks; ++i) {
+      blk = blocks[i];
+      printf("block: rot=%d x=%.2f..%.2f y=%.2f..%.2f space=%.2f..%.2f\n",
+	     blk->rot, blk->xMin, blk->xMax, blk->yMin, blk->yMax,
+	     blk->priMin, blk->priMax);
+      for (line = blk->lines; line; line = line->next) {
+        printf("  line:\n");
+        for (word0 = line->words; word0; word0 = word0->next) {
+	  printf("    word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
+	         word0->xMin, word0->xMax, word0->yMin, word0->yMax,
+	         word0->base,
+	         word0->font->fontName->getCString(),
+                 word0->fontSize, word0->spaceAfter);
+	  for (j = 0; j < word0->len; ++j) {
+            if ( 0x1F < word0->text[j] && word0->text[j] < 0x7F )
+              fputc(word0->text[j], stdout);
+            else
+              printf( "<%02X>", word0->text[j] );
+	  }
+	  printf("'\n");
+        }
       }
     }
+    printf("\n");
+    fflush(stdout);
   }
-  printf("\n");
-  fflush(stdout);
-#endif
 
   // build the flows
   //~ this needs to be adjusted for writing mode (vertical text)
@@ -3426,37 +3439,37 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
     lastFlow = flow;
   }
 
-#if DEBUG_TEXTOUTPUTDEV > 8 // for debugging
-  printf("*** flows ***\n");
-  for (flow = flows; flow; flow = flow->next) {
-    printf("flow: x=%.2f..%.2f y=%.2f..%.2f pri:%.2f..%.2f\n",
-	   flow->xMin, flow->xMax, flow->yMin, flow->yMax,
-	   flow->priMin, flow->priMax);
-    for (blk = flow->blocks; blk; blk = blk->next) {
-      printf("  block: rot=%d x=%.2f..%.2f y=%.2f..%.2f pri=%.2f..%.2f\n",
-	     blk->rot, blk->ExMin, blk->ExMax, blk->EyMin, blk->EyMax,
-	     blk->priMin, blk->priMax);
-      for (line = blk->lines; line; line = line->next) {
-	printf("    line:\n");
-	for (word0 = line->words; word0; word0 = word0->next) {
-	  printf("      word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
-		 word0->xMin, word0->xMax, word0->yMin, word0->yMax,
-		 word0->base,
-                 word0->font->fontName->getCString(),
-                 word0->fontSize, word0->spaceAfter);
-	  for (i = 0; i < word0->len; ++i) {
-          if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
-              fputc(word0->text[i], stdout);
-            else
-              printf( "<%02X>", word0->text[i] );
+  if (POPPLER_DEBUG_LEVEL( 8 )) {
+    printf("*** flows ***\n");
+    for (flow = flows; flow; flow = flow->next) {
+      printf("flow: x=%.2f..%.2f y=%.2f..%.2f pri:%.2f..%.2f\n",
+	     flow->xMin, flow->xMax, flow->yMin, flow->yMax,
+	     flow->priMin, flow->priMax);
+      for (blk = flow->blocks; blk; blk = blk->next) {
+        printf("  block: rot=%d x=%.2f..%.2f y=%.2f..%.2f pri=%.2f..%.2f\n",
+	       blk->rot, blk->ExMin, blk->ExMax, blk->EyMin, blk->EyMax,
+	       blk->priMin, blk->priMax);
+        for (line = blk->lines; line; line = line->next) {
+	  printf("    line:\n");
+	  for (word0 = line->words; word0; word0 = word0->next) {
+	    printf("      word: x=%.2f..%.2f y=%.2f..%.2f base=%.2f font=%s fontSize=%.2f space=%d: '",
+		   word0->xMin, word0->xMax, word0->yMin, word0->yMax,
+		   word0->base,
+                   word0->font->fontName->getCString(),
+                   word0->fontSize, word0->spaceAfter);
+	    for (i = 0; i < word0->len; ++i) {
+            if ( 0x1F < word0->text[i] && word0->text[i] < 0x7F )
+                fputc(word0->text[i], stdout);
+              else
+                printf( "<%02X>", word0->text[i] );
+	    }
+	    printf("'\n");
 	  }
-	  printf("'\n");
-	}
+        }
       }
     }
+    printf("\n");
   }
-  printf("\n");
-#endif
 
   if (uMap) {
     uMap->decRefCnt();
@@ -4823,19 +4836,19 @@ void TextPage::dump(void *outputStream, TextOutputFunc outputFunc,
       i = j;
     }
 
-#if DEBUG_TEXTOUTPUTDEV > 9 // for debugging
-    printf("*** line fragments ***\n");
-    for (i = 0; i < nFrags; ++i) {
-      frag = &frags[i];
-      printf("frag: x=%.2f..%.2f y=%.2f..%.2f base=%.2f '",
-	     frag->xMin, frag->xMax, frag->yMin, frag->yMax, frag->base);
-      for (n = 0; n < frag->len; ++n) {
-	fputc(frag->line->text[frag->start + n] & 0xff, stdout);
+    if (POPPLER_DEBUG_LEVEL( 8 )) {
+      printf("*** line fragments ***\n");
+      for (i = 0; i < nFrags; ++i) {
+        frag = &frags[i];
+        printf("frag: x=%.2f..%.2f y=%.2f..%.2f base=%.2f '",
+	       frag->xMin, frag->xMax, frag->yMin, frag->yMax, frag->base);
+        for (n = 0; n < frag->len; ++n) {
+	  fputc(frag->line->text[frag->start + n] & 0xff, stdout);
+        }
+        printf("'\n");
       }
-      printf("'\n");
+      printf("\n");
     }
-    printf("\n");
-#endif
 
     // generate output
     col = 0;
