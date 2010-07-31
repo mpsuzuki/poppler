@@ -295,14 +295,14 @@ QImage Page::thumbnail() const
   return ret;
 }
 
-QString Page::text(const QRectF &r) const
+QString Page::text(const QRectF &r, bool rawOrder) const
 {
   TextOutputDev *output_dev;
   GooString *s;
   PDFRectangle *rect;
   QString result;
   
-  output_dev = new TextOutputDev(0, gFalse, gFalse, gFalse);
+  output_dev = new TextOutputDev(0, gFalse, rawOrder, gFalse);
   m_page->parentDoc->doc->displayPageSlice(output_dev, m_page->index + 1, 72, 72,
       0, false, true, false, -1, -1, -1, -1);
   if (r.isNull())
@@ -320,6 +320,11 @@ QString Page::text(const QRectF &r) const
   delete output_dev;
   delete s;
   return result;
+}
+
+QString Page::text(const QRectF &r) const
+{
+  return this->text(r, FALSE);
 }
 
 bool Page::search(const QString &text, double &sLeft, double &sTop, double &sRight, double &sBottom, SearchDirection direction, SearchMode caseSensitive, Rotation rotate) const

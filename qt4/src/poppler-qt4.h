@@ -445,7 +445,8 @@ delete it;
 	   with coordinates given in points, i.e., 1/72th of an inch.
 	   If rect is null, all text on the page is given
 	**/
-	QString text(const QRectF &rect) const;
+	QString text(const QRectF &rect, bool rawOrder) const;
+	QString text(const QRectF &rect) const; /* older API, always physLayout */
 	
 	/**
 	   The starting point for a search
