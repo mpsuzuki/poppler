@@ -3627,17 +3627,21 @@ GooString *TextPage::getText(double xMin, double yMin,
 
   if (rawOrder) {
     TextWord*  word;
+    char mbc[16]; /* XXX: uMap should know the limit !*/
+    int  mbc_len;
+
     for (word = rawWords; word && word <= rawLastWord; word = word->next) {
       for (j = 0; j < word->getLength(); ++j) {
         double gXMin, gXMax, gYMin, gYMax;
         word->getCharBBox(j, &gXMin, &gYMin, &gXMax, &gYMax);
         if (xMin <= gXMin && gXMax <= xMax && yMin <= gYMin && gYMax <= yMax)
         {
-          char mbc[16]; /* XXX: uMap should know the limit !*/
-          int  mbc_len = uMap->mapUnicode( *(word->getChar(j)), mbc, sizeof(mbc) );
+          mbc_len = uMap->mapUnicode( *(word->getChar(j)), mbc, sizeof(mbc) );
           s->append(mbc, mbc_len);
         }
       }
+      mbc_len = uMap->mapUnicode( 0x20, mbc, sizeof(mbc) ); /* space between word */
+      s->append(mbc, mbc_len);
     }
     return s;
   }
