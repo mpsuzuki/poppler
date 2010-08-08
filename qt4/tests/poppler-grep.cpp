@@ -24,8 +24,8 @@ int main( int argc, char **argv )
 	exit(1);
     }
 
-    // QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
-    QTextCodec::setCodecForCStrings(QTextCodec::codecForName( "EUC-JP" ));
+    QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
+    // QTextCodec::setCodecForCStrings(QTextCodec::codecForName( "EUC-JP" ));
     // QTextCodec* codec = QTextCodec::codecForName( "EUC-JP" );
     QString qstr_key = QString::fromLocal8Bit( argv[3] );
     QByteArray qstr_utf8 = qstr_key.toUtf8();
@@ -54,7 +54,7 @@ int main( int argc, char **argv )
       {
         for ( y = 0; y < q ; y ++ )
         {
-          QRectF  rect = QRectF( x*w/q, y*h/q, (x+1)*w/q, (y+1)*h/q );
+          QRectF  rect = QRectF( (double)(x*w/q), (double)(y*h/q), (double)(w/q), (double)(h/q) );
           if ( page->search( qstr_key,
                              rect,
                              Poppler::Page::FromTop,
@@ -63,6 +63,7 @@ int main( int argc, char **argv )
                              true ) )
           {
             std::cout << "*** Page " << i << ", section (" << x << "," << y << ")" << std::endl;
+            std::cout << "         (" << x*w/q << "," << y*h/q << ") - (" << (x+1)*w/q << "," << (y+1)*h/q << ")" << std::endl;
             std::cout << std::flush;
 
             QByteArray utf8str = page->text( rect, TRUE ).toUtf8();
