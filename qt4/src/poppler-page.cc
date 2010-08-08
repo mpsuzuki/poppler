@@ -327,7 +327,7 @@ QString Page::text(const QRectF &r) const
   return this->text(r, FALSE);
 }
 
-bool Page::search(const QString &text, double &sLeft, double &sTop, double &sRight, double &sBottom, SearchDirection direction, SearchMode caseSensitive, Rotation rotate) const
+bool Page::search(const QString &text, double &sLeft, double &sTop, double &sRight, double &sBottom, SearchDirection direction, SearchMode caseSensitive, Rotation rotate, bool rawOrder) const
 {
   const QChar * str = text.unicode();
   int len = text.length();
@@ -343,7 +343,7 @@ bool Page::search(const QString &text, double &sLeft, double &sTop, double &sRig
   int rotation = (int)rotate * 90;
 
   // fetch ourselves a textpage
-  TextOutputDev td(NULL, gTrue, gFalse, gFalse);
+  TextOutputDev td(NULL, gTrue, rawOrder, gFalse);
   m_page->parentDoc->doc->displayPage( &td, m_page->index + 1, 72, 72, rotation, false, true, false );
   TextPage *textPage=td.takeText();
 
@@ -362,7 +362,7 @@ bool Page::search(const QString &text, double &sLeft, double &sTop, double &sRig
   return found;
 }
 
-bool Page::search(const QString &text, QRectF &rect, SearchDirection direction, SearchMode caseSensitive, Rotation rotate) const
+bool Page::search(const QString &text, QRectF &rect, SearchDirection direction, SearchMode caseSensitive, Rotation rotate, bool rawOrder) const
 {
   double sLeft, sTop, sRight, sBottom;
   sLeft = rect.left();
@@ -370,7 +370,7 @@ bool Page::search(const QString &text, QRectF &rect, SearchDirection direction, 
   sRight = rect.right();
   sBottom = rect.bottom();
 
-  bool found = search(text, sLeft, sTop, sRight, sBottom, direction, caseSensitive, rotate);
+  bool found = search(text, sLeft, sTop, sRight, sBottom, direction, caseSensitive, rotate, rawOrder);
 
   rect.setLeft( sLeft );
   rect.setTop( sTop );
@@ -378,6 +378,16 @@ bool Page::search(const QString &text, QRectF &rect, SearchDirection direction, 
   rect.setBottom( sBottom );
 
   return found;
+}
+
+bool Page::search(const QString &text, double &sLeft, double &sTop, double &sRight, double &sBottom, SearchDirection direction, SearchMode caseSensitive, Rotation rotate) const
+{
+  return this->search(text, sLeft, sTop, sRight, sBottom, direction, caseSensitive, rotate, gFalse);
+}
+
+bool Page::search(const QString &text, QRectF &rect, SearchDirection direction, SearchMode caseSensitive, Rotation rotate) const
+{
+  return this->search(text, rect, direction, caseSensitive, rotate, gFalse);
 }
 
 QList<TextBox*> Page::textList(Rotation rotate) const

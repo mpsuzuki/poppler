@@ -474,6 +474,7 @@ delete it;
 	   \param rotate the rotation to apply for the search order
 	**/
 	Q_DECL_DEPRECATED bool search(const QString &text, QRectF &rect, SearchDirection direction, SearchMode caseSensitive, Rotation rotate = Rotate0) const;
+	Q_DECL_DEPRECATED bool search(const QString &text, QRectF &rect, SearchDirection direction, SearchMode caseSensitive, Rotation rotate = Rotate0, bool rawOrder = false) const;
 	
 	/**
 	   Returns true if the specified text was found.
@@ -487,6 +488,7 @@ delete it;
 	   \since 0.14
 	**/
 	bool search(const QString &text, double &rectLeft, double &rectTop, double &rectRight, double &rectBottom, SearchDirection direction, SearchMode caseSensitive, Rotation rotate = Rotate0) const;
+	bool search(const QString &text, double &rectLeft, double &rectTop, double &rectRight, double &rectBottom, SearchDirection direction, SearchMode caseSensitive, Rotation rotate = Rotate0, bool rawOrder = false) const;
 
 	/**
 	   Returns a list of text of the page
