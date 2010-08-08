@@ -25,8 +25,6 @@ int main( int argc, char **argv )
     }
 
     QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
-    // QTextCodec::setCodecForCStrings(QTextCodec::codecForName( "EUC-JP" ));
-    // QTextCodec* codec = QTextCodec::codecForName( "EUC-JP" );
     QString qstr_key = QString::fromLocal8Bit( argv[3] );
     QByteArray qstr_utf8 = qstr_key.toUtf8();
 
