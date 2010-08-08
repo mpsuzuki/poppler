@@ -3401,44 +3401,32 @@ GBool TextPage::findText(Unicode *s, int len,
     double fXMin, fXMax, fYMin, fYMax;
     int  i, j;
     TextWord*  word;
-    bool during_match = false;
 
-    for (word = rawWords; word && word <= rawLastWord; word = word->next) {
-      for (j = 0; j < word->getLength(); ++j) {
+    j = 0;
+    for (word = rawWords; word && word <= rawLastWord && j < len; word = word->next) {
+      for (i = 0; i < word->getLength() && j < len; ++i) {
         double gXMin, gXMax, gYMin, gYMax;
-        word->getCharBBox(j, &gXMin, &gYMin, &gXMax, &gYMax);
+        word->getCharBBox(i, &gXMin, &gYMin, &gXMax, &gYMax);
         if (*xMin <= gXMin && gXMax <= *xMax && *yMin <= gYMin && gYMax <= *yMax)
         {
-          if ( during_match )
+          if ( s[j] == *(word->getChar(i)) ) /* matched, proceed to next char */
           {
-            if ( s[i] == *(word->getChar(j)) ) /* matched, proceed to next char */
-            {
-              if ( gXMin < fXMin ) fXMin = gXMin;
-              if ( gXMax > fXMax ) fXMax = gXMax;
-              if ( gYMin < fYMin ) fYMin = gYMin;
-              if ( gYMax > fYMax ) fYMax = gYMax;
-              i++;
-              if ( i == len ) /* all characters in *s[] are matched */
-                goto set_found_bbox;
-            }
-            else /* unmatched character found */
-              during_match = false;
-          }
-          else if ( s[0] == *(word->getChar(j)) )
-          {
-            during_match = true;
-            fXMin = gXMin;
-            fXMax = gXMax;
-            fYMin = gYMin;
-            fYMax = gYMax;
-            i = 1;
+            if ( 0 == j || gXMin < fXMin ) fXMin = gXMin;
+            if ( 0 == j || gXMax > fXMax ) fXMax = gXMax;
+            if ( 0 == j || gYMin < fYMin ) fYMin = gYMin;
+            if ( 0 == j || gYMax > fYMax ) fYMax = gYMax;
+            j++;
           }
         }
+        else /* reset the matching status when we draw a glyph out of the rect */
+             /* to avoid incorrect concatenation of the characters around zone */
+             /* boundary. */
+          j = 0;
       }
     }
-    return false;
+    if ( j < len )
+      return false;
 
-  set_found_bbox:
     *xMin = fXMin;
     *xMax = fXMax;
     *yMin = fYMin;
