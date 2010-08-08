@@ -3397,9 +3397,11 @@ GBool TextPage::findText(Unicode *s, int len,
 
   //~ needs to handle right-to-left text
 
+#if 0
   if (rawOrder) {
     return gFalse;
   }
+#endif
 
   // convert the search string to uppercase
   if (!caseSensitive) {
