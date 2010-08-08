@@ -3397,11 +3397,54 @@ GBool TextPage::findText(Unicode *s, int len,
 
   //~ needs to handle right-to-left text
 
-#if 0
   if (rawOrder) {
-    return gFalse;
+    double fXMin, fXMax, fYMin, fYMax;
+    int  i, j;
+    TextWord*  word;
+    bool during_match = false;
+
+    for (word = rawWords; word && word <= rawLastWord; word = word->next) {
+      for (j = 0; j < word->getLength(); ++j) {
+        double gXMin, gXMax, gYMin, gYMax;
+        word->getCharBBox(j, &gXMin, &gYMin, &gXMax, &gYMax);
+        if (*xMin <= gXMin && gXMax <= *xMax && *yMin <= gYMin && gYMax <= *yMax)
+        {
+          if ( during_match )
+          {
+            if ( s[i] == *(word->getChar(j)) ) /* matched, proceed to next char */
+            {
+              if ( gXMin < fXMin ) fXMin = gXMin;
+              if ( gXMax > fXMax ) fXMax = gXMax;
+              if ( gYMin < fYMin ) fYMin = gYMin;
+              if ( gYMax > fYMax ) fYMax = gYMax;
+              i++;
+              if ( i == len ) /* all characters in *s[] are matched */
+                goto set_found_bbox;
+            }
+            else /* unmatched character found */
+              during_match = false;
+          }
+          else if ( s[0] == *(word->getChar(j)) )
+          {
+            during_match = true;
+            fXMin = gXMin;
+            fXMax = gXMax;
+            fYMin = gYMin;
+            fYMax = gYMax;
+            i = 1;
+          }
+        }
+      }
+    }
+    return false;
+
+  set_found_bbox:
+    *xMin = fXMin;
+    *xMax = fXMax;
+    *yMin = fYMin;
+    *yMax = fYMax;
+    return true;
   }
-#endif
 
   // convert the search string to uppercase
   if (!caseSensitive) {
