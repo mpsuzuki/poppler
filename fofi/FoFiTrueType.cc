@@ -444,6 +444,24 @@ int FoFiTrueType::mapNameToGID(char *name) {
   return nameToGID->lookupInt(name);
 }
 
+char* FoFiTrueType::mapGIDToName(Gushort gid) {
+  if (nameToGID) {
+    GooHashIter* iter;
+
+    nameToGID->startIter( &iter );
+    while( iter ) {
+      GooString* key;
+      int val;
+      if ( !nameToGID->getNext( &iter, &key, &val ) )
+        break;
+
+      if ( val == gid )
+        return key->getCString();
+    }
+  }
+  return NULL;
+}
+
 Gushort *FoFiTrueType::getCIDToGIDMap(int *nCIDs) {
   FoFiType1C *ff;
   Gushort *map;

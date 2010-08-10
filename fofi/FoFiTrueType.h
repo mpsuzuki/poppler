@@ -80,6 +80,10 @@ public:
   // font does not have a post table.
   int mapNameToGID(char *name);
 
+  // Returns the name of glyph specified by GID according to the
+  // post table.  Returns NULL if there is no glyph name for GID.
+  char* mapGIDToName(Gushort gid);
+
   // Return the mapping from CIDs to GIDs, and return the number of
   // CIDs in *<nCIDs>.  This is only useful for CID fonts.  (Only
   // useful for OpenType CFF fonts.)
