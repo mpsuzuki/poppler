@@ -1,7 +1,6 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDebug>
 #include <QTextCodec>
-#include <iconv.h>
 
 #include <iostream>
 
@@ -61,9 +60,18 @@ int main( int argc, char **argv )
                              true ) )
           {
             std::cout << "*** Page " << i << ", section (" << x << "," << y << ")" << std::endl;
+#if 0
             std::cout << "         (" << x*w/q << "," << y*h/q << ") - (" << (x+1)*w/q << "," << (y+1)*h/q << ")" << std::endl;
             std::cout << std::flush;
-
+            rect = QRectF( (double)(x*w/q), (double)(y*h/q), (double)(w/q), (double)(h/q) );
+#else
+            std::cout << "         (" << rect.toRect().bottomLeft().x();
+            std::cout << ","          << rect.toRect().bottomLeft().y();
+            std::cout << ") - ("      << rect.toRect().topRight().x();
+            std::cout << ","          << rect.toRect().topRight().y();
+            std::cout << ")" << std::endl;
+#endif
+            rect = QRectF( (double)(x*w/q), (double)(y*h/q), (double)(w/q), (double)(h/q) );
             QByteArray utf8str = page->text( rect, TRUE ).toUtf8();
             for ( j = 0; j < utf8str.size(); j++ )
               std::cout << utf8str[j];
