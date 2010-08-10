@@ -25,13 +25,13 @@ int main( int argc, char **argv )
 
     QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
     QString qstr_key = QString::fromLocal8Bit( argv[3] );
-    QByteArray qstr_utf8 = qstr_key.toUtf8();
+    QByteArray mbcs = qstr_key.toLocal8Bit();
 
     std::cout << "*** given keyword: " << std::flush;
     {
       int j;
-      for ( j = 0; j < qstr_utf8.size(); j++ )
-        std::cout << qstr_utf8[j];
+      for ( j = 0; j < mbcs.size(); j++ )
+        std::cout << mbcs[j];
       std::cout << std::endl;
       std::cout << std::flush;
     }
@@ -72,9 +72,9 @@ int main( int argc, char **argv )
             std::cout << ")" << std::endl;
 #endif
             rect = QRectF( (double)(x*w/q), (double)(y*h/q), (double)(w/q), (double)(h/q) );
-            QByteArray utf8str = page->text( rect, TRUE ).toUtf8();
-            for ( j = 0; j < utf8str.size(); j++ )
-              std::cout << utf8str[j];
+            mbcs = page->text( rect, TRUE ).toLocal8Bit();
+            for ( j = 0; j < mbcs.size(); j++ )
+              std::cout << mbcs[j];
             std::cout << std::endl;
             std::cout << std::flush;
           }
