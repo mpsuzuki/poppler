@@ -1,5 +1,6 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDebug>
+#include <QTextCodec>
 
 #include <iostream>
 
@@ -22,6 +23,8 @@ int main( int argc, char **argv )
 	exit(1);
     }
 
+    QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
+
     int i;
     for ( i = 0; i < doc->numPages(); i++ )
     {
@@ -34,21 +37,13 @@ int main( int argc, char **argv )
                             0,
                             (int)doc->page(i)->pageSizeF().width(),
                             (int)doc->page(i)->pageSizeF().height() );
-#if 0
-      QString text = page->text( rect );
+
+      QByteArray mbcs = page->text( rect, TRUE ).toLocal8Bit();
       std::cout << std::flush;
-      QVector<uint> ucs4str = text.toUcs4();
-      for ( j = 0; j < ucs4str.size(); j++ )
-      {
-        std::cout << "<" << std::hex << ucs4str[j] << std::dec << ">" << std::endl;
-      }
-#else
-      QByteArray utf8str = page->text( rect, TRUE ).toUtf8();
-      std::cout << std::flush;
-      for ( j = 0; j < utf8str.size(); j++ )
-        std::cout << utf8str[j];
+      for ( j = 0; j < mbcs.size(); j++ )
+        std::cout << mbcs[j];
       std::cout << std::endl;
-#endif
+
     }
     delete doc;
 }
