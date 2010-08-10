@@ -3417,6 +3417,8 @@ GBool TextPage::findText(Unicode *s, int len,
             if ( 0 == j || gYMax > fYMax ) fYMax = gYMax;
             j++;
           }
+          else
+            j = 0; /* if mismatched, reset the status */
         }
         else /* reset the matching status when we draw a glyph out of the rect */
              /* to avoid incorrect concatenation of the characters around zone */
@@ -3661,7 +3663,7 @@ GooString *TextPage::getText(double xMin, double yMin,
   if (rawOrder) {
     TextWord*  word;
     char mbc[16]; /* XXX: uMap should know the limit !*/
-    int  mbc_len;
+    int  mbc_len = 0;
 
     for (word = rawWords; word && word <= rawLastWord; word = word->next) {
       for (j = 0; j < word->getLength(); ++j) {
@@ -3673,8 +3675,15 @@ GooString *TextPage::getText(double xMin, double yMin,
           s->append(mbc, mbc_len);
         }
       }
-      mbc_len = uMap->mapUnicode( 0x20, mbc, sizeof(mbc) ); /* space between word */
-      s->append(mbc, mbc_len);
+      /* if we got word break after drawing a glyph in given rect,
+       * we insert a space to indicate word breaking.
+       */
+      if ( mbc_len > 0 )
+      {
+        mbc_len = uMap->mapUnicode( 0x20, mbc, sizeof(mbc) ); /* space between word */
+        s->append(mbc, mbc_len);
+        mbc_len = 0;
+      }
     }
     return s;
   }
