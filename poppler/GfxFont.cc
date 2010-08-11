@@ -159,6 +159,7 @@ GfxFont *GfxFont::makeFont(XRef *xref, char *tagA, Ref idA, Dict *fontDict) {
   }
   obj1.free();
 
+  font->origXRef = xref;
   return font;
 }
 
@@ -175,6 +176,7 @@ GfxFont::GfxFont(char *tagA, Ref idA, GooString *nameA) {
   weight = WeightNotDefined;
   refCnt = 1;
   dfp = NULL;
+  origXRef = NULL;
 }
 
 GfxFont::~GfxFont() {
@@ -208,6 +210,8 @@ void GfxFont::readFontDescriptor(XRef *xref, Dict *fontDict) {
   Object obj1, obj2, obj3, obj4;
   double t;
   int i;
+
+  origXRef = xref;
 
   // assume Times-Roman by default (for substitution purposes)
   flags = fontSerif;
@@ -485,6 +489,7 @@ char *GfxFont::readEmbFontFile(XRef *xref, int *len) {
   Object obj1, obj2;
   Stream *str;
 
+  origXRef = xref;
   obj1.initRef(embFontID.num, embFontID.gen);
   obj1.fetch(xref, &obj2);
   if (!obj2.isStream()) {
@@ -534,6 +539,7 @@ Gfx8BitFont::Gfx8BitFont(XRef *xref, char *tagA, Ref idA, GooString *nameA,
   Object obj1, obj2, obj3;
   int n, i, a, b, m;
 
+  origXRef = xref;
   refCnt = 1;
   type = typeA;
   ctu = NULL;
@@ -1323,6 +1329,7 @@ GfxCIDFont::GfxCIDFont(XRef *xref, char *tagA, Ref idA, GooString *nameA,
   int c1, c2;
   int excepsSize, i, j, k, n;
 
+  origXRef = xref;
   refCnt = 1;
   ascent = 0.95;
   descent = -0.35;
@@ -1771,8 +1778,26 @@ CharCodeToUnicode *GfxCIDFont::getToUnicode() {
   return ctu;
 }
 
-const char *getCharName(CharCode code) {
-  return NULL;
+char *GfxCIDFont::getCharNameForGID(Gushort gid) {
+  switch (this->type)
+  {
+    case fontCIDType0COT:
+    case fontCIDType2:
+    case fontCIDType2OT:
+      Ref embID;
+      if (getEmbeddedFontID(&embID)) {
+        int len;
+        char* buf = readEmbFontFile(origXRef, &len);
+        if ( len > 0 && NULL != buf )
+        { 
+          FoFiTrueType *ffTT = FoFiTrueType::make(buf, len);
+          if (ffTT)
+            return ffTT->mapGIDToName(gid);
+        }
+      }
+    default:
+      return NULL;
+  }
 }
 
 GooString *GfxCIDFont::getCollection() {

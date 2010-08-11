@@ -253,6 +253,7 @@ protected:
   double descent;		// max depth below baseline
   int refCnt;
   GBool ok;
+  XRef *origXRef;		// duplicated when an instance is created.
 };
 
 //------------------------------------------------------------------------
@@ -277,7 +278,6 @@ public:
 
   // Return the character name associated with <code>.
   char *getCharName(int code) { return enc[code]; }
-  char *getCharName(CharCode code) { return enc[code]; }
 
   // Returns true if the PDF font specified an encoding.
   GBool getHasEncoding() { return hasEncoding; }
@@ -337,8 +337,8 @@ public:
   // Return the Unicode map.
   CharCodeToUnicode *getToUnicode();
 
-  // Return the character name associated with <code>.
-  char *getCharName(CharCode code);
+  // Return the character name associated with <gid>.
+  char *getCharNameForGID(Gushort gid);
 
   // Get the collection name (<registry>-<ordering>).
   GooString *getCollection();
