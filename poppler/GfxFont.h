@@ -277,6 +277,7 @@ public:
 
   // Return the character name associated with <code>.
   char *getCharName(int code) { return enc[code]; }
+  char *getCharName(CharCode code) { return enc[code]; }
 
   // Returns true if the PDF font specified an encoding.
   GBool getHasEncoding() { return hasEncoding; }
@@ -335,6 +336,9 @@ public:
 
   // Return the Unicode map.
   CharCodeToUnicode *getToUnicode();
+
+  // Return the character name associated with <code>.
+  char *getCharName(CharCode code);
 
   // Get the collection name (<registry>-<ordering>).
   GooString *getCollection();

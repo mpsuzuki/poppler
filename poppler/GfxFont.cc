@@ -1771,6 +1771,10 @@ CharCodeToUnicode *GfxCIDFont::getToUnicode() {
   return ctu;
 }
 
+const char *getCharName(CharCode code) {
+  return NULL;
+}
+
 GooString *GfxCIDFont::getCollection() {
   return cMap ? cMap->getCollection() : (GooString *)NULL;
 }
