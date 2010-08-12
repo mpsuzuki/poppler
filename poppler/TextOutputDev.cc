@@ -2428,23 +2428,36 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
           GfxFontType gfxFontType = word0->font->gfxFont->getType();
           if( word0->font->gfxFont->isCIDFont() )
           {
-            GfxCIDFont*  gfxCIDFont = (GfxCIDFont*)(word0->font);
+            GfxCIDFont*  gfxCIDFont = (GfxCIDFont*)(word0->font->gfxFont);
             Gushort*     cid2gid = NULL;
             unsigned int cid2gid_len = 0;
   
             if ( gfxFontType == fontCIDType2 || gfxFontType == fontCIDType2OT )
               cid2gid_len = gfxCIDFont->getCIDToGIDLen();
-            if ( cid2gid_len > 0 )
+            if ( cid2gid_len > 0 ) // CIDFontType2 with defined CID interface
               cid2gid = gfxCIDFont->getCIDToGID();
+            else // CIDFontType2 with per-font system, CID == GID
   
             for ( i = 0 ; i < word0->len ; i ++ )
             {
+              Gushort  gid;
+              char* name;
               printf("        <%05X> -> % 5d",
                               word0->text[i],
                               word0->charcode[i] );
+
               if ( cid2gid && word0->charcode[i] < cid2gid_len )
-                printf(" -> % 5d",
-                              cid2gid[word0->charcode[i]] );
+              {
+                gid = cid2gid[word0->charcode[i]];
+                printf(" -> % 5d", gid );
+              }
+              else
+                gid = word0->charcode[i];
+
+              name = gfxCIDFont->getCharNameForGID( gid );
+              if ( name )
+                printf(" -> %s", name );
+
               printf("\n");
             }
           }
