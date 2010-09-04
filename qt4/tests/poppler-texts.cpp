@@ -1,5 +1,6 @@
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDebug>
+#include <QTextCodec>
 
 #include <iostream>
 
@@ -22,19 +23,27 @@ int main( int argc, char **argv )
 	exit(1);
     }
 
-    for ( int i = 0; i < doc->numPages(); i++ )
+    QTextCodec::setCodecForCStrings(QTextCodec::codecForLocale());
+
+    int i;
+    for ( i = 0; i < doc->numPages(); i++ )
     {
       int j = 0;
       std::cout << "*** Page " << i << std::endl;
       std::cout << std::flush;
 
       Poppler::Page *page = doc->page(i);
-      const QByteArray utf8str = page->text( QRectF(), Poppler::Page::RawOrderLayout ).toUtf8();
+      QRectF rect = QRectF( 0,
+                            0,
+                            (int)doc->page(i)->pageSizeF().width(),
+                            (int)doc->page(i)->pageSizeF().height() );
+
+      QByteArray mbcs = page->text( rect, TRUE ).toLocal8Bit();
       std::cout << std::flush;
-      for ( j = 0; j < utf8str.size(); j++ )
-        std::cout << utf8str[j];
+      for ( j = 0; j < mbcs.size(); j++ )
+        std::cout << mbcs[j];
       std::cout << std::endl;
-      delete page;
+
     }
     delete doc;
 }
