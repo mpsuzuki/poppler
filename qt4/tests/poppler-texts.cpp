@@ -6,6 +6,15 @@
 
 #include <poppler-qt4.h>
 
+void
+stdcout_qbytearray( QByteArray  mbcs )
+{
+    std::cout << std::flush;
+    for ( int j = 0; j < mbcs.size(); j++ )
+        std::cout << mbcs[j];
+    std::cout << std::endl;
+}
+
 int main( int argc, char **argv )
 {
     QCoreApplication a( argc, argv );               // QApplication required!
@@ -34,31 +43,22 @@ int main( int argc, char **argv )
     int i;
     for ( i = 0; i < doc->numPages(); i++ )
     {
-      QByteArray mbcs;
+        QByteArray mbcs;
 
-      mbcs = QString::fromAscii("*** Page ").toLocal8Bit();
-      std::cout << std::flush;
-      for ( int j = 0; j < mbcs.size(); j++ )
-        std::cout << mbcs[j];
-      std::cout << std::endl;
+        mbcs = QString::fromAscii("*** Page ").toLocal8Bit();
+        stdcout_qbytearray( mbcs );
 
-      mbcs = QString::number(i).toLocal8Bit();
-      std::cout << std::flush;
-      for ( int j = 0; j < mbcs.size(); j++ )
-        std::cout << mbcs[j];
-      std::cout << std::endl;
+        mbcs = QString::number(i).toLocal8Bit();
+        stdcout_qbytearray( mbcs );
 
-      Poppler::Page *page = doc->page(i);
-      QRectF rect = QRectF( 0,
-                            0,
-                            (int)doc->page(i)->pageSizeF().width(),
-                            (int)doc->page(i)->pageSizeF().height() );
+        Poppler::Page *page = doc->page(i);
+        QRectF rect = QRectF( 0,
+                              0,
+                              (int)doc->page(i)->pageSizeF().width(),
+                              (int)doc->page(i)->pageSizeF().height() );
 
-      mbcs = page->text( rect, layout ).toLocal8Bit();
-      std::cout << std::flush;
-      for ( int j = 0; j < mbcs.size(); j++ )
-        std::cout << mbcs[j];
-      std::cout << std::endl;
+        mbcs = page->text( rect, layout ).toLocal8Bit();
+        stdcout_qbytearray( mbcs );
 
     }
     delete doc;
