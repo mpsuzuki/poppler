@@ -9,7 +9,9 @@ INCLUDES = 					\
 AM_LDFLAGS = @auto_import_flags@
 
 if BUILD_GTK_TEST
-noinst_PROGRAMS = poppler-glib-demo
+noinst_PROGRAMS = 				\
+	poppler-glib-demo 			\
+	poppler-glib-get-text
 endif
 
 poppler_glib_demo_SOURCES = 			\
@@ -49,7 +51,13 @@ poppler_glib_demo_SOURCES = 			\
 	utils.h					\
 	utils.c
 
+poppler_glib_get_text_SOURCES =			\
+	poppler-glib-get-text.c
+
 LDADD =						\
 	$(top_builddir)/glib/libpoppler-glib.la	\
 	$(top_builddir)/poppler/libpoppler.la	\
 	$(GTK_TEST_LIBS)
+
+CCLD = $(CXXLD)
+LDFLAGS = -static -lstdc++
