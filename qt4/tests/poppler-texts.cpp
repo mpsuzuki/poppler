@@ -15,6 +15,12 @@ stdcout_qbytearray( QByteArray  mbcs )
     std::cout << std::endl;
 }
 
+void
+stdcout_qstring( QString  qstr )
+{
+    stdcout_qbytearray( qstr.toLocal8Bit() );
+}
+
 int main( int argc, char **argv )
 {
     QCoreApplication a( argc, argv );               // QApplication required!
@@ -25,7 +31,8 @@ int main( int argc, char **argv )
         (argc == 3 && strcmp(argv[2], "-raw") != 0 ) ||
          argc > 3)
     {
-	qWarning() << QString::fromAscii( "usage: poppler-texts filename [-raw]" ).toLocal8Bit();
+	qWarning() << QString::fromAscii(
+            "usage: poppler-texts filename [-raw]").toLocal8Bit();
 	exit(1);
     }
   
@@ -36,30 +43,21 @@ int main( int argc, char **argv )
     Poppler::Document *doc = Poppler::Document::load(argv[1]);
     if (!doc)
     {
-	qWarning() << QString::fromAscii( "doc not loaded" ).toLocal8Bit();
+	qWarning() << QString::fromAscii("doc not loaded").toLocal8Bit();
 	exit(1);
     }
 
     int i;
     for ( i = 0; i < doc->numPages(); i++ )
     {
-        QByteArray mbcs;
-
-        mbcs = QString::fromAscii("*** Page ").toLocal8Bit();
-        stdcout_qbytearray( mbcs );
-
-        mbcs = QString::number(i).toLocal8Bit();
-        stdcout_qbytearray( mbcs );
-
+        stdcout_qstring( QString::fromAscii("*** Page ") );
+        stdcout_qstring( QString::number(i) );
         Poppler::Page *page = doc->page(i);
         QRectF rect = QRectF( 0,
                               0,
                               (int)doc->page(i)->pageSizeF().width(),
                               (int)doc->page(i)->pageSizeF().height() );
-
-        mbcs = page->text( rect, layout ).toLocal8Bit();
-        stdcout_qbytearray( mbcs );
-
+        stdcout_qstring( page->text( rect, layout ) );
     }
     delete doc;
 }
