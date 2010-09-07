@@ -31,16 +31,22 @@ extern char *optarg;
 extern int optind, optopt, opterr;
 
 
-
 int main (int argc, char **argv)
 {
-  double            resolution = 72;
-  double            xoffset    = 0;
-  double            yoffset    = 0;
-  double            width      = 0;
-  double            height     = 0;
-  int               firstpage  = 0;
-  int               lastpage   = 0;
+  double  resolution = 72;
+  double  xoffset    = 0;
+  double  yoffset    = 0;
+  double  width      = 0;
+  double  height     = 0;
+  int     firstpage  = 0;
+  int     lastpage   = 0;
+  static int  rawOrder   = 0;
+  int     option_index;
+  static struct option long_options[] = {
+   {"raw", no_argument, &rawOrder, 1},
+   {0, 0, 0, 0}
+  };
+
 
   PopplerDocument  *document;
   PopplerRectangle  rect;
@@ -51,10 +57,14 @@ int main (int argc, char **argv)
   {
     int  c;
 
-    while ( -1 != ( c = getopt( argc, argv, ":r:x:y:W:H:f:l:" ) ) )
+    /* while ( -1 != ( c = getopt( argc, argv, ":r:x:y:W:H:f:l:" ) ) ) */
+    while ( -1 != ( c = getopt_long( argc, argv, ":r:x:y:W:H:f:l:", long_options, &option_index ) ) ) 
     {
       switch( c )
       {
+      case 0:
+      case 1:
+        break;
       case 'f': /* first page */
         firstpage = atoi( optarg ) - 1;
         break;
@@ -160,7 +170,10 @@ int main (int argc, char **argv)
       page = poppler_document_get_page( document, pg );
       if ( rect.x1 == 0 && rect.y1 == 0 && rect.x2 == 0 && rect.y2 == 0 )
         poppler_page_get_size( page, &(rect.x2), &(rect.y2) );
-      gottext = poppler_page_get_text( page );
+      if (rawOrder > 0)
+        gottext = poppler_page_get_selected_raw_text(page, POPPLER_SELECTION_GLYPH, &rect);
+      else
+        gottext = poppler_page_get_selected_text(page, POPPLER_SELECTION_GLYPH, &rect);
       printf( "[Page %d]:[%s]\n", pg, gottext );
     }
   }
