@@ -986,6 +986,81 @@ poppler_page_get_text (PopplerPage *page)
 }
 
 /**
+ * poppler_page_get_selected_raw_text:
+ * @page: a #PopplerPage
+ * @style: a #PopplerSelectionStyle
+ * @selection: the #PopplerRectangle including the text
+ *
+ * Retrieves the contents of the specified @selection as raw text.
+ *
+ * Return value: a pointer to the contents of the @selection
+ *               as a string
+ * Since: 0.16
+ **/
+char *
+poppler_page_get_selected_raw_text (PopplerPage          *page,
+				    PopplerSelectionStyle style,
+				    PopplerRectangle     *selection)
+{
+  GooString *sel_text;
+  char *result;
+  SelectionStyle selection_style;
+  PopplerRectangle cropBox;
+
+  g_return_val_if_fail (POPPLER_IS_PAGE (page), FALSE);
+  g_return_val_if_fail (selection != NULL, NULL);
+
+  switch (style)
+    {
+      case POPPLER_SELECTION_WORD:
+        selection_style = selectionStyleWord;
+	break;
+      case POPPLER_SELECTION_GLYPH:
+      case POPPLER_SELECTION_LINE: /* in raw text, line is not defined */
+      default:
+        selection_style = selectionStyleGlyph;
+	break;
+    }
+
+  TextOutputDev *raw_text_dev = new TextOutputDev (NULL,
+						   gFalse,
+						   gTrue,	/* raw mode */
+						   gFalse);
+  page->document->doc->displayPageSlice(raw_text_dev,
+					 page->index + 1,
+					 72,
+					 72,
+					 0,
+					 false,
+					 true,
+					 false,
+					 -1,
+					 -1,
+					 -1,
+					 -1);
+
+  if (selection->x1 == 0 && selection->y1 == 0 &&
+      selection->x2 == 0 && selection->y2 == 0)
+  {
+    poppler_page_get_crop_box( page, &cropBox );
+    sel_text = raw_text_dev->getText(cropBox.x1,
+				     cropBox.y1,
+				     cropBox.x2,
+				     cropBox.y2);
+  }
+  else
+    sel_text = raw_text_dev->getText(selection->x1,
+				     selection->y1,
+				     selection->x2,
+				     selection->y2);
+
+  result = g_strdup (sel_text->getCString ());
+  delete sel_text;
+
+  return result;
+}
+
+/**
  * poppler_page_find_text:
  * @page: a #PopplerPage
  * @text: the text to search for (UTF-8 encoded)
