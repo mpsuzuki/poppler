@@ -2466,11 +2466,14 @@ void TextPage::coalesce(GBool physLayout, GBool doHTML) {
             char** enc = ((Gfx8BitFont *)(word0->font->gfxFont))->getEncoding();
             if ( enc )
               for ( i = 0; i < word0->len ; i ++ )
-                if ( enc[word0->charcode[i]] )
-                  printf("        <%05X> -> <%02X> -> /%s\n",
-                                  word0->text[i],
-                                  word0->charcode[i],
-                                  enc[word0->charcode[i]] );
+              {
+                printf("        <%05X> -> <%02X> -> ",
+                                word0->text[i], word0->charcode[i] );
+                if ( word0->charcode[i] < 256 && enc[word0->charcode[i]] )
+                  printf("/%s\n", enc[word0->charcode[i]] );
+                else
+                  printf("(noname, out of Encoding[])\n");
+              }
           }
         }
       }
