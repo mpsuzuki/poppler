@@ -547,6 +547,23 @@ AC_ARG_ENABLE(utils,
               enable_utils="yes")
 AM_CONDITIONAL(BUILD_UTILS, test x$enable_utils = xyes)
 
+AC_ARG_ENABLE(readline,
+              AC_HELP_STRING([--enable-readline],
+                             [Add readline interface to poppler-utils.]),
+              enable_readline=$enableval,
+              enable_readline=no)
+if test x$enable_readline = xyes; then
+  AC_CHECK_HEADERS([readline/readline.h],
+    AC_CHECK_LIB([readline], [readline],
+      AC_DEFINE(HAVE_READLINE, [1], [GNU readline or compatible is available])
+      READLINE_LIBS="-lreadline"
+    )
+  )
+fi
+AC_SUBST(READLINE_LIBS)
+AM_CONDITIONAL(BUILD_READLINE, test x${READLINE_LIBS} != x)
+AC_CHECK_HEADERS([libgen.h])
+
 AC_ARG_ENABLE(compile-warnings,
               AC_HELP_STRING([--enable-compile-warnings=@<:@no/yes/kde@:>@]
                              [Turn on compiler warnings.]),,
@@ -655,6 +672,7 @@ echo "  use libcurl:        $enable_libcurl"
 echo "  use libopenjpeg:    $enable_libopenjpeg"
 echo "  use cms:            $enable_cms"
 echo "  command line utils: $enable_utils"
+echo "    use readline:     $enable_readline"
 echo ""
 
 if test x$enable_splash_output = xno -a x$enable_cairo_output = xno; then

@@ -39,6 +39,11 @@ pdftocairo_binary = pdftocairo
 
 pdftocairo_manpage = pdftocairo.1
 
+if BUILD_READLINE
+# pdftocairo_SOURCES += interactive.cc
+pdftocairo_LDADD += $(READLINE_LIBS)
+endif
+
 endif
 
 AM_LDFLAGS = @auto_import_flags@
