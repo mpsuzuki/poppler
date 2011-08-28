@@ -62,6 +62,9 @@
 #if CAIRO_HAS_SVG_SURFACE
 #include <cairo-svg.h>
 #endif
+#if HAVE_READLINE
+#include "interactive.h"
+#endif
 
 
 static GBool png = gFalse;
@@ -70,6 +73,10 @@ static GBool ps = gFalse;
 static GBool eps = gFalse;
 static GBool pdf = gFalse;
 static GBool svg = gFalse;
+#if HAVE_READLINE
+static GBool interactive = gFalse;
+static char* history_filename = NULL;
+#endif
 
 static int firstPage = 1;
 static int lastPage = 0;
@@ -133,6 +140,10 @@ static const ArgDesc argDesc[] = {
 #if CAIRO_HAS_SVG_SURFACE
   {"-svg",    argFlag,     &svg,           0,
    "generate a Scalable Vector Graphics (SVG) file"},
+#endif
+#ifdef HAVE_READLINE
+  {"-interactive", argFlag, &interactive,  0,
+   "run in interactive mode"},
 #endif
 
   {"-f",      argInt,      &firstPage,     0,
@@ -704,12 +715,24 @@ int main(int argc, char *argv[]) {
   GooString *outputName = NULL;
   GooString *outputFileName = NULL;
   GooString *imageFileName = NULL;
-  GooString *ownerPW, *userPW;
-  CairoOutputDev *cairoOut;
+  GooString *ownerPW = NULL, *userPW = NULL;
+  CairoOutputDev *cairoOut = NULL;
   int pg, pg_num_len;
   double pg_w, pg_h, tmp, output_w, output_h;
   int num_outputs;
+  GBool reuseCairoOut = gFalse;
+#if HAVE_READLINE
+  int org_argc, num_tok;
+  char **org_argv, **tok;
+  char *rlbuff = NULL, *prompt = NULL;
+#endif
 
+#if HAVE_READLINE
+  org_argc = argc;
+  org_argv = (char**)malloc(sizeof(char*) * argc);
+  if (org_argv)
+    memcpy(org_argv, argv, sizeof(char*) * argc);
+#endif
   // parse args
   if (!parseArgs(argDesc, &argc, argv))
     exit(99);
@@ -847,12 +870,44 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
+#if HAVE_READLINE
+  /* init interactive mode */
+  if (interactive) {
+    init_readline_history( basename( org_argv[0] ), &history_filename );
+    prompt = stralloc_cat2( basename( org_argv[0] ), ">" );
+  }
+
+  /* read command from CLI */
+  if (interactive) {
+    rlbuff = read_command_from_readline( prompt, history_filename, &num_tok, &tok );
+    if (2 > num_tok || !parseArgs(argDesc, &num_tok, tok))
+      exit(99);
+  }
+
+update_output: 
+  if (interactive) {
+    /* in interactive mode, input PDF is fixed, only output may be changed */
+    if (num_tok > 1)
+    {
+      reuseCairoOut = gFalse;
+      if (cairoOut) {
+        endDocument();
+        delete cairoOut;
+      }
+      outputName = new GooString(tok[1]);
+    }
+    else
+      reuseCairoOut = gTrue; /* use existing cairoOutput */
+  }
+  else
+#endif
   if (argc == 3)
     outputName = new GooString(argv[2]);
   else
     outputName = NULL;
 
-  outputFileName = getOutputFileName(fileName, outputName);
+  if (!reuseCairoOut)
+    outputFileName = getOutputFileName(fileName, outputName);
 
 #if USE_CMS
   icc_data = NULL;
@@ -908,8 +963,10 @@ int main(int argc, char *argv[]) {
   if ((printOnlyEven && firstPage % 2 == 0) || (printOnlyOdd && firstPage % 2 == 1))
     firstPage++;
 
-  cairoOut = new CairoOutputDev();
-  cairoOut->startDoc(doc->getXRef(), doc->getCatalog());
+  if (!reuseCairoOut) {
+    cairoOut = new CairoOutputDev();
+    cairoOut->startDoc(doc->getXRef(), doc->getCatalog());
+  }
   if (sz != 0)
     crop_w = crop_h = sz;
   pg_num_len = numberOfCharacters(doc->getNumPages());
@@ -955,12 +1012,35 @@ int main(int argc, char *argv[]) {
       imageFileName = getImageFileName(outputFileName, pg_num_len, pg);
     getOutputSize(pg_w, pg_h, &output_w, &output_h);
 
-    if (pg == firstPage)
+    if (pg == firstPage && !reuseCairoOut)
       beginDocument(outputFileName, output_w, output_h);
     beginPage(output_w, output_h);
     renderPage(doc, cairoOut, pg, pg_w, pg_h, output_w, output_h);
     endPage(imageFileName);
   }
+
+#if HAVE_READLINE
+  if (interactive) {
+    if (tok)
+      free(tok);
+    if (rlbuff)
+      free(rlbuff);
+    rlbuff = read_command_from_readline( prompt, history_filename, &num_tok, &tok );
+    if (num_tok > 1 && parseArgs(argDesc, &num_tok, tok))
+      goto update_output;
+
+    fprintf( stderr, "\nExit interactive mode.\n" );
+    if (tok)
+      free(tok);
+    if (rlbuff)
+      free(rlbuff);
+    if (prompt)
+      free(prompt);
+    if (history_filename)
+      free(history_filename);
+  }
+#endif
+
   endDocument();
 
   // clean up
@@ -984,6 +1064,11 @@ int main(int argc, char *argv[]) {
   cmsCloseProfile(profile);
   if (icc_data)
     gfree(icc_data);
+#endif
+
+#if HAVE_READLINE
+  if (org_argv)
+    free(org_argv);
 #endif
 
   // check for memory leaks
