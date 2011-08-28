@@ -833,6 +833,20 @@ int main(int argc, char *argv[]) {
     delete fileName;
     fileName = new GooString("fd://0");
   }
+  doc = PDFDocFactory().createPDFDoc(*fileName, ownerPW, userPW);
+  if (!doc->isOk()) {
+    fprintf(stderr, "Error opening PDF file.\n");
+    exit(1);
+  }
+
+#ifdef ENFORCE_PERMISSIONS
+  // check for print permission
+  if (printing && !doc->okToPrint()) {
+    fprintf(stderr, "Printing this document is not allowed.\n");
+    exit(3);
+  }
+#endif
+
   if (argc == 3)
     outputName = new GooString(argv[2]);
   else
@@ -866,20 +880,6 @@ int main(int argc, char *argv[]) {
     profile = cmsCreate_sRGBProfile();
   }
   GfxColorSpace::setDisplayProfile(profile);
-#endif
-
-  doc = PDFDocFactory().createPDFDoc(*fileName, ownerPW, userPW);
-  if (!doc->isOk()) {
-    fprintf(stderr, "Error opening PDF file.\n");
-    exit(1);
-  }
-
-#ifdef ENFORCE_PERMISSIONS
-  // check for print permission
-  if (printing && !doc->okToPrint()) {
-    fprintf(stderr, "Printing this document is not allowed.\n");
-    exit(3);
-  }
 #endif
 
   // get page range
