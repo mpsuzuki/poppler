@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
   GooString *fileName = NULL;
   char *ppmRoot = NULL;
   char ppmFile[PPM_FILE_SZ];
-  GooString *ownerPW, *userPW;
+  GooString *ownerPW = NULL, *userPW = NULL;
   SplashColor paperColor;
   SplashOutputDev *splashOut;
   GBool ok;
@@ -257,15 +257,8 @@ int main(int argc, char *argv[]) {
 
   // parse args
   ok = parseArgs(argDesc, &argc, argv);
-  if (mono && gray) {
-    ok = gFalse;
-  }
-  if ( resolution != 0.0 &&
-       (x_resolution == 150.0 ||
-        y_resolution == 150.0)) {
-    x_resolution = resolution;
-    y_resolution = resolution;
-  }
+  if (argc > 1) fileName = new GooString(argv[1]);
+ 
   if (!ok || argc > 3 || printVersion || printHelp) {
     fprintf(stderr, "pdftoppm version %s\n", PACKAGE_VERSION);
     fprintf(stderr, "%s\n", popplerCopyright);
@@ -276,29 +269,6 @@ int main(int argc, char *argv[]) {
     if (printVersion || printHelp)
       exitCode = 0;
     goto err0;
-  }
-  if (argc > 1) fileName = new GooString(argv[1]);
-  if (argc == 3) ppmRoot = argv[2];
-
-  // read config file
-  globalParams = new GlobalParams();
-  if (enableFreeTypeStr[0]) {
-    if (!globalParams->setEnableFreeType(enableFreeTypeStr)) {
-      fprintf(stderr, "Bad '-freetype' value on command line\n");
-    }
-  }
-  if (antialiasStr[0]) {
-    if (!globalParams->setAntialias(antialiasStr)) {
-      fprintf(stderr, "Bad '-aa' value on command line\n");
-    }
-  }
-  if (vectorAntialiasStr[0]) {
-    if (!globalParams->setVectorAntialias(vectorAntialiasStr)) {
-      fprintf(stderr, "Bad '-aaVector' value on command line\n");
-    }
-  }
-  if (quiet) {
-    globalParams->setErrQuiet(quiet);
   }
 
   // open PDF file
@@ -349,6 +319,39 @@ int main(int argc, char *argv[]) {
         lastPage + 1 - firstPage);
     }
     lastPage = firstPage;
+  }
+
+  if (argc == 3) ppmRoot = argv[2];
+
+  if (mono && gray) {
+    ok = gFalse;
+  }
+  if ( resolution != 0.0 &&
+       (x_resolution == 150.0 ||
+        y_resolution == 150.0)) {
+    x_resolution = resolution;
+    y_resolution = resolution;
+  }
+
+  // read config file
+  globalParams = new GlobalParams();
+  if (enableFreeTypeStr[0]) {
+    if (!globalParams->setEnableFreeType(enableFreeTypeStr)) {
+      fprintf(stderr, "Bad '-freetype' value on command line\n");
+    }
+  }
+  if (antialiasStr[0]) {
+    if (!globalParams->setAntialias(antialiasStr)) {
+      fprintf(stderr, "Bad '-aa' value on command line\n");
+    }
+  }
+  if (vectorAntialiasStr[0]) {
+    if (!globalParams->setVectorAntialias(vectorAntialiasStr)) {
+      fprintf(stderr, "Bad '-aaVector' value on command line\n");
+    }
+  }
+  if (quiet) {
+    globalParams->setErrQuiet(quiet);
   }
 
   // write PPM files
