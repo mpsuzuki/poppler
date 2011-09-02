@@ -8,6 +8,11 @@ pdftoppm_binary = pdftoppm
 
 pdftoppm_manpage = pdftoppm.1
 
+if BUILD_READLINE
+pdftoppm_SOURCES += interactive.cc
+pdftoppm_LDADD = $(LDADD) $(READLINE_LIBS)
+endif
+
 endif
 
 INCLUDES =					\
