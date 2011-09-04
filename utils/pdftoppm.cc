@@ -321,6 +321,9 @@ int main(int argc, char *argv[]) {
     lastPage = firstPage;
   }
 
+  // read config file
+  globalParams = new GlobalParams();
+
   if (argc == 3) ppmRoot = argv[2];
 
   if (mono && gray) {
@@ -333,8 +336,7 @@ int main(int argc, char *argv[]) {
     y_resolution = resolution;
   }
 
-  // read config file
-  globalParams = new GlobalParams();
+  // update config by CLI options
   if (enableFreeTypeStr[0]) {
     if (!globalParams->setEnableFreeType(enableFreeTypeStr)) {
       fprintf(stderr, "Bad '-freetype' value on command line\n");
