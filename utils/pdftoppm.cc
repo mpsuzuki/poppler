@@ -48,6 +48,9 @@
 #include "splash/SplashBitmap.h"
 #include "splash/Splash.h"
 #include "SplashOutputDev.h"
+#if HAVE_READLINE
+#include "interactive.h"
+#endif
 
 #define PPM_FILE_SZ 512
 
@@ -86,6 +89,10 @@ static char TiffCompressionStr[16] = "";
 static GBool quiet = gFalse;
 static GBool printVersion = gFalse;
 static GBool printHelp = gFalse;
+#if HAVE_READLINE
+static GBool interactive = gFalse;
+static char* history_filename = NULL;
+#endif
 
 static const ArgDesc argDesc[] = {
   {"-f",      argInt,      &firstPage,     0,
@@ -154,6 +161,10 @@ static const ArgDesc argDesc[] = {
 #if HAVE_FREETYPE_FREETYPE_H | HAVE_FREETYPE_H
   {"-freetype",   argString,      enableFreeTypeStr, sizeof(enableFreeTypeStr),
    "enable FreeType font rasterizer: yes, no"},
+#endif
+#ifdef HAVE_READLINE
+  {"-interactive", argFlag, &interactive,  0,
+   "run in interactive mode"},
 #endif
   
   {"-aa",         argString,      antialiasStr,   sizeof(antialiasStr),
@@ -252,10 +263,22 @@ int main(int argc, char *argv[]) {
   int exitCode;
   int pg, pg_num_len;
   double pg_w, pg_h, tmp;
+#if HAVE_READLINE
+  int org_argc, num_tok;
+  char **org_argv, **tok;
+  char *rlbuff = NULL, *prompt = NULL;
+#endif
+
 
   exitCode = 99;
 
   // parse args
+#if HAVE_READLINE
+  org_argc = argc;
+  org_argv = (char**)malloc(sizeof(char*) * argc);
+  if (org_argv)
+    memcpy(org_argv, argv, sizeof(char*) * argc);
+#endif
   ok = parseArgs(argDesc, &argc, argv);
   if (argc > 1) fileName = new GooString(argv[1]);
  
@@ -324,6 +347,30 @@ int main(int argc, char *argv[]) {
   // read config file
   globalParams = new GlobalParams();
 
+#if HAVE_READLINE
+  /* init interactive mode */
+  if (interactive) {
+    init_readline_history( basename( org_argv[0] ), &history_filename );
+    prompt = stralloc_cat2( basename( org_argv[0] ), ">" );
+  }
+
+  /* read command from CLI */
+  if (interactive) {
+    rlbuff = read_command_from_readline( prompt, history_filename, &num_tok, &tok );
+    if (2 > num_tok || !parseArgs(argDesc, &num_tok, tok))
+      exit(99);
+  }
+
+update_output:
+  if (interactive) {
+    /* in interactive mode, input PDF is fixed, only output may be changed */
+    if (num_tok > 1)
+      ppmRoot = tok[1];
+    else
+      exit(99);
+  }
+  else
+#endif
   if (argc == 3) ppmRoot = argv[2];
 
   if (mono && gray) {
@@ -425,6 +472,28 @@ int main(int argc, char *argv[]) {
   }
   delete splashOut;
 
+#if HAVE_READLINE
+  if (interactive) {
+    if (tok)
+      free(tok);
+    if (rlbuff)
+      free(rlbuff);
+    rlbuff = read_command_from_readline( prompt, history_filename, &num_tok, &tok );
+    if (num_tok > 1 && parseArgs(argDesc, &num_tok, tok))
+      goto update_output;
+
+    fprintf( stderr, "\nExit interactive mode.\n" );
+    if (tok)
+      free(tok);
+    if (rlbuff)
+      free(rlbuff);
+    if (prompt)
+      free(prompt);
+    if (history_filename)
+      free(history_filename);
+  }
+#endif
+
   exitCode = 0;
 
   // clean up
@@ -432,6 +501,11 @@ int main(int argc, char *argv[]) {
   delete doc;
   delete globalParams;
  err0:
+
+#if HAVE_READLINE
+  if (org_argv)
+    free(org_argv);
+#endif
 
   // check for memory leaks
   Object::memCheck(stderr);
