@@ -745,16 +745,29 @@ GlobalParams::GlobalParams(const char *customPopplerDataDir)
   scanEncodingDirs();
 }
 
+GooString* GlobalParams::getEncodingMapDir(GlobalParams::EncodingMapType mapType) {
+  const char *dataRoot = popplerDataDir ? popplerDataDir : POPPLER_DATADIR;
+  GooString  *gDataRoot = new GooString(dataRoot);
+
+  switch(mapType) {
+  case EncodingNameToUnicode: return gDataRoot->append("/" DIRNAME_NAMETOUNICODE);
+  case EncodingCIDToUnicode: return gDataRoot->append("/" DIRNAME_CIDTOUNICODE);
+  case EncodingUnicodeMap: return gDataRoot->append("/" DIRNAME_UNICODEMAP);
+  case EncodingCMap: return gDataRoot->append("/" DIRNAME_CMAP);
+  }
+  return NULL;
+}
+
 void GlobalParams::scanEncodingDirs() {
   GDir *dir;
   GDirEntry *entry;
   const char *dataRoot = popplerDataDir ? popplerDataDir : POPPLER_DATADIR;
   
   // allocate buffer large enough to append "/nameToUnicode"
-  size_t bufSize = strlen(dataRoot) + strlen("/nameToUnicode") + 1;
+  size_t bufSize = strlen(dataRoot) + strlen(DIRNAME_NAMETOUNICODE) + 1;
   char *dataPathBuffer = new char[bufSize];
   
-  snprintf(dataPathBuffer, bufSize, "%s/nameToUnicode", dataRoot);
+  snprintf(dataPathBuffer, bufSize, "%s/" DIRNAME_NAMETOUNICODE, dataRoot);
   dir = new GDir(dataPathBuffer, gTrue);
   while (entry = dir->getNextEntry(), entry != NULL) {
     if (!entry->isDir()) {
@@ -764,7 +777,7 @@ void GlobalParams::scanEncodingDirs() {
   }
   delete dir;
 
-  snprintf(dataPathBuffer, bufSize, "%s/cidToUnicode", dataRoot);
+  snprintf(dataPathBuffer, bufSize, "%s/" DIRNAME_CIDTOUNICODE, dataRoot);
   dir = new GDir(dataPathBuffer, gFalse);
   while (entry = dir->getNextEntry(), entry != NULL) {
     addCIDToUnicode(entry->getName(), entry->getFullPath());
@@ -772,7 +785,7 @@ void GlobalParams::scanEncodingDirs() {
   }
   delete dir;
 
-  snprintf(dataPathBuffer, bufSize, "%s/unicodeMap", dataRoot);
+  snprintf(dataPathBuffer, bufSize, "%s/" DIRNAME_UNICODEMAP, dataRoot);
   dir = new GDir(dataPathBuffer, gFalse);
   while (entry = dir->getNextEntry(), entry != NULL) {
     addUnicodeMap(entry->getName(), entry->getFullPath());
@@ -780,7 +793,7 @@ void GlobalParams::scanEncodingDirs() {
   }
   delete dir;
 
-  snprintf(dataPathBuffer, bufSize, "%s/cMap", dataRoot);
+  snprintf(dataPathBuffer, bufSize, "%s/" DIRNAME_CMAP, dataRoot);
   dir = new GDir(dataPathBuffer, gFalse);
   while (entry = dir->getNextEntry(), entry != NULL) {
     addCMapDir(entry->getName(), entry->getFullPath());
