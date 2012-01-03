@@ -1423,7 +1423,10 @@ GfxCIDFont::GfxCIDFont(XRef *xref, char *tagA, Ref idA, GooString *nameA,
 	};
 	for (size_t i = 0; i < sizeof(knownCollections)/sizeof(knownCollections[0]); i++) {
 	  if (collection->cmp(knownCollections[i]) == 0) {
-	    error(-1, "Missing language pack for '%s' mapping", collection->getCString());
+            GooString*  cidToUnicodeMapDir = globalParams->getEncodingMapDir(GlobalParams::EncodingCIDToUnicode);
+	    error(-1, "Missing language pack in '%s' for '%s' mapping",
+                       cidToUnicodeMapDir->getCString(), collection->getCString());
+            delete cidToUnicodeMapDir;
 	    delete collection;
 	    goto err2;
 	  }
