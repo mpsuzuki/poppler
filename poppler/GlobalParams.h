@@ -65,6 +65,25 @@ class WinFontList;
 #endif
 
 //------------------------------------------------------------------------
+// locations of mapping files.
+
+#ifndef DIRNAME_NAMETOUNICODE
+#define DIRNAME_NAMETOUNICODE "nameToUnicode"
+#endif
+
+#ifndef DIRNAME_CIDTOUNICODE
+#define DIRNAME_CIDTOUNICODE  "cidToUnicode"
+#endif
+
+#ifndef DIRNAME_UNICODEMAP
+#define DIRNAME_UNICODEMAP    "unicodeMap"
+#endif
+
+#ifndef DIRNAME_CMAP
+#define DIRNAME_CMAP          "cMap"
+#endif
+
+//------------------------------------------------------------------------
 
 // The global parameters object.
 extern GlobalParams *globalParams;
@@ -230,6 +249,16 @@ public:
 #endif
 
   GooList *getEncodingNames();
+
+  //----- accessors for configuration info
+  enum EncodingMapType {
+    EncodingNameToUnicode,
+    EncodingCIDToUnicode,
+    EncodingUnicodeMap,
+    EncodingCMap
+  };
+  GooString *getEncodingMapDir(EncodingMapType mapType);
+
 
   //----- functions to set parameters
   void setPSExpandSmaller(GBool expand);
