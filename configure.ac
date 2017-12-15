@@ -1,5 +1,5 @@
 m4_define([poppler_version_major],[0])
-m4_define([poppler_version_minor],[59])
+m4_define([poppler_version_minor],[62])
 m4_define([poppler_version_micro],[0])
 m4_define([poppler_version],[poppler_version_major.poppler_version_minor.poppler_version_micro])
 
@@ -738,63 +738,6 @@ AC_SUBST(POPPLER_GLIB_DISABLE_SINGLE_INCLUDES)
 GTK_DOC_CHECK([1.14],[--flavour no-tmpl])
 
 dnl 
-dnl Try Qt4
-dnl
-
-AC_ARG_ENABLE(poppler-qt4,
-              AC_HELP_STRING([--disable-poppler-qt4],
-	                     [Don't compile poppler Qt4 wrapper.]),
-              enable_poppler_qt4=$enableval,
-              enable_poppler_qt4="try")
-if test x$enable_poppler_qt4 = xyes; then
-  PKG_CHECK_MODULES(POPPLER_QT4, 
-	            QtCore >= 4.7.0 QtGui >= 4.7.0 QtXml >= 4.7.0)
-  PKG_CHECK_MODULES(POPPLER_QT4_TEST, 
-	            QtTest >= 4.7.0)
-elif test x$enable_poppler_qt4 = xtry; then
-  PKG_CHECK_MODULES(POPPLER_QT4,
-                    QtCore >= 4.7.0 QtGui >= 4.7.0 QtXml >= 4.7.0,
-                    [enable_poppler_qt4="yes"],
-                    [enable_poppler_qt4="no"])
-  if test x$enable_poppler_qt4 = xyes; then
-    PKG_CHECK_MODULES(POPPLER_QT4_TEST,
-                    QtTest >= 4.7.0,
-                    [enable_poppler_qt4="yes"],
-                    [enable_poppler_qt4="no"])
-  fi
-fi
-
-AC_SUBST(POPPLER_QT4_CXXFLAGS)
-AC_SUBST(POPPLER_QT4_LIBS)
-AC_SUBST(POPPLER_QT4_TEST_LIBS)
-
-if test x$enable_poppler_qt4 = xyes; then
-  AC_CHECK_TOOL(MOCQT4, moc)
-  AC_MSG_CHECKING([for Qt4 moc])
-  mocversion=`$MOCQT4 -v 2>&1`
-  mocversiongrep=`echo $mocversion | grep "Qt 4"`
-  if test x"$mocversiongrep" != x"$mocversion"; then
-    AC_MSG_RESULT([no])
-    # moc was not the qt4 one, try with moc-qt4
-    AC_CHECK_TOOL(MOCQT42, moc-qt4)
-    AC_MSG_CHECKING([for Qt4 moc-qt4])
-    mocversion=`$MOCQT42 -v 2>&1`
-    mocversiongrep=`echo $mocversion | grep "Qt 4"`
-    if test x"$mocversiongrep" != x"$mocversion"; then
-      # no valid moc found
-      enable_poppler_qt4=no;
-      MOCQT4="not found"
-    else
-      MOCQT4=$MOCQT42
-    fi
-  fi
-  AC_SUBST(MOCQT4)
-  AC_MSG_RESULT([$MOCQT4])
-fi
-
-AM_CONDITIONAL(BUILD_POPPLER_QT4, test "x$enable_poppler_qt4" = "xyes")
-
-dnl 
 dnl Try Qt5
 dnl
 
@@ -1054,10 +997,6 @@ glib/reference/Makefile
 glib/reference/version.xml
 glib/demo/Makefile
 test/Makefile
-qt4/Makefile
-qt4/src/Makefile
-qt4/tests/Makefile
-qt4/demos/Makefile
 qt5/Makefile
 qt5/src/Makefile
 qt5/tests/Makefile
@@ -1073,8 +1012,6 @@ poppler-splash.pc
 poppler-splash-uninstalled.pc
 poppler-glib.pc
 poppler-glib-uninstalled.pc
-poppler-qt4.pc
-poppler-qt4-uninstalled.pc
 poppler-qt5.pc
 poppler-qt5-uninstalled.pc
 poppler-cpp.pc
@@ -1089,7 +1026,6 @@ if test x$enable_cmyk = xyes;then
         echo "      with CMYK support"
 fi
 echo "  cairo output:        $use_cairo"
-echo "  qt4 wrapper:         $enable_poppler_qt4"
 echo "  qt5 wrapper:         $enable_poppler_qt5"
 echo "  glib wrapper:        $use_glib"
 echo "    introspection:     $found_introspection"
