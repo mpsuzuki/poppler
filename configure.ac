@@ -203,7 +203,10 @@ dnl ##### Check for functions specific to GNU Libc (see goo/glibc.h for the list
 AC_CHECK_FUNC(gmtime_r, AC_DEFINE(HAVE_GMTIME_R, 1, [Defines if gmtime_r is available on your system]))
 AC_CHECK_FUNC(localtime_r, AC_DEFINE(HAVE_LOCALTIME_R, 1, [Defines if localtime_r is available on your system]))
 AC_CHECK_FUNC(timegm, AC_DEFINE(HAVE_TIMEGM, 1, [Defines if timegm is available on your system]))
-AC_CHECK_FUNC(strtok_r, AC_DEFINE(HAVE_STRTOK_R, 1, [Defines if strtok_r is available on your system]))
+AC_CHECK_FUNC(strtok_r,
+  AC_DEFINE(HAVE_STRTOK_R, 1, [Defines if strtok_r is available on your system])
+  AM_CONDITIONAL(BUILD_STRTOK_R, test "x$ac_cv_func_strtok_r" != xyes)
+)
 
 dnl ##### Check for extra libraries needed by X.  (LynxOS needs this.)
 AC_CHECK_FUNC(nanosleep,,)
