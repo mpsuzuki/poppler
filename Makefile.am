@@ -20,18 +20,13 @@ qt5_subdir = qt5
 qt5_pc_file = poppler-qt5.pc
 endif
 
-if BUILD_POPPLER_QT4
-qt4_subdir = qt4
-qt4_pc_file = poppler-qt4.pc
-endif
-
 
 if BUILD_POPPLER_CPP
 cpp_subdir = cpp
 cpp_pc_file = poppler-cpp.pc
 endif
 
-SUBDIRS = goo fofi $(splash_subdir) poppler utils $(glib_subdir) test $(qt4_subdir) $(qt5_subdir) $(cpp_subdir)
+SUBDIRS = goo fofi $(splash_subdir) poppler utils $(glib_subdir) test $(qt5_subdir) $(cpp_subdir)
 
 EXTRA_DIST =					\
 	README-XPDF				\
@@ -41,8 +36,6 @@ EXTRA_DIST =					\
 	poppler-cairo-uninstalled.pc.in		\
 	poppler-splash.pc.in			\
 	poppler-splash-uninstalled.pc.in	\
-	poppler-qt4.pc.in			\
-	poppler-qt4-uninstalled.pc.in		\
 	poppler-qt5.pc.in			\
 	poppler-qt5-uninstalled.pc.in		\
 	poppler-cpp.pc.in			\
@@ -54,7 +47,6 @@ pkgconfig_DATA =				\
 	$(cairo_pc_file)			\
 	$(splash_pc_file)			\
 	$(glib_pc_file)				\
-	$(qt4_pc_file)				\
 	$(qt5_pc_file)				\
 	$(cpp_pc_file)
 
@@ -65,10 +57,6 @@ EXTRA_DIST +=							\
 	glib/demo/CMakeLists.txt				\
 	glib/CMakeLists.txt					\
 	glib/poppler-features.h.cmake				\
-	qt4/src/CMakeLists.txt					\
-	qt4/tests/CMakeLists.txt				\
-	qt4/CMakeLists.txt					\
-	qt4/demos/CMakeLists.txt				\
 	qt5/src/CMakeLists.txt					\
 	qt5/tests/CMakeLists.txt				\
 	qt5/CMakeLists.txt					\
@@ -104,7 +92,6 @@ EXTRA_DIST +=							\
 	poppler/poppler-config.h.cmake				\
 	poppler-cpp.pc.cmake					\
 	poppler-glib.pc.cmake					\
-	poppler-qt4.pc.cmake					\
 	poppler-qt5.pc.cmake					\
 	poppler-splash.pc.cmake					\
 	poppler.pc.cmake
