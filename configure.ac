@@ -197,10 +197,13 @@ dnl ##### (99% of xpdf is written in C++.)
 AC_LANG_CPLUSPLUS
 
 AC_CHECK_DECL(gettimeofday, [AC_CHECK_FUNC(gettimeofday, AC_DEFINE(HAVE_GETTIMEOFDAY, 1, [Defines if gettimeofday is available on your system]))],[],[#include <sys/time.h>])
-AC_CHECK_FUNC(localtime_r, AC_DEFINE(HAVE_LOCALTIME_R, 1, [Defines if localtime_r is available on your system]))
-AC_CHECK_FUNC(gmtime_r, AC_DEFINE(HAVE_GMTIME_R, 1, [Defines if gmtime_r is available on your system]))
-AC_CHECK_FUNC(timegm, AC_DEFINE(HAVE_TIMEGM, 1, [Defines if timegm is available on your system]))
 AC_CHECK_FUNC(rand_r, AC_DEFINE(HAVE_RAND_R, 1, [Defines if rand_r is available on your system]))
+
+dnl ##### Check for functions specific to GNU Libc (see goo/glibc.h for the list of functions to be checked)
+AC_CHECK_FUNC(gmtime_r, AC_DEFINE(HAVE_GMTIME_R, 1, [Defines if gmtime_r is available on your system]))
+AC_CHECK_FUNC(localtime_r, AC_DEFINE(HAVE_LOCALTIME_R, 1, [Defines if localtime_r is available on your system]))
+AC_CHECK_FUNC(timegm, AC_DEFINE(HAVE_TIMEGM, 1, [Defines if timegm is available on your system]))
+AC_CHECK_FUNC(strtok_r, AC_DEFINE(HAVE_STRTOK_R, 1, [Defines if strtok_r is available on your system]))
 
 dnl ##### Check for extra libraries needed by X.  (LynxOS needs this.)
 AC_CHECK_FUNC(nanosleep,,)
