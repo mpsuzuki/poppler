@@ -1,5 +1,7 @@
 #!/bin/sh
 
+NOCONFIGURE="yes"
+
 # Package name
 PKG_NAME=${PKG_NAME:-Poppler}
 srcdir=$(dirname $0)
