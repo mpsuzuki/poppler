@@ -21,9 +21,6 @@ poppler_splash_include_HEADERS =		\
 	SplashPattern.h				\
 	SplashScreen.h				\
 	SplashState.h				\
-	SplashT1Font.h				\
-	SplashT1FontEngine.h			\
-	SplashT1FontFile.h			\
 	SplashTypes.h				\
 	SplashXPath.h				\
 	SplashXPathScanner.h
@@ -45,9 +42,6 @@ libsplash_la_SOURCES =				\
 	SplashPattern.cc			\
 	SplashScreen.cc				\
 	SplashState.cc				\
-	SplashT1Font.cc				\
-	SplashT1FontEngine.cc			\
-	SplashT1FontFile.cc			\
 	SplashXPath.cc				\
 	SplashXPathScanner.cc
 
