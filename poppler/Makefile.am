@@ -281,7 +281,6 @@ libpoppler_la_SOURCES =		\
 	Stream.cc 		\
 	StructTreeRoot.cc	\
 	StructElement.cc	\
-	strtok_r.cpp		\
 	UnicodeMap.cc		\
 	UnicodeTypeTable.cc	\
 	UTF.cc                  \
@@ -295,6 +294,11 @@ libpoppler_la_SOURCES =		\
 	SecurityHandler.cc	\
 	Sound.cc		\
 	XpdfPluginAPI.cc
+
+if BUILD_STRTOK_R
+libpoppler_la_SOURCES +=		\
+	strtok_r.cpp
+endif
 
 libpoppler_la_CPPFLAGS =			\
 	$(cms_includes)				\
