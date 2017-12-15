@@ -45,6 +45,11 @@
 #include "Object.h"
 #include "goo/GooMutex.h"
 
+/* standardized nullptr is since C+11 */
+#if !defined( __cplusplus  ) || __cplusplus < 201103L
+#include "goo/gnullptr.h"
+#endif
+
 class GooFile;
 class BaseStream;
 class CachedFile;

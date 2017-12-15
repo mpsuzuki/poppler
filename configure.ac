@@ -29,7 +29,7 @@ AC_PROG_INSTALL
 CXXFLAGS="$CXXFLAGS -D_DEFAULT_SOURCE"
 
 dnl ##### Check for C++11 flags
-AX_CXX_COMPILE_STDCXX(11)
+AX_CXX_COMPILE_STDCXX(11,,optional)
 
 dnl ##### Check for pkgconfig
 PKG_PROG_PKG_CONFIG
