@@ -866,34 +866,21 @@ dnl   Color Management
 dnl
 
 AC_ARG_ENABLE(cms,
-              AC_HELP_STRING([--enable-cms=@<:@auto/lcms1/lcms2/none@:>@],
-                             [Use color management system. 'auto' prefers lcms2 over lcms1 if both are available [[default=auto]]]),
+              AC_HELP_STRING([--enable-cms=@<:@auto/lcms2/none@:>@],
+                             [Use color management system. lcms1 is no longer supported [[default=auto]]]),
               [enable_cms=$enableval],
               [enable_cms="auto"])
-if test x$enable_cms = xauto; then
-  PKG_CHECK_MODULES(LCMS, lcms2, [lcms2=yes], [lcms2=no])
-  if test x$lcms2 = xno; then
-      PKG_CHECK_MODULES(LCMS, lcms, [lcms1=yes], [lcms1=no])
-  fi
-elif test x$enable_cms = xlcms1; then
-  PKG_CHECK_MODULES(LCMS, lcms, [lcms1=yes], [lcms1=no])
-elif test x$enable_cms = xlcms2; then
-  PKG_CHECK_MODULES(LCMS, lcms2, [lcms2=yes], [lcms2=no])
-fi
-
-if test x$lcms1 = xyes || test x$lcms2 = xyes; then
-  enable_cms=yes
-  AC_DEFINE(USE_CMS, 1, [Defines if use cms])
-  if test x$lcms1 = xyes; then
-    lcms1=yes;
-    AC_DEFINE(USE_LCMS1, 1, [Defines if use lcms1])
-  fi
-else
-  enable_cms=no
+if test x$enable_cms = xauto -o x$enable_cms = xlcms2; then
+  PKG_CHECK_MODULES(LCMS, lcms2, [
+    enable_cms=yes
+    lcms2=yes
+  ],[
+    enable_cms=no
+    lcms2=no
+  ])
 fi
 
 AM_CONDITIONAL(USE_CMS, test x$enable_cms = xyes)
-AM_CONDITIONAL(USE_LCMS1, test x$lcms1 = xyes)
 
 AC_ARG_WITH([testdatadir],
    [AS_HELP_STRING([--with-testdatadir=/path/to/testdatadir],
@@ -1057,11 +1044,7 @@ if test x$enable_libopenjpeg = xyes;then
 fi
 echo "  use cms:             $enable_cms"
 if test x$enable_cms = xyes;then
-    if test x$lcms1 = xyes;then
-        echo "      with lcms1"
-    else
-        echo "      with lcms2"
-    fi
+   echo "      with lcms2"
 fi
 if test x$enable_build_type != xno;then
         echo "  build type:          $enable_build_type"
