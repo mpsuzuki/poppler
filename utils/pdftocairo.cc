@@ -57,11 +57,7 @@
 #include "CairoOutputDev.h"
 #include "Win32Console.h"
 #ifdef USE_CMS
-#ifdef USE_LCMS1
-#include <lcms.h>
-#else
 #include <lcms2.h>
-#endif
 #endif
 #include <cairo.h>
 #ifdef CAIRO_HAS_PS_SURFACE

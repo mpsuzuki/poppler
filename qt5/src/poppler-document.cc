@@ -48,11 +48,7 @@
 #include "poppler-page-private.h"
 
 #if defined(USE_CMS)
-#if defined(USE_LCMS1)
-#include <lcms.h>
-#else
 #include <lcms2.h>
-#endif
 #endif
 
 namespace Poppler {
