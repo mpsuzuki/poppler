@@ -227,11 +227,10 @@ fi
 
 
 dnl ##### Test for libopenjpeg. Versions prior to 1.4 do not provide a pkgconfig file.
-openjpeg1="no"
 openjpeg2="no"
 AC_ARG_ENABLE(libopenjpeg,
-	      AC_HELP_STRING([--enable-libopenjpeg=@<:@auto/openjpeg1/openjpeg2/unmaintained/none@:>@],
-                             [Use openjpeg for JPEG2000 images. 'auto' prefers openjpeg2 over openjpeg1 if both are available. 'unmaintained' gives you the internal unmaintained decoder. Use at your own risk. 'none' compiles no JPX decoder at all. [[default=auto]]]),
+	      AC_HELP_STRING([--enable-libopenjpeg=@<:@auto/openjpeg2/unmaintained/none@:>@],
+                             [Use openjpeg for JPEG2000 images. 'unmaintained' gives you the internal unmaintained decoder. Use at your own risk. 'none' compiles no JPX decoder at all. [[default=auto]]]),
               [enable_libopenjpeg=$enableval],
               [enable_libopenjpeg="auto"])
 
@@ -243,66 +242,31 @@ if test x$enable_libopenjpeg = xopenjpeg2 || test x$enable_libopenjpeg = xauto; 
                     [openjpeg2=yes],[openjpeg2=no])
 fi
 
-dnl test for libopenjpeg1
-if test x$openjpeg2 = xno; then
-  if test x$enable_libopenjpeg = xopenjpeg1 || test x$enable_libopenjpeg = xauto; then
-    PKG_CHECK_MODULES(LIBOPENJPEG, libopenjpeg,
-      [openjpeg1="yes"],
-      [AC_CHECK_LIB([openjpeg], [opj_cio_open],
-        [openjpeg1="yes"
-         LIBOPENJPEG_LIBS="-lopenjpeg"],[openjpeg_header=no])
-       AC_CHECK_HEADERS([openjpeg.h],,
-		        [openjpeg_header="no"])])
-  fi
-fi
-
-
-if test x$enable_libopenjpeg = xopenjpeg1 && test x$openjpeg1 = xno; then
-  if test x$openjpeg_header = xno; then
-    AC_MSG_ERROR("*** libopenjpeg headers not found ***")
-  else
-    AC_MSG_ERROR("*** libopenjpeg library not found ***")
-  fi
-fi
-
 if test x$enable_libopenjpeg = xopenjpeg2 && test x$openjpeg2 = xno; then
   AC_MSG_ERROR("*** libopenjp2 library not found ***")
 fi
 
+
 if test x$openjpeg1 = xyes || test x$openjpeg2 = xyes; then
   enable_libopenjpeg=yes
-  if test x$openjpeg1 = xyes; then
-    AC_DEFINE(USE_OPENJPEG1, 1, [Defined if using openjpeg1])
-  fi
-  if test x$openjpeg2 = xyes; then
-    AC_DEFINE(USE_OPENJPEG2, 1, [Defined if using openjpeg2])
-  fi
-
+  AC_DEFINE(USE_OPENJPEG2, 1, [Defined if using openjpeg2])
   AC_SUBST(LIBOPENJPEG_CFLAGS)
   AC_SUBST(LIBOPENJPEG_LIBS)
   AC_DEFINE(ENABLE_LIBOPENJPEG)
-  PKG_CHECK_EXISTS(libopenjpeg >= 1.5,
-      [AC_DEFINE(WITH_OPENJPEG_IGNORE_PCLR_CMAP_CDEF_FLAG, 1, [OpenJPEG with the OPJ_DPARAMETERS_IGNORE_PCLR_CMAP_CDEF_FLAG flag.])],
-      [PKG_CHECK_EXISTS(libopenjpeg1 >= 1.5,
-       [AC_DEFINE(WITH_OPENJPEG_IGNORE_PCLR_CMAP_CDEF_FLAG, 1, [OpenJPEG with the OPJ_DPARAMETERS_IGNORE_PCLR_CMAP_CDEF_FLAG flag.])],
-       [])
-      ])
   have_jpx_decoder=yes
   AC_DEFINE(HAVE_JPX_DECODER)
+elif test x$enable_libopenjpeg = xunmaintained; then
+  enable_libopenjpeg=no
+  have_jpx_decoder=yes
+  AC_DEFINE(HAVE_JPX_DECODER)
+elif test x$enable_libopenjpeg = xnone; then
+  enable_libopenjpeg=no
+  have_jpx_decoder=no
 else
-  if test x$enable_libopenjpeg = xunmaintained; then
-    enable_libopenjpeg=no
-    have_jpx_decoder=yes
-    AC_DEFINE(HAVE_JPX_DECODER)
-  elif test x$enable_libopenjpeg = xnone; then
-    enable_libopenjpeg=no
-    have_jpx_decoder=no
+  if test x$enable_libopenjpeg = xopenjpeg2 || test x$enable_libopenjpeg = xauto; then
+    AC_MSG_ERROR([Install libopenjpeg2 before trying to build poppler. You can also decide to use the internal unmaintained JPX decoder or none at all. See --help.])
   else
-    if test x$enable_libopenjpeg = xopenjpeg2 || test x$enable_libopenjpeg = xopenjpeg1 || test x$enable_libopenjpeg = xauto; then
-      AC_MSG_ERROR([Install libopenjpeg2 or libopenjpeg1 before trying to build poppler. You can also decide to use the internal unmaintained JPX decoder or none at all. See --help.])
-    else
-      AC_MSG_ERROR([Invalid --enable-libopenjpeg value. See --help.])
-    fi
+    AC_MSG_ERROR([Invalid --enable-libopenjpeg value. See --help.])
   fi
 fi
 
