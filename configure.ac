@@ -316,7 +316,7 @@ AC_ARG_ENABLE(libnss,
               enable_libnss="try")
 
 if test x$enable_libnss != xno; then
-  PKG_CHECK_MODULES(NSS3, nss, [enable_nss="yes"],
+  PKG_CHECK_MODULES(NSS3, nss >= 3.19, [enable_nss="yes"],
       [enable_nss="no"])
 fi
 
