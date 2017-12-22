@@ -20,7 +20,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <time.h>
-#include <prtypes.h>
 #include <hasht.h>
 #include "parseargs.h"
 #include "Object.h"
