@@ -21,7 +21,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <time.h>
-#include <prtypes.h>
 #include <hasht.h>
 #include <fstream>
 #include "parseargs.h"
