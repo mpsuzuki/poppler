@@ -77,7 +77,6 @@ EXTRA_DIST +=							\
 	cmake/modules/FindLCMS.cmake				\
 	cmake/modules/FindLCMS2.cmake				\
         cmake/modules/FindNSS3.cmake				\
-	cmake/modules/FindQt4.cmake				\
 	cmake/modules/GObjectIntrospectionMacros.cmake		\
 	cmake/modules/MacroBoolTo01.cmake			\
 	cmake/modules/MacroEnsureVersion.cmake			\
@@ -85,7 +84,6 @@ EXTRA_DIST +=							\
 	cmake/modules/MacroPushRequiredVars.cmake		\
 	cmake/modules/PopplerDefaults.cmake			\
 	cmake/modules/PopplerMacros.cmake			\
-	cmake/modules/FindLIBOPENJPEG.cmake			\
 	cmake/modules/FindLIBOPENJPEG2.cmake			\
 	config.h.cmake						\
 	poppler-cairo.pc.cmake					\
