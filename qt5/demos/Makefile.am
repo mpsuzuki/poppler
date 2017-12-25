@@ -17,33 +17,50 @@ BUILT_SOURCES =					\
 	viewer.moc
 
 poppler_qt5viewer_SOURCES =			\
-	abstractinfodock.cpp			\
+	abstractinfodock.cc			\
 	abstractinfodock.h			\
 	documentobserver.cpp			\
 	documentobserver.h			\
-	embeddedfiles.cpp			\
+	embeddedfiles.cc			\
 	embeddedfiles.h				\
-	fonts.cpp				\
+	fonts.cc				\
 	fonts.h					\
-	info.cpp				\
+	info.cc					\
 	info.h					\
 	main_viewer.cpp				\
-	metadata.cpp				\
+	metadata.cc				\
 	metadata.h				\
-	navigationtoolbar.cpp			\
+	navigationtoolbar.cc			\
 	navigationtoolbar.h			\
-	optcontent.cpp				\
+	optcontent.cc				\
 	optcontent.h				\
-	pageview.cpp				\
+	pageview.cc				\
 	pageview.h				\
-	permissions.cpp				\
+	permissions.cc				\
 	permissions.h				\
-	thumbnails.cpp				\
+	thumbnails.cc				\
 	thumbnails.h				\
-	toc.cpp					\
+	toc.cc					\
 	toc.h					\
-	viewer.cpp				\
+	viewer.cc				\
 	viewer.h
+
+BUILT_SOURCES += \
+	abstractinfodock.cc \
+	embeddedfiles.cc \
+	fonts.cc \
+	info.cc \
+	metadata.cc \
+	navigationtoolbar.cc \
+	optcontent.cc \
+	pageview.cc \
+	permissions.cc \
+	thumbnails.cc \
+	toc.cc \
+	viewer.cc
+
+.cpp.cc: $(@:.cc=.cpp) $(@:.cc=.moc)
+	cat $(srcdir)/$(@:.cc=.cpp) $(builddir)/$(@:.cc=.moc) > $@
 
 poppler_qt5viewer_CPPFLAGS =			\
 	-I$(top_srcdir)				\
