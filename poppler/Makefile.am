@@ -215,7 +215,6 @@ poppler_include_HEADERS =	\
 	MarkedContentOutputDev.h \
 	SecurityHandler.h	\
 	UTF.h			\
-	UTF8.h			\
 	XpdfPluginAPI.h		\
 	Sound.h
 nodist_poppler_include_HEADERS = poppler-config.h
@@ -294,11 +293,6 @@ libpoppler_la_SOURCES =		\
 	SecurityHandler.cc	\
 	Sound.cc		\
 	XpdfPluginAPI.cc
-
-if BUILD_STRTOK_R
-libpoppler_la_SOURCES +=		\
-	strtok_r.cpp
-endif
 
 libpoppler_la_CPPFLAGS =			\
 	$(cms_includes)				\
