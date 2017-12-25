@@ -21,7 +21,7 @@ libpoppler_qt5_la_SOURCES =			\
 	poppler-link.cc				\
 	poppler-annotation.cc			\
 	poppler-link-extractor.cc		\
-	poppler-optcontent.cc			\
+	poppler-optcontent.cxx			\
 	poppler-optcontent.h			\
 	poppler-page-transition.cc		\
 	poppler-sound.cc			\
@@ -72,7 +72,10 @@ libpoppler_qt5_la_LDFLAGS =			\
 	$(AM_V_GEN) $(MOCQT5) -i $< -o $@
 SUFFIXES: .moc
 
-BUILT_SOURCES = poppler-optcontent.moc
+BUILT_SOURCES = poppler-optcontent.moc poppler-optcontent.cxx
+
+.cc.cxx: $(@:.cxx=.cc) $(@:.cxx=.moc)
+	cat $(srcdir)/$(@:.cxx=.cc) $(builddir)/$(@:.cxx=.moc) > $@
 
 clean-generic:
 	rm -f *.moc
