@@ -80,7 +80,7 @@ set(poppler_glib_generated_SRCS
   ${CMAKE_SOURCE_DIR}/poppler/CairoOutputDev.cc
   ${CMAKE_SOURCE_DIR}/poppler/CairoRescaleBox.cc
 )
-add_library(poppler-glib SHARED ${poppler_glib_SRCS} ${poppler_glib_generated_SRCS})
+add_library(poppler-glib ${poppler_glib_SRCS} ${poppler_glib_generated_SRCS})
 set_target_properties(poppler-glib PROPERTIES VERSION 8.9.0 SOVERSION 8)
 if(MINGW)
     get_target_property(POPPLER_GLIB_SOVERSION poppler-glib SOVERSION)
