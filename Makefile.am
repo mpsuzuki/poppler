@@ -29,7 +29,11 @@ endif
 SUBDIRS = goo fofi $(splash_subdir) poppler utils $(glib_subdir) test $(qt5_subdir) $(cpp_subdir)
 
 EXTRA_DIST =					\
+	COPYING3				\
+	README.contributors			\
 	README-XPDF				\
+	gtkdoc.py				\
+	make-glib-api-docs			\
 	poppler.pc.in				\
 	poppler-uninstalled.pc.in		\
 	poppler-cairo.pc.in			\
@@ -57,6 +61,7 @@ EXTRA_DIST +=							\
 	glib/demo/CMakeLists.txt				\
 	glib/CMakeLists.txt					\
 	glib/poppler-features.h.cmake				\
+	glib/reference/CMakeLists.txt				\
 	qt5/src/CMakeLists.txt					\
 	qt5/tests/CMakeLists.txt				\
 	qt5/CMakeLists.txt					\

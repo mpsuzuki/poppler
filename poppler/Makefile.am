@@ -199,6 +199,7 @@ poppler_include_HEADERS =	\
 	StructElement.h		\
 	StructTreeRoot.h	\
 	UnicodeMap.h		\
+	UnicodeMapFuncs.h	\
 	UnicodeMapTables.h	\
 	UnicodeTypeTable.h	\
 	UnicodeCClassTables.h	\
