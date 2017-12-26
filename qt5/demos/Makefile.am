@@ -2,7 +2,7 @@ AM_LDFLAGS = @auto_import_flags@
 
 noinst_PROGRAMS = poppler_qt5viewer
 
-BUILT_SOURCES =					\
+BUILT_SOURCES_MOC =				\
 	abstractinfodock.moc			\
 	embeddedfiles.moc			\
 	fonts.moc				\
@@ -16,51 +16,30 @@ BUILT_SOURCES =					\
 	toc.moc					\
 	viewer.moc
 
-poppler_qt5viewer_SOURCES =			\
-	abstractinfodock.cc			\
-	abstractinfodock.h			\
-	documentobserver.cpp			\
-	documentobserver.h			\
-	embeddedfiles.cc			\
-	embeddedfiles.h				\
-	fonts.cc				\
-	fonts.h					\
-	info.cc					\
-	info.h					\
-	main_viewer.cpp				\
-	metadata.cc				\
-	metadata.h				\
-	navigationtoolbar.cc			\
-	navigationtoolbar.h			\
-	optcontent.cc				\
-	optcontent.h				\
-	pageview.cc				\
-	pageview.h				\
-	permissions.cc				\
-	permissions.h				\
-	thumbnails.cc				\
-	thumbnails.h				\
-	toc.cc					\
-	toc.h					\
-	viewer.cc				\
-	viewer.h
-
-BUILT_SOURCES += \
-	abstractinfodock.cc \
-	embeddedfiles.cc \
-	fonts.cc \
-	info.cc \
-	metadata.cc \
-	navigationtoolbar.cc \
-	optcontent.cc \
-	pageview.cc \
-	permissions.cc \
-	thumbnails.cc \
-	toc.cc \
-	viewer.cc
+BUILT_SOURCES_CC = $(BUILT_SOURCES_MOC:.moc=.cc)
+BUILT_SOURCES = $(BUILT_SOURCES_MOC) $(BUILT_SOURCES_CC)
+EXTRA_DIST = $(BUILT_SOURCES_MOC:.moc=.cpp)
+nodist_poppler_qt5viewer_SOURCES = $(BUILT_SOURCES_CC)
 
 .cpp.cc: $(@:.cc=.cpp) $(@:.cc=.moc)
 	cat $(srcdir)/$(@:.cc=.cpp) $(builddir)/$(@:.cc=.moc) > $@
+
+poppler_qt5viewer_SOURCES =			\
+	abstractinfodock.h			\
+	documentobserver.cpp			\
+	documentobserver.h			\
+	embeddedfiles.h				\
+	fonts.h					\
+	info.h					\
+	main_viewer.cpp				\
+	metadata.h				\
+	navigationtoolbar.h			\
+	optcontent.h				\
+	pageview.h				\
+	permissions.h				\
+	thumbnails.h				\
+	toc.h					\
+	viewer.h
 
 poppler_qt5viewer_CPPFLAGS =			\
 	-I$(top_srcdir)				\
