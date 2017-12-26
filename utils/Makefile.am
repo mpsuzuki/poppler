@@ -146,6 +146,8 @@ pdftocairo_CPPFLAGS =				\
 noinst_LTLIBRARIES = libparseargs.la
 
 libparseargs_la_SOURCES =			\
+	Win32Console.cc				\
+	Win32Console.h				\
 	parseargs.cc				\
 	parseargs.h
 

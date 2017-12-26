@@ -1,5 +1,9 @@
 SUBDIRS = . tests
 
+EXTRA_DIST = \
+	Doxyfile \
+	Mainpage.dox
+
 lib_LTLIBRARIES = libpoppler-cpp.la
 
 libpoppler_cpp_includedir = $(includedir)/poppler/cpp

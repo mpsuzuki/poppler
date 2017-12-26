@@ -21,6 +21,7 @@ poppler-enums.c: poppler-enums.c.template $(poppler_glib_public_headers)
 	&& rm -f xgen-etbc
 
 EXTRA_DIST =					\
+	poppler.gidl				\
 	poppler-enums.h.template		\
 	poppler-enums.c.template
 
