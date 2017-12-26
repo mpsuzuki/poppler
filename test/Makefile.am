@@ -63,5 +63,7 @@ pdf_fullrewrite_LDADD =					\
 	$(top_builddir)/poppler/libpoppler.la
 
 EXTRA_DIST =					\
+	goostring-format-checker		\
+	perf-test-preview-win.cc		\
 	pdf-operators.c				\
 	pdf-inspector.ui
