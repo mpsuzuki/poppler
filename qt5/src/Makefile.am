@@ -1,5 +1,25 @@
 lib_LTLIBRARIES = libpoppler-qt5.la
 
+EXTRA_DIST = Doxyfile Mainpage.dox
+
+# This rule lets GNU make create any *.moc from the equivalent *.h
+.h.moc:
+	$(AM_V_GEN) $(MOCQT5) -i $< -o $@
+
+SUFFIXES: .moc
+
+clean-generic:
+	rm -f *.moc
+
+BUILT_SOURCES_MOC = poppler-optcontent.moc
+BUILT_SOURCES_CXX = $(BUILT_SOURCES_MOC:.moc=.cxx)
+BUILT_SOURCES = $(BUILT_SOURCES_MOC) $(BUILT_SOURCES_CXX)
+nodist_libpoppler_qt5_la_SOURCES = $(BUILT_SOURCES_CXX)
+EXTRA_DIST += $(BUILT_SOURCES_MOC:.moc=.cc)
+
+.cc.cxx: $(@:.cxx=.cc) $(@:.cxx=.moc)
+	cat $(srcdir)/$(@:.cxx=.cc) $(builddir)/$(@:.cxx=.moc) > $@
+
 poppler_includedir = $(includedir)/poppler/qt5
 poppler_include_HEADERS =			\
 	poppler-qt5.h				\
@@ -21,7 +41,6 @@ libpoppler_qt5_la_SOURCES =			\
 	poppler-link.cc				\
 	poppler-annotation.cc			\
 	poppler-link-extractor.cc		\
-	poppler-optcontent.cxx			\
 	poppler-optcontent.h			\
 	poppler-page-transition.cc		\
 	poppler-sound.cc			\
@@ -67,15 +86,3 @@ libpoppler_qt5_la_LDFLAGS =			\
 	@create_shared_lib@			\
 	@auto_import_flags@
 
-# This rule lets GNU make create any *.moc from the equivalent *.h
-.h.moc:
-	$(AM_V_GEN) $(MOCQT5) -i $< -o $@
-SUFFIXES: .moc
-
-BUILT_SOURCES = poppler-optcontent.moc poppler-optcontent.cxx
-
-.cc.cxx: $(@:.cxx=.cc) $(@:.cxx=.moc)
-	cat $(srcdir)/$(@:.cxx=.cc) $(builddir)/$(@:.cxx=.moc) > $@
-
-clean-generic:
-	rm -f *.moc
