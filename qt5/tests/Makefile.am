@@ -1,5 +1,9 @@
 AM_LDFLAGS = @auto_import_flags@
 
+EXTRA_DIST = \
+	README.unittest				\
+	check_utf_conversion.cpp
+
 AM_CPPFLAGS =					\
 	-I$(top_srcdir)				\
 	-I$(top_srcdir)/poppler			\
