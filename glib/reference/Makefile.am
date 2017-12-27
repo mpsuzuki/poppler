@@ -91,8 +91,3 @@ include $(top_srcdir)/gtk-doc.make
 # e.g. EXTRA_DIST += version.xml.in
 EXTRA_DIST += version.xml.in
 
-# ./html dir is not existing in git repository
-EXTRA_DIST += \
-	html/PopplerAction.html				\
-	html/PopplerColor.html				\
-	html/poppler-poppler-features.html
