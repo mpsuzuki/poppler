@@ -22,7 +22,7 @@ EXTRA_DIST = $(BUILT_SOURCES_MOC:.moc=.cpp)
 nodist_poppler_qt5viewer_SOURCES = $(BUILT_SOURCES_CC)
 
 .cpp.cc: $(@:.cc=.cpp) $(@:.cc=.moc)
-	cat $(srcdir)/$(@:.cc=.cpp) $(builddir)/$(@:.cc=.moc) > $@
+	$(AM_V_GEN) cat $(srcdir)/$(@:.cc=.cpp) $(builddir)/$(@:.cc=.moc) > $@
 
 poppler_qt5viewer_SOURCES =			\
 	abstractinfodock.h			\
