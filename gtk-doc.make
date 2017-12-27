@@ -201,7 +201,7 @@ html-build.stamp.old: sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand
 	$(GTK_DOC_V_XREF)gtkdoc-fixxref --module=$(DOC_MODULE) --module-dir=html --html-dir=$(HTML_DIR) $(FIXXREF_OPTIONS)
 	$(AM_V_at)touch html-build.stamp
 
-html-build.stamp: # sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand_content_files)
+html-build.stamp: sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand_content_files)
 	$(GTK_DOC_V_HTML)rm -rf html && mkdir html && \
 	if test $(top_srcdir) = $(top_builddir) ; then \
 		mkdir -p build-html/glib/reference/html ; \
