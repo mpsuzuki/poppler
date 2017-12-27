@@ -18,7 +18,7 @@ nodist_libpoppler_qt5_la_SOURCES = $(BUILT_SOURCES_CXX)
 EXTRA_DIST += $(BUILT_SOURCES_MOC:.moc=.cc)
 
 .cc.cxx: $(@:.cxx=.cc) $(@:.cxx=.moc)
-	cat $(srcdir)/$(@:.cxx=.cc) $(builddir)/$(@:.cxx=.moc) > $@
+	$(AM_V_GEN) cat $(srcdir)/$(@:.cxx=.cc) $(builddir)/$(@:.cxx=.moc) > $@
 
 poppler_includedir = $(includedir)/poppler/qt5
 poppler_include_HEADERS =			\
