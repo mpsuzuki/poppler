@@ -174,7 +174,7 @@ GTK_DOC_V_XREF=$(GTK_DOC_V_XREF_$(V))
 GTK_DOC_V_XREF_=$(GTK_DOC_V_XREF_$(AM_DEFAULT_VERBOSITY))
 GTK_DOC_V_XREF_0=@echo "  DOC   Fixing cross-references";
 
-html-build.stamp: sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand_content_files)
+html-build.stamp.old: sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand_content_files)
 	$(GTK_DOC_V_HTML)rm -rf html && mkdir html && \
 	mkhtml_options=""; \
 	gtkdoc-mkhtml 2>&1 --help | grep  >/dev/null "\-\-verbose"; \
@@ -199,6 +199,25 @@ html-build.stamp: sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand_con
 	  test -f $$file && cp $$file $(abs_builddir)/html; \
 	done;
 	$(GTK_DOC_V_XREF)gtkdoc-fixxref --module=$(DOC_MODULE) --module-dir=html --html-dir=$(HTML_DIR) $(FIXXREF_OPTIONS)
+	$(AM_V_at)touch html-build.stamp
+
+html-build.stamp: # sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand_content_files)
+	$(GTK_DOC_V_HTML)rm -rf html && mkdir html && \
+	if test $(top_srcdir) = $(top_builddir) ; then \
+		mkdir -p build-html/glib/reference/html ; \
+		cp -pr . build-html/glib/reference/ ; \
+		cp -p $(top_builddir)/*.pc build-html/ ; \
+		rm -f build-html/*-uninstalled.pc ; \
+		cp -p $(top_builddir)/glib/libpoppler-glib.la build-html/glib/ ; \
+		library_names=`(cat build-html/glib/libpoppler-glib.la ; echo 'echo $${library_names} $${old_library}') | sh` ; \
+		for file in $$library_names; do \
+			cp -p $(top_builddir)/glib/.libs/$$file build-html/glib/ ; \
+		done ; \
+		$(top_srcdir)/make-glib-api-docs --src-dir=$(top_srcdir) --build-dir=$(top_builddir)/glib/reference/build-html/ ; \
+		cp -p $(top_builddir)/glib/reference/build-html/glib/reference/html/* $(top_builddir)/glib/reference/html/ ; \
+	else \
+		$(top_srcdir)/make-glib-api-docs --src-dir=$(top_srcdir) --build-dir=$(top_builddir) ; \
+	fi
 	$(AM_V_at)touch html-build.stamp
 
 #### pdf ####
@@ -233,6 +252,7 @@ pdf-build.stamp: sgml.stamp $(DOC_MAIN_SGML_FILE) $(content_files) $(expand_cont
 clean-local:
 	@rm -f *~ *.bak
 	@rm -rf .libs
+	@rm -rf $(top_builddir)/glib/reference/build-html
 	@if echo $(SCAN_OPTIONS) | grep -q "\-\-rebuild-types" ; then \
 	  rm -f $(DOC_MODULE).types; \
 	fi
@@ -241,6 +261,7 @@ clean-local:
 	fi
 
 distclean-local:
+	@rm -rf $(top_builddir)/glib/reference/build-html
 	@rm -rf xml html $(REPORT_FILES) $(DOC_MODULE).pdf \
 	    $(DOC_MODULE)-decl-list.txt $(DOC_MODULE)-decl.txt
 	@if test "$(abs_srcdir)" != "$(abs_builddir)" ; then \
@@ -248,9 +269,11 @@ distclean-local:
 	fi
 
 maintainer-clean-local:
+	@rm -rf $(top_builddir)/glib/reference/build-html
 	@rm -rf xml html
 
 install-data-local:
+	@rm -rf $(top_builddir)/glib/reference/build-html
 	@installfiles=`echo $(builddir)/html/*`; \
 	if test "$$installfiles" = '$(builddir)/html/*'; \
 	then echo 1>&2 'Nothing to install' ; \
