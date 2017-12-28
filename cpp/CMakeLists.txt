@@ -22,14 +22,20 @@ set(poppler_cpp_SRCS
   poppler-version.cpp
 )
 
-add_library(poppler-cpp SHARED ${poppler_cpp_SRCS})
-set_target_properties(poppler-cpp PROPERTIES VERSION 0.3.0 SOVERSION 0)
+if(BUILD_SHARED_LIBS)
+    add_library(poppler-cpp SHARED ${poppler_cpp_SRCS})
+    set_target_properties(poppler-cpp PROPERTIES VERSION 0.3.0 SOVERSION 0)
+endif()
+if(BUILD_STATIC_LIBS)
+    add_library(poppler-cpp-static STATIC ${poppler_cpp_SRCS})
+    set_target_properties(poppler-cpp-static PROPERTIES OUTPUT_NAME poppler-cpp)
+endif()
 if(MINGW)
     get_target_property(POPPLER_CPP_SOVERSION poppler-cpp SOVERSION)
     set_target_properties(poppler-cpp PROPERTIES SUFFIX "-${POPPLER_CPP_SOVERSION}${CMAKE_SHARED_LIBRARY_SUFFIX}")
 endif()
 target_link_libraries(poppler-cpp poppler ${ICONV_LIBRARIES})
-install(TARGETS poppler-cpp RUNTIME DESTINATION bin LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS poppler-cpp poppler-cpp-static RUNTIME DESTINATION bin LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 install(FILES
   poppler-document.h

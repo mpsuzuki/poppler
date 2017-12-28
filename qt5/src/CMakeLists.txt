@@ -1,9 +1,13 @@
 add_definitions(${QT5_DEFINITIONS})
 add_definitions(${Qt5Core_DEFINITIONS})
+add_definitions(${Qt5Gui_DEFINITIONS})
+add_definitions(${Qt5Xml_DEFINITIONS})
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${Qt5Core_INCLUDE_DIRS}
+  ${Qt5Gui_INCLUDE_DIRS}
+  ${Qt5Xml_INCLUDE_DIRS}
   ${CMAKE_CURRENT_BINARY_DIR}
 )
 
@@ -29,8 +33,15 @@ set(poppler_qt5_SRCS
   poppler-media.cc
   ArthurOutputDev.cc
 )
-add_library(poppler-qt5 SHARED ${poppler_qt5_SRCS})
-set_target_properties(poppler-qt5 PROPERTIES VERSION 1.12.0 SOVERSION 1)
+if(BUILD_SHARED_LIBS)
+    add_library(poppler-qt5 SHARED ${poppler_qt5_SRCS})
+    set_target_properties(poppler-qt5 PROPERTIES VERSION 1.12.0 SOVERSION 1)
+endif()
+if(BUILD_STATIC_LIBS)
+    add_library(poppler-qt5-static STATIC ${poppler_qt5_SRCS})
+    set_target_properties(poppler-qt5-static PROPERTIES OUTPUT_NAME poppler-qt5)
+    target_compile_options(poppler-qt5-static PRIVATE -fPIC)
+endif()
 if(MINGW)
     get_target_property(POPPLER_QT5_SOVERSION poppler-qt5 SOVERSION)
     set_target_properties(poppler-qt5 PROPERTIES SUFFIX "-${POPPLER_QT5_SOVERSION}${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -39,7 +50,7 @@ target_link_libraries(poppler-qt5 poppler ${Qt5Core_LIBRARIES} ${Qt5Gui_LIBRARIE
 if(MSVC)
 target_link_libraries(poppler-qt5 poppler ${poppler_LIBS})
 endif()
-install(TARGETS poppler-qt5 RUNTIME DESTINATION bin LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(TARGETS poppler-qt5 poppler-qt5-static RUNTIME DESTINATION bin LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 install(FILES
   poppler-qt5.h
