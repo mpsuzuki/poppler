@@ -380,5 +380,7 @@ std::vector<text_box*> page::text_list(rotation_enum rotate) const
 
 	output_list.push_back(tb);
     }
+    delete word_list;
+    delete output_dev;
     return output_list;
 }
