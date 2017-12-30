@@ -67,6 +67,21 @@ void delete_all(const Collection &c)
     delete_all(c.begin(), c.end());
 }
 
+class text_box;
+class text_box_data
+{
+public:
+    text_box_data()
+    : next_text_box(0), has_space_after(false)
+    {
+    }
+    ustring text;
+    rectf bbox;
+    text_box *next_text_box;
+    std::vector<rectf> char_bboxes;
+    bool has_space_after;
+};
+
 }
 
 #endif
