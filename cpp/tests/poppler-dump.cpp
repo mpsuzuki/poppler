@@ -50,6 +50,7 @@ bool show_embedded_files = false;
 bool show_pages = false;
 bool show_help = false;
 char show_text[32];
+bool show_text_list = false;
 poppler::page::text_layout_enum show_text_layout = poppler::page::physical_layout;
 
 static const ArgDesc the_args[] = {
@@ -71,6 +72,8 @@ static const ArgDesc the_args[] = {
       "show pages information" },
     { "--show-text",           argString, &show_text,          sizeof(show_text),
       "show text (physical|raw) extracted from all pages" },
+    { "--show-text-list",      argFlag, &show_text_list,       0,
+      "show text list (experimental)" },
     { "-h",                    argFlag,  &show_help,           0,
       "print usage information" },
     { "--help",                argFlag,  &show_help,           0,
@@ -323,6 +326,27 @@ static void print_page_text(poppler::page *p)
     std::cout << std::endl;
 }
 
+static void print_page_text_list(poppler::page *p)
+{
+    if (!p) {
+        std::cout << std::setw(out_width) << "Broken Page. Could not be parsed" << std::endl;
+        std::cout << std::endl;
+        return;
+    }
+    std::vector<poppler::text_box*> text_list = p->text_list(poppler::rotate_0);
+
+    std::cout << "---" << std::endl;
+    for (size_t i = 0; i < text_list.size(); i ++) {
+        poppler::rectf bbox = text_list[i]->bbox();
+        poppler::ustring ustr = text_list[i]->text();
+        std::cout << "[" << ustr << "] @ ";
+        std::cout << "( x=" << bbox.x() << " y=" << bbox.y() << " w=" << bbox.width() << " h=" << bbox.height() << " )";
+        std::cout << std::endl;
+    }
+    std::cout << "---" << std::endl;
+}
+
+
 int main(int argc, char *argv[])
 {
     if (!parseArgs(the_args, &argc, argv)
@@ -396,6 +420,14 @@ int main(int argc, char *argv[])
             std::cout << "Page " << (i + 1) << "/" << pages << ":" << std::endl;
             std::unique_ptr<poppler::page> p(doc->create_page(i));
             print_page_text(p.get());
+        }
+    }
+    if (show_text_list) {
+        const int pages = doc->pages();
+        for (int i = 0; i < pages; ++i) {
+            std::cout << "Page " << (i + 1) << "/" << pages << ":" << std::endl;
+            std::unique_ptr<poppler::page> p(doc->create_page(i));
+            print_page_text_list(p.get());
         }
     }
 

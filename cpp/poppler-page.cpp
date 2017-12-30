@@ -285,3 +285,101 @@ ustring page::text(const rectf &r, text_layout_enum layout_mode) const
     }
     return ustring::from_utf8(s->getCString());
 }
+
+/*
+ * text_box object for page::text_list()
+ */
+text_box::text_box(const ustring& text, const rectf &bbox)
+{
+    m_data = new text_box_data();
+    m_data->text = text;
+    m_data->bbox = bbox;
+}
+
+text_box::~text_box()
+{
+    delete m_data;
+}
+
+ustring text_box::text() const
+{
+    return m_data->text;
+}
+
+rectf text_box::bbox() const
+{
+    return m_data->bbox;
+}
+
+text_box* text_box::next_text_box() const
+{
+    return m_data->next_text_box;
+}
+
+rectf text_box::char_bbox(int i) const
+{
+    return m_data->char_bboxes[i];
+}
+
+bool text_box::has_space_after() const
+{
+    return m_data->has_space_after;
+}
+
+std::vector<text_box*> page::text_list(rotation_enum rotate) const
+{
+    TextOutputDev *output_dev;
+    std::vector<text_box*>  output_list;
+    const int rotation_value = (int)rotate * 90;
+
+    /* config values are same with Qt5 Page::TextList() */
+    output_dev = new TextOutputDev(NULL,    /* char* fileName */
+                                   gFalse,  /* GBool physLayoutA */
+                                   0,       /* double fixedPitchA */
+                                   gFalse,  /* GBool rawOrderA */
+                                   gFalse); /* GBool append */
+
+    /* config values are same with Qt5 Page::TextList() */
+    d->doc->doc->displayPageSlice(output_dev,
+                                  d->index + 1,           /* page */
+                                  72, 72, rotation_value, /* hDPI, vDPI, rot */
+                                  false, false, false,    /* useMediaBox, crop, printing */
+                                  -1, -1, -1, -1,         /* sliceX, sliceY, sliceW, sliceH */
+                                  NULL, NULL,             /* abortCheckCbk(), abortCheckCbkData */
+                                  NULL, NULL,             /* annotDisplayDecideCbk(), annotDisplayDecideCbkData */
+                                  gTrue);                 /* copyXRef */
+
+    TextWordList *word_list = output_dev->makeWordList();
+    if (!word_list) {
+        delete output_dev;
+        return output_list;
+    }
+
+    {
+        output_list.reserve(word_list->getLength());
+        for (int i = 0; i < word_list->getLength(); i ++) {
+	    TextWord *word = word_list->get(i);
+
+	    GooString *gooWord = word->getText();
+	    ustring ustr = detail::unicode_GooString_to_ustring(gooWord);
+	    delete gooWord;
+
+	    double xMin, yMin, xMax, yMax;
+	    word->getBBox(&xMin, &yMin, &xMax, &yMax);
+
+	    text_box* tb = new text_box(ustr, rectf(xMin, yMin, xMax-xMin, yMax-yMin));
+	    tb->m_data->has_space_after = (word->hasSpaceAfter() == gTrue);
+
+	    tb->m_data->char_bboxes.reserve(word->getLength());
+	    for (int j = 0; j < word->getLength(); j ++) {
+		word->getCharBBox(j, &xMin, &yMin, &xMax, &yMax);
+		tb->m_data->char_bboxes.push_back(rectf(xMin, yMin, xMax-xMin, yMax-yMin));
+	    }
+
+	    if (output_list.size() > 0)
+		output_list.back()->m_data->next_text_box = tb;
+	    output_list.push_back(tb);
+	}
+    }
+    return output_list;
+}
