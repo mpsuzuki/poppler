@@ -285,3 +285,71 @@ ustring page::text(const rectf &r, text_layout_enum layout_mode) const
     }
     return ustring::from_utf8(s->getCString());
 }
+
+
+#include "poppler-textbox-private.h"
+#include "poppler-textbox.h"
+
+// bool copy_char_bboxes_to_std_vector(std::vector<rectf> charBBoxes,
+//				    TextWord *word)
+
+// bool copy_text_word_list_to_std_vector(std::vector<TextBox*> output_list,
+//                                        TextWordList *word_list)
+
+
+std::vector<TextBox*> page::textList(rotation_enum rotate) const
+{
+    TextOutputDev *output_dev;
+    std::vector<TextBox*>  output_list;
+    const int rotation_value = (int)rotate * 90;
+
+    output_dev = new TextOutputDev(0, gFalse, 0, gFalse, gFalse);
+    d->doc->doc->displayPageSlice(output_dev,
+                                  d->index + 1,
+                                  72, 72, rotation_value,
+                                  false, false, false,
+                                     -1,    -1,    -1,    -1,
+                                   NULL,  NULL,  NULL,  NULL,
+                                  gTrue);
+
+    TextWordList *word_list = output_dev->makeWordList();
+    if (!word_list) {
+        delete output_dev;
+        return output_list;
+    }
+
+    // copy_text_word_list_to_std_vector(output_list, word_list);
+    {
+        output_list.reserve(word_list->getLength());
+        for (int j = 0; j < word_list->getLength(); j ++) {
+	    TextWord *word = word_list->get(j);
+
+	    GooString *gooWord = word->getText();
+	    ustring ustr = detail::unicode_GooString_to_ustring(gooWord);
+	    delete gooWord;
+
+	    double xMin, yMin, xMax, yMax;
+	    word->getBBox(&xMin, &yMin, &xMax, &yMax);
+
+	    TextBox* text_box = new TextBox(ustr, rectf(xMin, yMin, xMax-xMin, yMax-yMin));
+	    text_box->m_data->hasSpaceAfter = (word->hasSpaceAfter() == gTrue);
+
+	    // copy_char_bboxes_to_std_vector(text_box->m_data->charBBoxes, word);
+	    {
+		// double xMin, yMin, xMax, yMax;
+
+		text_box->m_data->charBBoxes.reserve(word->getLength());
+		for (int k = 0; k < word->getLength(); k ++) {
+
+		    word->getCharBBox(k, &xMin, &yMin, &xMax, &yMax);
+		    text_box->m_data->charBBoxes.push_back(rectf(xMin, yMin, xMax - xMin, yMax - yMin));
+		}
+	    }
+
+	    if (output_list.size() > 0)
+		output_list.back()->m_data->nextWord = text_box;
+	    output_list.push_back(text_box);
+	}
+    }
+    return output_list;
+}

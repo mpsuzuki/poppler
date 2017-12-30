@@ -21,6 +21,7 @@
 
 #include "poppler-global.h"
 #include "poppler-rectangle.h"
+#include "poppler-textbox.h"
 
 namespace poppler
 {
@@ -62,6 +63,8 @@ public:
                 case_sensitivity_enum case_sensitivity, rotation_enum rotation = rotate_0) const;
     ustring text(const rectf &rect = rectf()) const;
     ustring text(const rectf &rect, text_layout_enum layout_mode) const;
+
+    std::vector<TextBox*> textList(rotation_enum rotation) const;
 
 private:
     page(document_private *doc, int index);
