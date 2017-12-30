@@ -21,10 +21,8 @@
  */
 
 #include "poppler-global.h"
-#include "poppler-textbox.h"
 
 #include "poppler-private.h"
-#include "poppler-textbox-private.h"
 
 #include "DateInfo.h"
 
@@ -372,47 +370,4 @@ void poppler::set_debug_error_function(debug_func debug_function, void *closure)
 {
     poppler::detail::user_debug_function = debug_function;
     poppler::detail::debug_closure = closure;
-}
-
-/**
- TextBox class
- */
-
-namespace poppler {
-  TextBox::TextBox(const ustring& text, const rectf &bBox)
-  {
-    m_data = new TextBoxData();
-    m_data->text = text;
-    m_data->bBox = bBox;
-  }
-
-  TextBox::~TextBox()
-  {
-    delete m_data;
-  }
-
-  ustring TextBox::text() const
-  {
-    return m_data->text;
-  }
-
-  rectf TextBox::boundingBox() const
-  {
-    return m_data->bBox;
-  }
-
-  TextBox* TextBox::nextWord() const
-  {
-    return m_data->nextWord;
-  }
-
-  rectf TextBox::charBoundingBox(int i) const
-  {
-    return m_data->charBBoxes[i];
-  }
-
-  bool TextBox::hasSpaceAfter() const
-  {
-    return m_data->hasSpaceAfter;
-  }
 }
