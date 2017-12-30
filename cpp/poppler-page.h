@@ -27,18 +27,18 @@ namespace poppler
 
 class text_box_data;
 class POPPLER_CPP_EXPORT text_box {
-  friend class page;
-  public:
-  text_box(const ustring &text, const rectf &bBox);
-  ~text_box();
-  ustring text() const;
-  rectf bbox() const;
-  text_box *next_text_box() const;
-  text_box *next_word() { return this->next_text_box(); };
-  rectf char_bbox(int i) const;
-  bool has_space_after() const;
-private:
-  text_box_data* m_data;
+    friend class page;
+    public:
+	text_box(const ustring &text, const rectf &bBox);
+	~text_box();
+	ustring   text() const;
+	rectf     bbox() const;
+	text_box *next_text_box() const;
+	text_box *next_word() { return this->next_text_box(); };
+	rectf     char_bbox(int i) const;
+	bool      has_space_after() const;
+    private:
+	text_box_data* m_data;
 };
 
 class document;
