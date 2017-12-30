@@ -25,6 +25,22 @@
 namespace poppler
 {
 
+class text_box_data;
+class POPPLER_CPP_EXPORT text_box {
+  friend class page;
+  public:
+  text_box(const ustring &text, const rectf &bBox);
+  ~text_box();
+  ustring text() const;
+  rectf bbox() const;
+  text_box *next_text_box() const;
+  text_box *next_word() { return this->next_text_box(); };
+  rectf char_bbox(int i) const;
+  bool has_space_after() const;
+private:
+  text_box_data* m_data;
+};
+
 class document;
 class document_private;
 class page_private;
@@ -62,6 +78,8 @@ public:
                 case_sensitivity_enum case_sensitivity, rotation_enum rotation = rotate_0) const;
     ustring text(const rectf &rect = rectf()) const;
     ustring text(const rectf &rect, text_layout_enum layout_mode) const;
+
+    std::vector<text_box*> text_list(rotation_enum rotation) const;
 
 private:
     page(document_private *doc, int index);
