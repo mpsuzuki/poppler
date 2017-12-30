@@ -342,6 +342,8 @@ static void print_page_text_list(poppler::page *p)
         std::cout << "[" << ustr << "] @ ";
         std::cout << "( x=" << bbox.x() << " y=" << bbox.y() << " w=" << bbox.width() << " h=" << bbox.height() << " )";
         std::cout << std::endl;
+
+        delete text_list[i];
     }
     std::cout << "---" << std::endl;
 }
