@@ -311,9 +311,9 @@ rectf text_box::bbox() const
     return m_data->bbox;
 }
 
-text_box* text_box::next_word() const
+text_box* text_box::next_text_box() const
 {
-    return m_data->next_word;
+    return m_data->next_text_box;
 }
 
 rectf text_box::char_bbox(int i) const
@@ -355,11 +355,10 @@ std::vector<text_box*> page::text_list(rotation_enum rotate) const
         return output_list;
     }
 
-    // copy_text_word_list_to_std_vector(output_list, word_list);
     {
         output_list.reserve(word_list->getLength());
-        for (int j = 0; j < word_list->getLength(); j ++) {
-	    TextWord *word = word_list->get(j);
+        for (int i = 0; i < word_list->getLength(); i ++) {
+	    TextWord *word = word_list->get(i);
 
 	    GooString *gooWord = word->getText();
 	    ustring ustr = detail::unicode_GooString_to_ustring(gooWord);
@@ -371,20 +370,14 @@ std::vector<text_box*> page::text_list(rotation_enum rotate) const
 	    text_box* tb = new text_box(ustr, rectf(xMin, yMin, xMax-xMin, yMax-yMin));
 	    tb->m_data->has_space_after = (word->hasSpaceAfter() == gTrue);
 
-	    // copy_char_bboxes_to_std_vector(tb->m_data->charBBoxes, word);
-	    {
-		// double xMin, yMin, xMax, yMax;
-
-		tb->m_data->char_bboxes.reserve(word->getLength());
-		for (int k = 0; k < word->getLength(); k ++) {
-
-		    word->getCharBBox(k, &xMin, &yMin, &xMax, &yMax);
-		    tb->m_data->char_bboxes.push_back(rectf(xMin, yMin, xMax - xMin, yMax - yMin));
-		}
+	    tb->m_data->char_bboxes.reserve(word->getLength());
+	    for (int j = 0; j < word->getLength(); j ++) {
+		word->getCharBBox(j, &xMin, &yMin, &xMax, &yMax);
+		tb->m_data->char_bboxes.push_back(rectf(xMin, yMin, xMax-xMin, yMax-yMin));
 	    }
 
 	    if (output_list.size() > 0)
-		output_list.back()->m_data->next_word = tb;
+		output_list.back()->m_data->next_text_box = tb;
 	    output_list.push_back(tb);
 	}
     }
