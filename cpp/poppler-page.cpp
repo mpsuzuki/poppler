@@ -289,11 +289,26 @@ ustring page::text(const rectf &r, text_layout_enum layout_mode) const
 /*
  * text_box object for page::text_list()
  */
-text_box::text_box(const ustring& text, const rectf &bbox)
+ustring text_box_data::set_text(const ustring& t)
+{
+    text = t;
+    return text;
+}
+
+rectf text_box_data::set_bbox(const rectf &b)
+{
+    bbox = b;
+    return bbox;
+}
+
+text_box::text_box()
 {
     m_data = new text_box_data();
-    m_data->text = text;
-    m_data->bbox = bbox;
+}
+
+text_box::text_box(text_box_data* p)
+{
+    m_data = p;
 }
 
 text_box::~text_box()
@@ -326,10 +341,10 @@ bool text_box::has_space_after() const
     return m_data->has_space_after;
 }
 
-std::vector<text_box*> page::text_list(rotation_enum rotate) const
+std::vector<text_box> page::text_list(rotation_enum rotate) const
 {
     TextOutputDev *output_dev;
-    std::vector<text_box*>  output_list;
+    std::vector<text_box>  output_list;
     const int rotation_value = (int)rotate * 90;
 
     /* config values are same with Qt5 Page::TextList() */
@@ -359,26 +374,29 @@ std::vector<text_box*> page::text_list(rotation_enum rotate) const
     for (int i = 0; i < word_list->getLength(); i ++) {
 	TextWord *word = word_list->get(i);
 
+	text_box_data* m_data = new text_box_data();
+
 	GooString *gooWord = word->getText();
-	ustring ustr = detail::unicode_GooString_to_ustring(gooWord);
+	m_data->set_text( detail::unicode_GooString_to_ustring(gooWord) );
 	delete gooWord;
 
 	double xMin, yMin, xMax, yMax;
 	word->getBBox(&xMin, &yMin, &xMax, &yMax);
+	m_data->set_bbox( rectf(xMin, yMin, xMax-xMin, yMax-yMin) );
 
-	text_box* tb = new text_box(ustr, rectf(xMin, yMin, xMax-xMin, yMax-yMin));
-	tb->m_data->has_space_after = (word->hasSpaceAfter() == gTrue);
+	m_data->has_space_after = (word->hasSpaceAfter() == gTrue);
 
-	tb->m_data->char_bboxes.reserve(word->getLength());
+	m_data->char_bboxes.reserve(word->getLength());
 	for (int j = 0; j < word->getLength(); j ++) {
 	    word->getCharBBox(j, &xMin, &yMin, &xMax, &yMax);
-	    tb->m_data->char_bboxes.push_back(rectf(xMin, yMin, xMax-xMin, yMax-yMin));
+	    m_data->char_bboxes.push_back(rectf(xMin, yMin, xMax-xMin, yMax-yMin));
 	}
 
-	if (output_list.size() > 0)
-	    output_list.back()->m_data->next_text_box = tb;
+	output_list.push_back(text_box());
+	output_list[i].m_data = m_data;
 
-	output_list.push_back(tb);
+	if (i > 0)
+	    output_list[i-1].m_data->next_text_box = &(output_list[i]);
     }
     delete word_list;
     delete output_dev;

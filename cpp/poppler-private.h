@@ -70,6 +70,8 @@ void delete_all(const Collection &c)
 class text_box;
 class text_box_data
 {
+friend class text_box;
+friend class page;
 public:
     text_box_data()
     : next_text_box(0), has_space_after(false)
@@ -80,6 +82,10 @@ public:
     text_box *next_text_box;
     std::vector<rectf> char_bboxes;
     bool has_space_after;
+
+private:
+    ustring set_text(const ustring& text);
+    rectf set_bbox(const rectf& bbox);
 };
 
 }
