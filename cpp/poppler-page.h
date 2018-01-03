@@ -38,7 +38,7 @@ class POPPLER_CPP_EXPORT text_box {
 	rectf     char_bbox(int i) const;
 	bool      has_space_after() const;
     private:
-	text_box_data* m_data;
+	std::unique_ptr<text_box_data> m_data;
 };
 
 class document;
