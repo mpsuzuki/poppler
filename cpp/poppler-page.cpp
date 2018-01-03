@@ -311,11 +311,6 @@ rectf text_box::bbox() const
     return m_data->bbox;
 }
 
-text_box* text_box::next_text_box() const
-{
-    return m_data->next_text_box;
-}
-
 rectf text_box::char_bbox(int i) const
 {
     return m_data->char_bboxes[i];
@@ -326,10 +321,10 @@ bool text_box::has_space_after() const
     return m_data->has_space_after;
 }
 
-std::vector<text_box*> page::text_list(rotation_enum rotate) const
+std::vector<std::unique_ptr<text_box>> page::text_list(rotation_enum rotate) const
 {
     TextOutputDev *output_dev;
-    std::vector<text_box*>  output_list;
+    std::vector<std::unique_ptr<text_box>>  output_list;
     const int rotation_value = (int)rotate * 90;
 
     /* config values are same with Qt5 Page::TextList() */
@@ -366,7 +361,7 @@ std::vector<text_box*> page::text_list(rotation_enum rotate) const
 	double xMin, yMin, xMax, yMax;
 	word->getBBox(&xMin, &yMin, &xMax, &yMax);
 
-	text_box* tb = new text_box(ustr, rectf(xMin, yMin, xMax-xMin, yMax-yMin));
+	std::unique_ptr<text_box> tb = std::unique_ptr<text_box>(new text_box(ustr, rectf(xMin, yMin, xMax-xMin, yMax-yMin)));
 	tb->m_data->has_space_after = (word->hasSpaceAfter() == gTrue);
 
 	tb->m_data->char_bboxes.reserve(word->getLength());
@@ -375,10 +370,7 @@ std::vector<text_box*> page::text_list(rotation_enum rotate) const
 	    tb->m_data->char_bboxes.push_back(rectf(xMin, yMin, xMax-xMin, yMax-yMin));
 	}
 
-	if (output_list.size() > 0)
-	    output_list.back()->m_data->next_text_box = tb;
-
-	output_list.push_back(tb);
+	output_list.push_back(std::move(tb));
     }
     delete word_list;
     delete output_dev;
