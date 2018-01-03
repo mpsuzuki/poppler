@@ -333,7 +333,7 @@ static void print_page_text_list(poppler::page *p)
         std::cout << std::endl;
         return;
     }
-    std::vector<poppler::text_box*> text_list = p->text_list(poppler::rotate_0);
+    std::vector<std::unique_ptr<poppler::text_box>> text_list = p->text_list(poppler::rotate_0);
 
     std::cout << "---" << std::endl;
     for (size_t i = 0; i < text_list.size(); i ++) {
@@ -343,7 +343,6 @@ static void print_page_text_list(poppler::page *p)
         std::cout << "( x=" << bbox.x() << " y=" << bbox.y() << " w=" << bbox.width() << " h=" << bbox.height() << " )";
         std::cout << std::endl;
 
-        delete text_list[i];
     }
     std::cout << "---" << std::endl;
 }

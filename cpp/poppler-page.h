@@ -22,6 +22,8 @@
 #include "poppler-global.h"
 #include "poppler-rectangle.h"
 
+#include <memory>
+
 namespace poppler
 {
 
@@ -33,8 +35,6 @@ class POPPLER_CPP_EXPORT text_box {
 	~text_box();
 	ustring   text() const;
 	rectf     bbox() const;
-	text_box *next_text_box() const;
-	text_box *next_word() { return this->next_text_box(); };
 	rectf     char_bbox(int i) const;
 	bool      has_space_after() const;
     private:
@@ -79,7 +79,7 @@ public:
     ustring text(const rectf &rect = rectf()) const;
     ustring text(const rectf &rect, text_layout_enum layout_mode) const;
 
-    std::vector<text_box*> text_list(rotation_enum rotation) const;
+    std::vector<std::unique_ptr<text_box>> text_list(rotation_enum rotation) const;
 
 private:
     page(document_private *doc, int index);
