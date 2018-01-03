@@ -291,14 +291,13 @@ ustring page::text(const rectf &r, text_layout_enum layout_mode) const
  */
 text_box::text_box(const ustring& text, const rectf &bbox)
 {
-    m_data = new text_box_data();
+    m_data = std::unique_ptr<text_box_data>(new text_box_data());
     m_data->text = text;
     m_data->bbox = bbox;
 }
 
 text_box::~text_box()
 {
-    delete m_data;
 }
 
 ustring text_box::text() const
