@@ -115,7 +115,7 @@ macro(_list_prefix _outvar _listvar _prefix)
 endmacro(_list_prefix)
 
 # GObject Introspection
-if (HAVE_INTROSPECTION)
+if (HAVE_INTROSPECTION AND BUILD_SHARED_LIBS)
   include(GObjectIntrospectionMacros)
   set(INTROSPECTION_GIRS)
   set(INTROSPECTION_SCANNER_ARGS "--add-include-path=${CMAKE_CURRENT_SOURCE_DIR} --warn-all")
