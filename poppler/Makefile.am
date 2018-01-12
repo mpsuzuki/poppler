@@ -282,6 +282,7 @@ libpoppler_la_SOURCES =		\
 	StructTreeRoot.cc	\
 	StructElement.cc	\
 	UnicodeMap.cc		\
+	UnicodeMapFuncs.cc	\
 	UnicodeTypeTable.cc	\
 	UTF.cc                  \
 	ViewerPreferences.cc	\
