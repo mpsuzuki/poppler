@@ -96,7 +96,7 @@ DISTCLEANFILES = $(BUILT_SOURCES) $(stamp_files)
 MAINTAINERCLEANFILES = $(BUILT_SOURCES) $(stamp_files)
 
 # GObject Introspection
-if HAVE_INTROSPECTION
+if ENABLE_INTROSPECTION
 -include $(INTROSPECTION_MAKEFILE)
 INTROSPECTION_GIRS =
 INTROSPECTION_SCANNER_ARGS = --add-include-path=$(srcdir) --warn-all
@@ -120,4 +120,4 @@ typelibsdir = $(libdir)/girepository-1.0
 typelibs_DATA = $(INTROSPECTION_GIRS:.gir=.typelib)
 
 CLEANFILES += $(gir_DATA) $(typelibs_DATA)
-endif #HAVE_INTROSPECTION
+endif #ENABLE_INTROSPECTION
