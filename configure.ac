@@ -665,6 +665,7 @@ AC_SUBST(CAIRO_REQ)
 
 use_glib=""
 found_introspection=no
+use_introspection=no
 if test x$enable_cairo_output = xyes; then
   POPPLER_GLIB_DISABLE_DEPRECATED=""
   POPPLER_GLIB_DISABLE_SINGLE_INCLUDES=""
@@ -688,6 +689,7 @@ if test x$enable_cairo_output = xyes; then
     # Check for introspection
     GOBJECT_INTROSPECTION_CHECK([0.6.7])
 
+    use_introspection=yes
     AC_PATH_PROG([GLIB_MKENUMS],[glib-mkenums])
     POPPLER_GLIB_DISABLE_DEPRECATED="$POPPLER_GLIB_DISABLE_DEPRECATED -DG_DISABLE_DEPRECATED"
     POPPLER_GLIB_DISABLE_SINGLE_INCLUDES="$POPPLER_GLIB_DISABLE_SINGLE_INCLUDES -DG_DISABLE_SINGLE_INCLUDES"
@@ -702,8 +704,14 @@ fi
 if test x"$use_glib" = x; then
    use_glib="$enable_poppler_glib"
 fi
+if test "x${found_introspection}" = "xyes" -a "x${enable_shared}" != "xyes"; then
+  AC_MSG_WARN([*** introspection is disabled, because shared library to be scanned is disabled])
+  use_introspection="available but disabled"
+fi
 AM_CONDITIONAL(BUILD_POPPLER_GLIB, test x$enable_poppler_glib = xyes)
 AM_CONDITIONAL(HAVE_INTROSPECTION, test "x$found_introspection" = "xyes")
+AM_CONDITIONAL(ENABLE_SHARED, test "x${enable_shared}" = "xyes")
+AM_CONDITIONAL(ENABLE_INTROSPECTION, test "x${enable_shared}" = "xyes" -a "x${found_introspection}" = "xyes")
 AC_SUBST(GLIB_REQ)
 AC_SUBST(POPPLER_GLIB_DISABLE_DEPRECATED)
 AC_SUBST(POPPLER_GLIB_DISABLE_SINGLE_INCLUDES)
@@ -988,7 +996,7 @@ fi
 echo "  cairo output:        $use_cairo"
 echo "  qt5 wrapper:         $enable_poppler_qt5"
 echo "  glib wrapper:        $use_glib"
-echo "    introspection:     $found_introspection"
+echo "    introspection:     $use_introspection"
 echo "  cpp wrapper:         $enable_poppler_cpp"
 echo "  use gtk-doc:         $enable_gtk_doc"
 echo "  use libjpeg:         $enable_libjpeg"
