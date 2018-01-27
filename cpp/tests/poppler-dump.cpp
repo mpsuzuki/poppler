@@ -333,7 +333,7 @@ static void print_page_text_list(poppler::page *p)
         std::cout << std::endl;
         return;
     }
-    auto text_list = p->text_list(poppler::rotate_0);
+    auto text_list = p->text_list();
 
     std::cout << "---" << std::endl;
     for (size_t i = 0; i < text_list.size(); i ++) {

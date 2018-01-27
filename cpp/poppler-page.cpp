@@ -315,7 +315,7 @@ bool text_box::has_space_after() const
     return m_data->has_space_after;
 }
 
-std::vector<text_box> page::text_list(rotation_enum rotate) const
+std::vector<text_box> page::text_list() const
 {
     std::vector<text_box>  output_list;
 
@@ -328,15 +328,19 @@ std::vector<text_box> page::text_list(rotation_enum rotate) const
                           gFalse)  /* GBool append */
     };
 
-    /* config values are same with Qt5 Page::TextList() */
+    /*
+     * config values are same with Qt5 Page::TextList(),
+     * but rotation is fixed to zero.
+     * Few people use non-zero values.
+     */
     d->doc->doc->displayPageSlice(output_dev.get(),
-                                  d->index + 1,             /* page */
-                                  72, 72, (int)rotate * 90, /* hDPI, vDPI, rot */
-                                  false, false, false,      /* useMediaBox, crop, printing */
-                                  -1, -1, -1, -1,           /* sliceX, sliceY, sliceW, sliceH */
-                                  NULL, NULL,               /* abortCheckCbk(), abortCheckCbkData */
-                                  NULL, NULL,               /* annotDisplayDecideCbk(), annotDisplayDecideCbkData */
-                                  gTrue);                   /* copyXRef */
+                                  d->index + 1,        /* page */
+                                  72, 72, 0,           /* hDPI, vDPI, rot */
+                                  false, false, false, /* useMediaBox, crop, printing */
+                                  -1, -1, -1, -1,      /* sliceX, sliceY, sliceW, sliceH */
+                                  NULL, NULL,          /* abortCheckCbk(), abortCheckCbkData */
+                                  NULL, NULL,          /* annotDisplayDecideCbk(), annotDisplayDecideCbkData */
+                                  gTrue);              /* copyXRef */
 
     if (std::unique_ptr< TextWordList > word_list{output_dev->makeWordList()}) {
 

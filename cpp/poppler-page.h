@@ -85,7 +85,7 @@ public:
     ustring text(const rectf &rect = rectf()) const;
     ustring text(const rectf &rect, text_layout_enum layout_mode) const;
 
-    std::vector<text_box> text_list(rotation_enum rotation) const;
+    std::vector<text_box> text_list() const;
 
 private:
     page(document_private *doc, int index);
