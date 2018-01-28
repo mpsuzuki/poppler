@@ -39,7 +39,7 @@ public:
 
     ustring   text() const;
     rectf     bbox() const;
-    rectf     char_bbox(int i) const;
+    rectf     char_bbox(size_t i) const;
     bool      has_space_after() const;
 private:
     text_box(text_box_data *data);

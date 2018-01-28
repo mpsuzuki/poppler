@@ -305,9 +305,11 @@ rectf text_box::bbox() const
     return m_data->bbox;
 }
 
-rectf text_box::char_bbox(int i) const
+rectf text_box::char_bbox(size_t i) const
 {
-    return m_data->char_bboxes.at(i);
+    if (i < m_data->char_bboxes.size())
+        return m_data->char_bboxes[i];
+    return rectf(0, 0, 0, 0);
 }
 
 bool text_box::has_space_after() const
