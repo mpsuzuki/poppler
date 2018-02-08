@@ -39,6 +39,20 @@ public:
 
     ustring   text() const;
     rectf     bbox() const;
+
+    /**
+       Get a bbox for the i-th glyph
+
+       This method returns a rectf of the bounding box for
+       the i-th glyph in the text_box.
+
+       \note The text_box object owns the rectf objects,
+       the caller is not needed to free them.
+
+       \warning For too large glyph index, rectf(0,0,0,0)
+       is returned. The number of the glyphs and ustring
+       codepoints might be different in some complex scripts.
+     */
     rectf     char_bbox(size_t i) const;
     bool      has_space_after() const;
 private:
@@ -85,6 +99,22 @@ public:
     ustring text(const rectf &rect = rectf()) const;
     ustring text(const rectf &rect, text_layout_enum layout_mode) const;
 
+    /**
+       Returns a list of text of the page
+
+       This method returns a std::vector of text_box that contain all
+       the text of the page, with roughly one text word of text
+       per text_box item.
+
+       For text written in western languages (left-to-right and
+       up-to-down), the std::vector contains the text in the proper
+       order.
+
+       \note The page object owns the text_box objects as unique_ptr,
+             the caller is not needed to free them.
+
+       \warning This method is not tested with Asian scripts
+    */
     std::vector<text_box> text_list() const;
 
 private:
