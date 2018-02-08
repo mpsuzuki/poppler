@@ -323,7 +323,7 @@ std::vector<text_box> page::text_list() const
 
     /* config values are same with Qt5 Page::TextList() */
     std::unique_ptr<TextOutputDev> output_dev{
-        new TextOutputDev(NULL,    /* char* fileName */
+        new TextOutputDev(nullptr,    /* char* fileName */
                           gFalse,  /* GBool physLayoutA */
                           0,       /* double fixedPitchA */
                           gFalse,  /* GBool rawOrderA */
@@ -336,13 +336,13 @@ std::vector<text_box> page::text_list() const
      * Few people use non-zero values.
      */
     d->doc->doc->displayPageSlice(output_dev.get(),
-                                  d->index + 1,        /* page */
-                                  72, 72, 0,           /* hDPI, vDPI, rot */
-                                  false, false, false, /* useMediaBox, crop, printing */
-                                  -1, -1, -1, -1,      /* sliceX, sliceY, sliceW, sliceH */
-                                  NULL, NULL,          /* abortCheckCbk(), abortCheckCbkData */
-                                  NULL, NULL,          /* annotDisplayDecideCbk(), annotDisplayDecideCbkData */
-                                  gTrue);              /* copyXRef */
+                                  d->index + 1,           /* page */
+                                  72, 72, 0,              /* hDPI, vDPI, rot */
+                                  gFalse, gFalse, gFalse, /* useMediaBox, crop, printing */
+                                  -1, -1, -1, -1,         /* sliceX, sliceY, sliceW, sliceH */
+                                  nullptr, nullptr,       /* abortCheckCbk(), abortCheckCbkData */
+                                  nullptr, nullptr,       /* annotDisplayDecideCbk(), annotDisplayDecideCbkData */
+                                  gTrue);                 /* copyXRef */
 
     if (std::unique_ptr< TextWordList > word_list{output_dev->makeWordList()}) {
 
