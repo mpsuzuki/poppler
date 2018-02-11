@@ -1,0 +1,41 @@
+language: cpp
+
+script:
+  - mkdir build && cd build
+  - cmake .. -DENABLE_GLIB=OFF -DCMAKE_INSTALL_PREFIX= -DBUILD_GTK_TESTS=OFF -DENABLE_QT5=OFF -DWITH_GObjectIntrospection=OFF -DENABLE_CMS=none
+  - make
+  - mkdir ../dist
+  - make DESTDIR="$PWD/../dist" install
+
+matrix:
+  include:
+    - dist: trusty
+      compiler: clang
+    - dist: trusty
+      compiler: gcc     
+    - os: osx
+      osx_image: xcode9.2
+      before_install:
+        - brew install poppler --build-from-source
+        - brew remove poppler
+    - os: osx
+      osx_image: xcode8.3
+      before_install:
+        - brew install poppler --build-from-source
+        - brew remove poppler
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:aacid/openjp2trusty'    
+    packages:
+      - cmake
+      - libglib2.0-dev
+      - libgtk2.0-dev
+      - libfontconfig1-dev
+      - libcairo2-dev
+      - libjpeg-dev
+      - libpng-dev
+      - libtiff-dev
+      - liblcms2-dev
+      - libfreetype6-dev
+      - libopenjp2-7-dev
