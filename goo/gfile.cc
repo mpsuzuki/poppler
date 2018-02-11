@@ -687,7 +687,7 @@ GooFile::GooFile(int fdA)
 {
     struct stat statbuf;
     fstat(fd, &statbuf);
-    modifiedTimeOnOpen = statbuf.st_mtim;
+    modifiedTimeOnOpen.tv_sec = statbuf.st_mtime;
 }
 
 bool GooFile::modificationTimeChangedSinceOpen() const
@@ -695,7 +695,7 @@ bool GooFile::modificationTimeChangedSinceOpen() const
     struct stat statbuf;
     fstat(fd, &statbuf);
 
-    return modifiedTimeOnOpen.tv_sec != statbuf.st_mtim.tv_sec || modifiedTimeOnOpen.tv_nsec != statbuf.st_mtim.tv_nsec;
+    return modifiedTimeOnOpen.tv_sec != statbuf.st_mtime || modifiedTimeOnOpen.tv_nsec != statbuf.st_mtime;
 }
 
 #endif // _WIN32
