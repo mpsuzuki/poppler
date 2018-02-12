@@ -70,6 +70,8 @@ void delete_all(const Collection &c)
 
 struct text_box_data
 {
+    ~text_box_data();
+
     ustring text;
     rectf bbox;
     std::vector<rectf> char_bboxes;

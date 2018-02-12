@@ -290,6 +290,8 @@ ustring page::text(const rectf &r, text_layout_enum layout_mode) const
 /*
  * text_box object for page::text_list()
  */
+text_box_data::~text_box_data() = default;
+
 text_box::~text_box() = default;
 
 text_box::text_box(text_box_data *data) : m_data{data}
