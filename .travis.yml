@@ -1,12 +1,13 @@
 language: cpp
 
 script:
-  - ./autogen.sh
-  - ./configure
-  - make V=1
-  - mkdir "$PWD/root"
-  - make DESTDIR="$PWD/root" install
-  - make V=1 dist
+  - glib-mkenums --version
+#  - ./autogen.sh
+#  - ./configure
+#  - make V=1
+#  - mkdir "$PWD/root"
+#  - make DESTDIR="$PWD/root" install
+#  - make V=1 dist
 
 matrix:
   include:
@@ -22,7 +23,6 @@ addons:
       - autotools-dev
       - libtool
       - libglib2.0-dev
-      - libglib2.0-dev-bin
       - libgtk2.0-dev
       - gtk-doc-tools
       - libfontconfig1-dev
