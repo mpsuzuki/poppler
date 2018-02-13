@@ -22,9 +22,10 @@ addons:
       - automake
       - autotools-dev
       - libtool
+      - gtk-doc-tools
+      - gobject-introspection
       - libglib2.0-dev
       - libgtk2.0-dev
-      - gtk-doc-tools
       - libfontconfig1-dev
       - libcairo2-dev
       - libjpeg-dev
@@ -33,3 +34,4 @@ addons:
       - liblcms2-dev
       - libfreetype6-dev
       - libopenjp2-7-dev
+      - libgirepository1.0-dev
