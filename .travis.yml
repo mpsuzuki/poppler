@@ -2,23 +2,18 @@ language: cpp
 
 script:
   - ./autogen.sh
-  - ./configure
   - make V=1
-  - mkdir "$PWD/root"
-  - make DESTDIR="$PWD/root" install
-#  - make dist
 
 matrix:
   include:
     - dist: trusty
       compiler: gcc     
+
 addons:
   apt:
+    sources:
+      - sourceline: 'ppa:aacid/openjp2trusty'    
     packages:
-      - autoconf
-      - automake
-      - autotools-dev
-      - libtool
       - libglib2.0-dev
       - libgtk2.0-dev
       - libfontconfig1-dev
@@ -29,4 +24,3 @@ addons:
       - liblcms2-dev
       - libfreetype6-dev
       - libopenjp2-7-dev
-      - gtk-doc-tools
