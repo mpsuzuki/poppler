@@ -1,13 +1,13 @@
 language: cpp
 
 script:
-  - glib-mkenums --version
-#  - ./autogen.sh
-#  - ./configure
-#  - make V=1
-#  - mkdir "$PWD/root"
-#  - make DESTDIR="$PWD/root" install
-#  - make V=1 dist
+  - ./autogen.sh
+  - ./configure
+  - fgrep GLIB_MKENUMS glib/Makefile
+  - make V=1
+  - mkdir "$PWD/root"
+  - make DESTDIR="$PWD/root" install
+  - make V=1 dist
 
 matrix:
   include:
