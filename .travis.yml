@@ -6,7 +6,7 @@ script:
   - make V=1
   - mkdir "$PWD/root"
   - make DESTDIR="$PWD/root" install
-  - make dist
+  - make V=1 dist
 
 matrix:
   include:
