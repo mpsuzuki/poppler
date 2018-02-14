@@ -106,6 +106,11 @@ distclean-local:
 		rm -f ChangeLog; \
 	fi
 
+copy-dist-archives: $(DIST_ARCHIVES)
+	rm -rf $(top_builddir)/dist-archives
+	mkdir $(top_builddir)/dist-archives
+	cp -v $(DIST_ARCHIVES) $(top_builddir)/dist-archives/
+
 ChangeLog:
 	$(AM_V_GEN) if test -d "$(srcdir)/.git"; then \
 	  (GIT_DIR=$(top_srcdir)/.git ./missing --run git log --stat) | fmt --split-only > $@.tmp \
