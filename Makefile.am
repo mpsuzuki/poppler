@@ -109,7 +109,18 @@ distclean-local:
 copy-dist-archives: $(DIST_ARCHIVES)
 	rm -rf $(top_builddir)/dist-archives
 	mkdir $(top_builddir)/dist-archives
-	cp -v $(DIST_ARCHIVES) $(top_builddir)/dist-archives/
+	DIST_HASH=`git log | head -1 | awk '{printf("%s\n",substr($$2,0,6))}'` ; \
+	DATE=`date -u +%Y%M%d-%H%m` ; \
+	for f in $(DIST_ARCHIVES) ; do \
+          case $$f in \
+	  *.zip) suffix="zip" ;; \
+	  *.tar.gz) suffix="tar.gz" ;; \
+	  *.tar.bz2) suffix="tar.bz2" ;; \
+	  *.tar.xz) suffix="tar.xz" ;; \
+	  *.tar.lz) suffix="tar.lz" ;; \
+          esac ; \
+	  cp -v $$f $(top_builddir)/dist-archives/$(distdir)_$${DIST_HASH}.$${suffix} ; \
+	done
 
 ChangeLog:
 	$(AM_V_GEN) if test -d "$(srcdir)/.git"; then \
