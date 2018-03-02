@@ -9,7 +9,15 @@ script:
   - mkdir "$PWD/root"
   - make DESTDIR="$PWD/root" install
   - make V=1 dist
-  - make V=1 copt-dist-archives
+  - make V=1 copy-dist-archives
+
+#deploy:
+#  provider: releases
+#  skip_cleanup: true
+#  api_key: $GITHUB_TOKEN
+#  file_glob: true
+#  file: 'dist-archives/*.{tar.gz,tar.xz,zip}'
+#  on:
 
 matrix:
   include:
