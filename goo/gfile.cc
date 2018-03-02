@@ -54,6 +54,14 @@
 #    include <unixlib.h>
 #  endif
 #endif // _WIN32
+
+#if defined( HAVE_STAT_ST_MTIM )
+# define GET_ST_MTIM_FROM_STATBUF( stbuf ) ( ( stbuf ).st_mtim )
+#elif defined( HAVE_STAT_ST_MTIMESPEC )
+# define GET_ST_MTIM_FROM_STATBUF( stbuf ) ( ( stbuf ).st_mtimespec )
+#endif
+
+
 #include <stdio.h>
 #include <limits>
 #include "GooString.h"
@@ -687,7 +695,7 @@ GooFile::GooFile(int fdA)
 {
     struct stat statbuf;
     fstat(fd, &statbuf);
-    modifiedTimeOnOpen = statbuf.st_mtim;
+    modifiedTimeOnOpen = GET_ST_MTIM_FROM_STATBUF( statbuf );
 }
 
 bool GooFile::modificationTimeChangedSinceOpen() const
@@ -695,7 +703,8 @@ bool GooFile::modificationTimeChangedSinceOpen() const
     struct stat statbuf;
     fstat(fd, &statbuf);
 
-    return modifiedTimeOnOpen.tv_sec != statbuf.st_mtim.tv_sec || modifiedTimeOnOpen.tv_nsec != statbuf.st_mtim.tv_nsec;
+    return modifiedTimeOnOpen.tv_sec  != GET_ST_MTIM_FROM_STATBUF( statbuf ).tv_sec ||
+           modifiedTimeOnOpen.tv_nsec != GET_ST_MTIM_FROM_STATBUF( statbuf ).tv_nsec;
 }
 
 #endif // _WIN32

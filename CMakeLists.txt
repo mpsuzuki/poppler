@@ -22,6 +22,17 @@ test_big_endian(WORDS_BIGENDIAN)
 include(CheckFileOffsetBits)
 CHECK_FILE_OFFSET_BITS()
 
+include(CheckStructHasMember)
+# since POSIX 7 (2008), stat.st_mtim is used for nsec time
+CHECK_STRUCT_HAS_MEMBER("struct stat" st_mtim sys/stat.h HAVE_STAT_ST_MTIM LANGUAGE C)
+# macOS uses stat.st_mtimespec before POSIX standardization
+CHECK_STRUCT_HAS_MEMBER("struct stat" st_mtimespec sys/stat.h HAVE_STAT_ST_MTIMESPEC LANGUAGE C)
+if (HAVE_STAT_ST_MTIM)
+    add_definitions(-DHAVE_STAT_ST_MTIM=1)
+elseif (HAVE_STAT_ST_MTIMESPEC)
+    add_definitions(-DHAVE_STAT_ST_MTIMESPEC=1)
+endif()
+
 include(GNUInstallDirs)
 
 find_package (ECM 1.6.0 QUIET NO_MODULE)
