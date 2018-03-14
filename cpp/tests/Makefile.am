@@ -11,6 +11,7 @@ LDADD =						\
 	$(top_builddir)/cpp/libpoppler-cpp.la
 
 noinst_PROGRAMS =				\
+	jeroen-test				\
 	poppler-dump				\
 	poppler-render
 
@@ -19,3 +20,6 @@ poppler_dump_SOURCES =				\
 
 poppler_render_SOURCES =			\
 	poppler-render.cpp
+
+jeroen_test_SOURCES = \
+	jeroen-test.cpp
