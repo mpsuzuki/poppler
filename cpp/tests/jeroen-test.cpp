@@ -38,12 +38,14 @@ int main(int argc, char* argv[]){
   //Incorrect conversion to UTF8:
   print_ustring(doc->get_creator());
   print_ustring(doc->get_author());
-  print_ustring(doc->create_toc()->root()->title());
+  if (doc->create_toc() && doc->create_toc()->root()) {
+    print_ustring(doc->create_toc()->root()->title());
+  }
   std::cout << "\n--------\n Individual textboxes:\n" <<  std::endl;
 
   //Also incorrect conversion to UTF8:
   std::vector<text_box> words = p->text_list();
-  for(int i = 0; i < words.size(); i++)
+  for(size_t i = 0; i < words.size(); i++)
     print_ustring(words.at(i).text());
   return 0;
 }
