@@ -21,5 +21,7 @@ poppler_dump_SOURCES =				\
 poppler_render_SOURCES =			\
 	poppler-render.cpp
 
+jeroen-test.$(OBJEXT) : CXXFLAGS += -fexceptions
+
 jeroen_test_SOURCES = \
 	jeroen-test.cpp
