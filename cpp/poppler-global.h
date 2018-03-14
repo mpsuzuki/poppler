@@ -92,6 +92,8 @@ public:
 
     static ustring from_utf8(const char *str, int len = -1);
     static ustring from_latin1(const std::string &str);
+    static ustring from_buff_with_global_text_encoding(const char *str, int len = -1);
+    static ustring from_buff_with_text_encoding(const char *str, const char *from_code = "UTF-8", int len = -1);
 
 private:
     // forbid implicit std::string conversions

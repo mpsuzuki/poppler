@@ -26,6 +26,7 @@
 #include "poppler-private.h"
 
 #include "DateInfo.h"
+#include "GlobalParams.h"
 
 #include <algorithm>
 
@@ -265,7 +266,7 @@ std::string ustring::to_latin1() const
     return ret;
 }
 
-ustring ustring::from_utf8(const char *str, int len)
+ustring ustring::from_buff_with_text_encoding(const char *str, const char* from_code, int len)
 {
     if (len <= 0) {
         len = std::strlen(str);
@@ -274,7 +275,7 @@ ustring ustring::from_utf8(const char *str, int len)
         }
     }
 
-    MiniIconv ic("UTF-16", "UTF-8");
+    MiniIconv ic("UTF-16", from_code);
     if (!ic.is_valid()) {
         return ustring();
     }
@@ -299,6 +300,16 @@ ustring ustring::from_utf8(const char *str, int len)
     ret.resize(ret.size() - ret_len_left/sizeof(ustring::value_type));
 
     return ret;
+}
+
+ustring ustring::from_buff_with_global_text_encoding(const char *str, int len)
+{
+    return ustring::from_buff_with_text_encoding(str, globalParams->getTextEncodingName()->getCString(), len);
+}
+
+ustring ustring::from_utf8(const char *str, int len)
+{
+    return ustring::from_buff_with_text_encoding(str, "UTF-8", len);
 }
 
 ustring ustring::from_latin1(const std::string &str)
