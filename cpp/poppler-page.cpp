@@ -355,7 +355,7 @@ std::vector<text_box> page::text_list() const
             TextWord *word = word_list->get(i);
 
             std::unique_ptr<GooString> gooWord{word->getText()};
-            ustring ustr = detail::unicode_GooString_to_ustring(gooWord.get());
+            ustring ustr = ustring::from_utf8(gooWord->getCString());
 
             double xMin, yMin, xMax, yMax;
             word->getBBox(&xMin, &yMin, &xMax, &yMax);
