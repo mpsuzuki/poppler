@@ -88,7 +88,7 @@ std::string embedded_file::name() const
 ustring embedded_file::description() const
 {
     GooString *goo = d->file_spec->getDescription();
-    return goo ? detail::unicode_GooString_to_ustring(goo) : ustring();
+    return goo ? ustring::from_utf8(goo->getCString(), goo->getLength()) : ustring();
 }
 
 /**

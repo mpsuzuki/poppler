@@ -342,7 +342,7 @@ ustring document::info_key(const std::string &key) const
         return ustring();
     }
 
-    return detail::unicode_GooString_to_ustring(goo_value.get());
+    return ustring::from_utf8(goo_value->getCString(), goo_value->getLength());
 }
 
 /**
@@ -433,7 +433,7 @@ ustring document::get_title() const
         return ustring();
     }
 
-    return detail::unicode_GooString_to_ustring(goo_title.get());
+    return ustring::from_utf8(goo_title->getCString(), goo_title->getLength());
 }
 
 /**
@@ -477,7 +477,7 @@ ustring document::get_author() const
         return ustring();
     }
 
-    return detail::unicode_GooString_to_ustring(goo_author.get());
+    return ustring::from_utf8(goo_author->getCString(), goo_author->getLength());
 }
 
 /**
@@ -521,7 +521,7 @@ ustring document::get_subject() const
         return ustring();
     }
 
-    return detail::unicode_GooString_to_ustring(goo_subject.get());
+    return ustring::from_utf8(goo_subject->getCString(), goo_subject->getLength());
 }
 
 /**
@@ -565,7 +565,7 @@ ustring document::get_keywords() const
         return ustring();
     }
 
-    return detail::unicode_GooString_to_ustring(goo_keywords.get());
+    return ustring::from_utf8(goo_keywords->getCString(), goo_keywords->getLength());
 }
 
 /**
@@ -609,7 +609,7 @@ ustring document::get_creator() const
         return ustring();
     }
 
-    return detail::unicode_GooString_to_ustring(goo_creator.get());
+    return ustring::from_utf8(goo_creator->getCString(), goo_creator->getLength());
 }
 
 /**
@@ -653,7 +653,7 @@ ustring document::get_producer() const
         return ustring();
     }
 
-    return detail::unicode_GooString_to_ustring(goo_producer.get());
+    return ustring::from_utf8(goo_producer->getCString(), goo_producer->getLength());
 }
 
 /**
@@ -838,7 +838,7 @@ ustring document::metadata() const
 {
     std::unique_ptr<GooString> md(d->doc->getCatalog()->readMetadata());
     if (md.get()) {
-        return detail::unicode_GooString_to_ustring(md.get());
+        return ustring::from_utf8(md->getCString(), md->getLength());
     }
     return ustring();
 }
