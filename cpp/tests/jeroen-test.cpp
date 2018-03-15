@@ -36,10 +36,20 @@ int main(int argc, char* argv[]){
   std::cout << "\n--------\n Some ustring fields:\n" <<  std::endl;
 
   //Incorrect conversion to UTF8:
+  std::cout << "creator:\t";
   print_ustring(doc->get_creator());
+  std::cout << "\n";
+
+  std::cout << "author:\t";
   print_ustring(doc->get_author());
+  std::cout << "\n";
+
   if (doc->create_toc() && doc->create_toc()->root()) {
-    print_ustring(doc->create_toc()->root()->title());
+    toc_item* toc_root = doc->create_toc()->root();
+    for (auto itr = toc_root->children_begin(); itr != toc_root->children_end(); ++ itr) {
+      std::cout << "title:\t";
+      print_ustring((*itr)->title());
+    }
   }
   std::cout << "\n--------\n Individual textboxes:\n" <<  std::endl;
 
