@@ -11,13 +11,14 @@ script:
   - make V=1 dist
   - make V=1 copy-dist-archives
 
-#deploy:
-#  provider: releases
-#  skip_cleanup: true
-#  api_key: $GITHUB_TOKEN
-#  file_glob: true
-#  file: 'dist-archives/*.{tar.gz,tar.xz,zip}'
-#  on:
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key: $GITHUB_TOKEN
+  file_glob: true
+  file: 'dist-archives/*.{tar.gz,tar.xz,zip}'
+  on:
+    branch: keep-autotool-travis
 
 matrix:
   include:
