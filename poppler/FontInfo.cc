@@ -50,7 +50,7 @@ FontInfoScanner::FontInfoScanner(PDFDoc *docA, int firstPage) {
 FontInfoScanner::~FontInfoScanner() {
 }
 
-GooList *FontInfoScanner::scan(int nPages) {
+GooList *FontInfoScanner::scan(int nPages, bool doSubst) {
   GooList *result;
   Page *page;
   Dict *resDict;
@@ -74,14 +74,14 @@ GooList *FontInfoScanner::scan(int nPages) {
     if (!page) continue;
 
     if ((resDict = page->getResourceDictCopy(xrefA))) {
-      scanFonts(xrefA, resDict, result);
+      scanFonts(xrefA, resDict, doSubst, result);
       delete resDict;
     }
     annots = page->getAnnots();
     for (int i = 0; i < annots->getNumAnnots(); ++i) {
       Object obj1 = annots->getAnnot(i)->getAppearanceResDict();
       if (obj1.isDict()) {
-        scanFonts(xrefA, obj1.getDict(), result);
+        scanFonts(xrefA, obj1.getDict(), doSubst, result);
       }
     }
   }
@@ -92,7 +92,11 @@ GooList *FontInfoScanner::scan(int nPages) {
   return result;
 }
 
-void FontInfoScanner::scanFonts(XRef *xrefA, Dict *resDict, GooList *fontsList) {
+GooList *FontInfoScanner::scan(int nPages) {
+  return FontInfoScanner::scan(nPages, true);
+}
+
+void FontInfoScanner::scanFonts(XRef *xrefA, Dict *resDict, bool doSubst, GooList *fontsList) {
   GfxFontDict *gfxFontDict;
   GfxFont *font;
 
@@ -115,7 +119,7 @@ void FontInfoScanner::scanFonts(XRef *xrefA, Dict *resDict, GooList *fontsList) 
 
         // add this font to the list if not already found
         if (fonts.find(fontRef.num) == fonts.end()) {
-          fontsList->append(new FontInfo(font, xrefA));
+          fontsList->append(new FontInfo(font, xrefA, doSubst));
           fonts.insert(fontRef.num);
         }
       }
@@ -145,15 +149,18 @@ void FontInfoScanner::scanFonts(XRef *xrefA, Dict *resDict, GooList *fontsList) 
         if (obj2.isStream()) {
           Object resObj = obj2.streamGetDict()->lookup("Resources");
           if (resObj.isDict() && resObj.getDict() != resDict) {
-            scanFonts(xrefA, resObj.getDict(), fontsList);
+            scanFonts(xrefA, resObj.getDict(), doSubst, fontsList);
           }
         }
       }
     }
   }
 }
+void FontInfoScanner::scanFonts(XRef *xrefA, Dict *resDict, GooList *fontsList) {
+  return FontInfoScanner::scanFonts(xrefA, resDict, true, fontsList);
+}
 
-FontInfo::FontInfo(GfxFont *font, XRef *xref) {
+FontInfo::FontInfo(GfxFont *font, XRef *xref, bool doSubst) {
   const GooString *origName;
 
   fontRef = *font->getID();
@@ -178,7 +185,7 @@ FontInfo::FontInfo(GfxFont *font, XRef *xref) {
 
   file = nullptr;
   substituteName = nullptr;
-  if (!emb)
+  if (!emb && doSubst)
   {
     SysFontType dummy;
     int dummy2;

@@ -70,6 +70,7 @@ void delete_all(const Collection &c)
     delete_all(c.begin(), c.end());
 }
 
+class font_info;
 struct text_box_data
 {
     ~text_box_data();
@@ -78,6 +79,14 @@ struct text_box_data
     rectf bbox;
     std::vector<rectf> char_bboxes;
     bool has_space_after;
+
+    /*
+     * font_info objects are collected in document object,
+     * no need to duplicate here, just refer it
+     */
+    std::vector<int> wmodes;
+    double font_size;
+    std::vector<font_info*> font_infos;
 };
 
 }

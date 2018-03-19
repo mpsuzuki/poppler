@@ -67,6 +67,7 @@ private:
 
     font_info_private *d;
     friend class font_iterator;
+    friend class page;
 };
 
 
@@ -75,6 +76,7 @@ class POPPLER_CPP_EXPORT font_iterator : public poppler::noncopyable
 public:
     ~font_iterator();
 
+    std::vector<font_info> next(bool doSubst);
     std::vector<font_info> next();
     bool has_next() const;
     int current_page() const;
@@ -84,6 +86,8 @@ private:
 
     font_iterator_private *d;
     friend class document;
+    friend class page;
+    friend class page_private;
 };
 
 }

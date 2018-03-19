@@ -57,6 +57,12 @@ public:
      */
     rectf     char_bbox(size_t i) const;
     bool      has_space_after() const;
+
+    /* new functions missing in Qt frontend */
+    int         get_wmode(int i = 0) const;
+    double      get_font_size() const;
+    std::string get_font_name(int i = 0) const; /* sometimes in legacy encoding */
+
 private:
     text_box(text_box_data *data);
 

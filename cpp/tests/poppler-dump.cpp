@@ -340,8 +340,12 @@ static void print_page_text_list(poppler::page *p)
     for (size_t i = 0; i < text_list.size(); i ++) {
         poppler::rectf bbox = text_list[i].bbox();
         poppler::ustring ustr = text_list[i].text();
+        std::string font_name = text_list[i].get_font_name(0);
+        double font_size = text_list[i].get_font_size();
+        int wmode = text_list[i].get_wmode();
         std::cout << "[" << ustr << "] @ ";
         std::cout << "( x=" << bbox.x() << " y=" << bbox.y() << " w=" << bbox.width() << " h=" << bbox.height() << " )";
+        std::cout << "( fontname=" << font_name << " fontsize=" << font_size << " wmode=" << wmode << " )";
         std::cout << std::endl;
 
     }

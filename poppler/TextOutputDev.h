@@ -40,6 +40,7 @@
 #include "goo/gtypes.h"
 #include "GfxFont.h"
 #include "GfxState.h"
+#include "FontInfo.h"
 #include "OutputDev.h"
 
 class GooString;
@@ -83,7 +84,11 @@ public:
   TextFontInfo(const TextFontInfo &) = delete;
   TextFontInfo& operator=(const TextFontInfo &) = delete;
 
+  GBool matches(Ref ref);
+  GBool matches(Ref *ref);
   GBool matches(GfxState *state);
+  GBool matches(GfxFont *gfxFont);
+  GBool matches(FontInfo *fontInfo);
   GBool matches(TextFontInfo *fontInfo);
 
   // Get the font ascent, or a default value if the font is not set

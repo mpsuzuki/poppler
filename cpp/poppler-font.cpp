@@ -21,59 +21,13 @@
 
 #include "poppler-document-private.h"
 
+#include "poppler-font-private.h"
+
 #include "FontInfo.h"
 
 #include <algorithm>
 
 using namespace poppler;
-
-class poppler::font_info_private
-{
-public:
-    font_info_private()
-        : type(font_info::unknown)
-        , is_embedded(false)
-        , is_subset(false)
-    {
-    }
-    font_info_private(FontInfo *fi)
-        : type((font_info::type_enum)fi->getType())
-        , is_embedded(fi->getEmbedded())
-        , is_subset(fi->getSubset())
-    {
-        if (fi->getName()) {
-            font_name = fi->getName()->getCString();
-        }
-        if (fi->getFile()) {
-            font_file = fi->getFile()->getCString();
-        }
-    }
-
-    std::string font_name;
-    std::string font_file;
-    font_info::type_enum type : 5;
-    bool is_embedded : 1;
-    bool is_subset : 1;
-};
-
-
-class poppler::font_iterator_private
-{
-public:
-    font_iterator_private(int start_page, document_private *dd)
-        : font_info_scanner(dd->doc, start_page)
-        , total_pages(dd->doc->getNumPages())
-        , current_page((std::max)(start_page, 0))
-    {
-    }
-    ~font_iterator_private()
-    {
-    }
-
-    FontInfoScanner font_info_scanner;
-    int total_pages;
-    int current_page;
-};
 
 /**
  \class poppler::font_info poppler-font.h "poppler/cpp/poppler-font.h"
@@ -205,7 +159,7 @@ font_iterator::~font_iterator()
 /**
  Returns the fonts of the current page and advances to the next one.
  */
-std::vector<font_info> font_iterator::next()
+std::vector<font_info> font_iterator::next(bool doSubst)
 {
     if (!has_next()) {
         return std::vector<font_info>();
@@ -213,7 +167,7 @@ std::vector<font_info> font_iterator::next()
 
     ++d->current_page;
 
-    GooList *items = d->font_info_scanner.scan(1);
+    GooList *items = d->font_info_scanner.scan(1, doSubst);
     if (!items) {
         return std::vector<font_info>();
     }
@@ -223,6 +177,11 @@ std::vector<font_info> font_iterator::next()
     }
     deleteGooList(items, FontInfo);
     return fonts;
+}
+
+std::vector<font_info> font_iterator::next()
+{
+    return font_iterator::next(true);
 }
 
 /**

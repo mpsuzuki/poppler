@@ -324,8 +324,24 @@ TextFontInfo::~TextFontInfo() {
 #endif
 }
 
+GBool TextFontInfo::matches(Ref ref) {
+  return ( gfxFont->getID()->num == ref.num && gfxFont->getID()->gen == ref.gen);
+}
+
+GBool TextFontInfo::matches(Ref *ref) {
+  return ( gfxFont->getID()->num == ref->num && gfxFont->getID()->gen == ref->gen);
+}
+
 GBool TextFontInfo::matches(GfxState *state) {
   return state->getFont() == gfxFont;
+}
+
+GBool TextFontInfo::matches(GfxFont *gf) {
+  return (gfxFont->getID()->num == gf->getID()->num && gfxFont->getID()->gen == gf->getID()->gen);
+}
+
+GBool TextFontInfo::matches(FontInfo *fontInfo) {
+  return (fontInfo->getRef().num == gfxFont->getID()->num && fontInfo->getRef().gen == gfxFont->getID()->gen);
 }
 
 GBool TextFontInfo::matches(TextFontInfo *fontInfo) {

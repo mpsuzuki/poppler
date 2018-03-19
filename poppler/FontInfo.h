@@ -50,7 +50,7 @@ public:
   };
     
   // Constructor.
-  FontInfo(GfxFont *fontA, XRef *xrefA);
+  FontInfo(GfxFont *fontA, XRef *xrefA, bool doSubst = true);
   // Copy constructor
   FontInfo(FontInfo& f);
   // Destructor.
@@ -91,6 +91,7 @@ public:
   ~FontInfoScanner();
 
   GooList *scan(int nPages);
+  GooList *scan(int nPages, bool doSubst);
 
 private:
 
@@ -99,6 +100,7 @@ private:
   std::set<int> fonts;
   std::set<int> visitedObjects;
 
+  void scanFonts(XRef *xrefA, Dict *resDict, bool doSubst, GooList *fontsList);
   void scanFonts(XRef *xrefA, Dict *resDict, GooList *fontsList);
 };
 
