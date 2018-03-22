@@ -91,7 +91,6 @@ public:
     std::string to_latin1() const;
 
     static ustring from_utf8(const char *str, int len = -1);
-    static ustring from_utf16(const char *str, int len = -1);
     static ustring from_latin1(const std::string &str);
 
 private:

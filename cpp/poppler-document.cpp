@@ -342,11 +342,7 @@ ustring document::info_key(const std::string &key) const
         return ustring();
     }
 
-    if (goo_value->hasUnicodeMarker()) { // octet string of UTF-16BE, skip BOM
-      return ustring::from_utf16(goo_value->getCString() + 2, goo_value->getLength() - 2);
-    } else {
-      return ustring::from_utf8(goo_value->getCString(), goo_value->getLength());
-    }
+    return ustring::from_utf8(goo_value->getCString(), goo_value->getLength());
 }
 
 /**
