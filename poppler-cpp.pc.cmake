@@ -5,8 +5,8 @@ includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 Name: poppler-cpp
 Description: cpp backend for Poppler PDF rendering library
 Version: @POPPLER_VERSION@
-Requires: @PC_REQUIRES@
-@PC_REQUIRES_PRIVATE@
+Requires: @PC_REQUIRES_POPPLER@
+@PC_REQUIRES_POPPLER_CPP_PRIVATE@
 
 Libs: -L${libdir} -lpoppler-cpp
 Cflags: -I${includedir}/poppler/cpp
