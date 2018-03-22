@@ -1,16 +1,16 @@
 language: cpp
 
 script:
-#  - mkdir build-shared && cd build-shared
-#  - cmake ..
-#  - make VERBOSE=1
-#  - cd ..
+  - pkg-config --list-all | sort
+  - mkdir build-shared && cd build-shared
+  - cmake ..
+  - make VERBOSE=1
+  - cd ..
   - mkdir build-static && cd build-static
   - cmake -DBUILD_SHARED_LIBS=OFF ..
   - make VERBOSE=1
   - mkdir ../dist
   - make DESTDIR="$PWD/../dist" install
-  - pkg-config --list-all | sort
   - cat $PWD/../dist/usr/local/lib/pkgconfig/poppler.pc
   - cat $PWD/../dist/usr/local/lib/pkgconfig/poppler-cpp.pc
   - cat $PWD/../dist/usr/local/lib/pkgconfig/poppler-glib.pc
@@ -27,32 +27,32 @@ matrix:
       compiler: gcc     
       before_install:
         - for p in `dpkg -l | fgrep jpeg | fgrep dev | awk '{print $2}'` ; do echo "== " ${p} ; dpkg -L ${p} ; done
-##    - dist: trusty
-##      compiler: clang
+#    - dist: trusty
+#      compiler: clang
+    - os: osx
+      osx_image: xcode9.2
+      before_install:
+        - ( brew install gettext && brew link --force gettext ) || true
+        - ( brew install libffi && brew link --force libffi ) || true
+        - ( brew install cmake && brew link --force cmake ) || true
+        - ( brew install pcre && brew link --force pcre ) || true
+        - ( brew install glib && brew link --force glib ) || true
+        - ( brew install freetype && brew link --force freetype ) || true
+        - ( brew install fontconfig && brew link --force fontconfig ) || true
+        - ( brew install pixman && brew link --force pixman ) || true
+        - ( brew install cairo && brew link --force cairo ) || true
+        - ( brew install jpeg && brew link --force jpeg ) || true
+        - ( brew install openjpeg && brew link --force openjpeg ) || true
+        - ( brew install libtiff && brew link --force libtiff ) || true
+        - ( brew install little-cms2 && brew link --force little-cms2 ) || true
+#        - ( brew install gtk+ && brew link --force gtk+ ) || true
+        - brew remove gobject-introspection || true
 #    - os: osx
-#      osx_image: xcode9.2
+#      osx_image: xcode8.3
 #      before_install:
-#        - ( brew install gettext && brew link --force gettext ) || true
-#        - ( brew install libffi && brew link --force libffi ) || true
-#        - ( brew install cmake && brew link --force cmake ) || true
-#        - ( brew install pcre && brew link --force pcre ) || true
-#        - ( brew install glib && brew link --force glib ) || true
-#        - ( brew install freetype && brew link --force freetype ) || true
-#        - ( brew install fontconfig && brew link --force fontconfig ) || true
-#        - ( brew install pixman && brew link --force pixman ) || true
-#        - ( brew install cairo && brew link --force cairo ) || true
-#        - ( brew install jpeg && brew link --force jpeg ) || true
-#        - ( brew install openjpeg && brew link --force openjpeg ) || true
-#        - ( brew install libtiff && brew link --force libtiff ) || true
-#        - ( brew install little-cms2 && brew link --force little-cms2 ) || true
-##        - ( brew install gtk+ && brew link --force gtk+ ) || true
-#        - brew remove gobject-introspection || true
-##    - os: osx
-##      osx_image: xcode8.3
-##      before_install:
-##        - brew install gettext
-##        - brew install poppler --build-from-source
-##        - brew remove poppler
+#        - brew install gettext
+#        - brew install poppler --build-from-source
+#        - brew remove poppler
 addons:
   apt:
     sources:
