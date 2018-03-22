@@ -701,32 +701,36 @@ endfunction()
 # if not, append LDFLAGS + LIBS to list_libs.
 #
 function (APPEND_PKG_REQUIRES_OR_LIBS pkgnames library list_requires list_libs)
+  message("")
+  message("check pkg-config + flags for ${library}")
   MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME("${library}" pkg_libname pkg_libdir)
 
   foreach(a_pkg IN LISTS pkgnames)
     execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --exists
                     RESULT_VARIABLE _result_VARIABLE
                     OUTPUT_VARIABLE _pkgconfigDevNull )
-    # message("check pkg-config --exists ${a_pkg}: ${_result_VARIABLE}")
+    message("check pkg-config --exists ${a_pkg}: ${_result_VARIABLE}")
     if (_result_VARIABLE STREQUAL "0")
       execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --variable=libdir
                       RESULT_VARIABLE _result_VARIABLE
                       OUTPUT_VARIABLE _output_VARIABLE
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
-      # message("check pkg-config --variable=libdir ${a_pkg}: ${_output_VARIABLE}")
-      # message("${_output_VARIABLE} == ${pkg_libdir}?")
+      message("check pkg-config --variable=libdir ${a_pkg}: ${_output_VARIABLE}")
+      message("${_output_VARIABLE} == ${pkg_libdir}")
       if ("${_output_VARIABLE}" STREQUAL "${pkg_libdir}")
         execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --libs
                         RESULT_VARIABLE _result_VARIABLE
                         OUTPUT_VARIABLE _output_VARIABLE
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
-        # message("check pkg-config --libs ${a_pkg}: ${_output_VARIABLE}")
+        message("check pkg-config --libs ${a_pkg}: ${_output_VARIABLE}")
         string(REGEX REPLACE "\/+$" "" _output_VARIABLE "${_output_VARIABLE}")
         string(FIND " ${_output_VARIABLE} " " -l${pkg_libname} " _pos)
         if (_pos GREATER -1)
           set(${list_requires} "${${list_requires}} ${a_pkg}" PARENT_SCOPE)
           return()
         endif() 
+      else()
+        message("*** different directories")
       endif()
     endif()
   endforeach(a_pkg)
@@ -752,12 +756,6 @@ endif()
 if (ENABLE_LIBOPENJPEG)
   set(cmake_pc_requires_private "${cmake_pc_requires_private} libopenjp2")
 endif()
-if (ENABLE_LIBPNG)
-  set(cmake_pc_requires_private "${cmake_pc_requires_private} libpng")
-endif()
-if (ENABLE_LIBTIFF)
-  set(cmake_pc_requires_private "${cmake_pc_requires_private} libtiff-4")
-endif()
 if (ENABLE_LIBNSS)
   set(cmake_pc_requires_private "${cmake_pc_requires_private} nss")
 endif()
@@ -765,6 +763,16 @@ endif()
 if (ENABLE_LIBJPEG)
   APPEND_PKG_REQUIRES_OR_LIBS("libjpeg;libjpeg8-turbo;libjpeg8;libjpeg9;libjpeg62"
                               "${JPEG_LIBRARY}"
+                              cmake_pc_requires_private cmake_pc_libs_private)
+endif()
+if (ENABLE_LIBTIFF)
+  APPEND_PKG_REQUIRES_OR_LIBS("libtiff;libtiff-4"
+                              "${TIFF_LIBRARY}"
+                              cmake_pc_requires_private cmake_pc_libs_private)
+endif()
+if (ENABLE_LIBPNG)
+  APPEND_PKG_REQUIRES_OR_LIBS("libpng;libpng16;libpng12"
+                              "${PNG_LIBRARY}"
                               cmake_pc_requires_private cmake_pc_libs_private)
 endif()
 
