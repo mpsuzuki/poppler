@@ -420,7 +420,16 @@ if(ENABLE_SPLASH)
   )
 endif()
 if(FONTCONFIG_FOUND)
-  set(poppler_LIBS ${poppler_LIBS} ${FONTCONFIG_LIBRARIES})
+  if (${FONTCONFIG_LIBRARIES} MATCHES ".*\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
+    execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" fontconfig --libs --static
+                    RESULT_VARIABLE _result_VARIABLE
+                    OUTPUT_VARIABLE _output_VARIABLE
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message("${FONTCONFIG_LIBRARIES} is static library, so dependency should be obtained by --libs --static: ${_output_VARIABLE}")
+    set(poppler_LIBS ${poppler_LIBS} ${_output_VARIABLE})
+  else() 
+    set(poppler_LIBS ${poppler_LIBS} ${FONTCONFIG_LIBRARIES})
+  endif()
 endif()
 
 if(JPEG_FOUND)
