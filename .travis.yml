@@ -1,0 +1,61 @@
+language: cpp
+
+script:
+  - mkdir build-static && cd build-static
+  - cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_QT5=OFF -DENABLE_GLIB=OFF -DENABLE_LIBCURL=OFF -DENABLE_GOBJECT_INTROSPECTION=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/root ..
+  - make install
+  - export PKG_CONFIG_PATH=`pwd`/root/lib/pkgconfig/
+  - git clone git://github.com/jeroen/popplertest
+  - cd popplertest
+  - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs --static poppler-cpp) -pthread
+  - ./encoding ./hello.pdf | cat -A
+
+matrix:
+  include:
+    - dist: trusty
+      compiler: gcc     
+#      before_install:
+#        - for p in `dpkg -l | fgrep jpeg | fgrep dev | awk '{print $2}'` ; do echo "== " ${p} ; dpkg -L ${p} ; done
+#    - dist: trusty
+#      compiler: clang
+#    - os: osx
+#      osx_image: xcode9.2
+#      before_install:
+#        - ( brew install gettext && brew link --force gettext ) || true
+#        - ( brew install libffi && brew link --force libffi ) || true
+#        - ( brew install cmake && brew link --force cmake ) || true
+#        - ( brew install pcre && brew link --force pcre ) || true
+#        - ( brew install glib && brew link --force glib ) || true
+#        - ( brew install freetype && brew link --force freetype ) || true
+#        - ( brew install fontconfig && brew link --force fontconfig ) || true
+#        - ( brew install pixman && brew link --force pixman ) || true
+#        - ( brew install cairo && brew link --force cairo ) || true
+#        - ( brew install jpeg && brew link --force jpeg ) || true
+#        - ( brew install openjpeg && brew link --force openjpeg ) || true
+#        - ( brew install libtiff && brew link --force libtiff ) || true
+#        - ( brew install little-cms2 && brew link --force little-cms2 ) || true
+##        - ( brew install gtk+ && brew link --force gtk+ ) || true
+#        - brew remove gobject-introspection || true
+#    - os: osx
+#      osx_image: xcode8.3
+#      before_install:
+#        - brew install gettext
+#        - brew install poppler --build-from-source
+#        - brew remove poppler
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:ricotz/testing'
+      - sourceline: 'ppa:aacid/openjp2trusty'    
+    packages:
+      - cmake
+#      - libglib2.0-dev
+#      - libgtk2.0-dev
+      - libfontconfig1-dev
+      - libcairo2-dev
+      - libjpeg-dev
+      - libpng-dev
+      - libtiff-dev
+      - liblcms2-dev
+      - libfreetype6-dev
+      - libopenjp2-7-dev
