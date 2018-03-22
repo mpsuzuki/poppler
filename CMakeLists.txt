@@ -699,8 +699,8 @@ endfunction()
 # if not, append LDFLAGS + LIBS to list_libs.
 #
 function (APPEND_PKG_REQUIRES_OR_LIBS pkgname library list_requires list_libs)
-  execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${pkgname} --exists RETURN_VALUE _return_VALUE OUTPUT_VARIABLE _pkgconfigDevNull )
-  if (NOT _return_VALUE)
+  execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE} ${pkgname} --exists" RESULT_VALUE _result_VALUE OUTPUT_VARIABLE _pkgconfigDevNull )
+  if (_result_VALUE STREQUAL "0")
     set(${list_requires} "${${list_requires}} ${pkgname}" PARENT_SCOPE)
   else()
     MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME("${library}" pkg_ldflags pkg_libs)
