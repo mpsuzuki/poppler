@@ -701,28 +701,28 @@ endfunction()
 # if not, append LDFLAGS + LIBS to list_libs.
 #
 function (APPEND_PKG_REQUIRES_OR_LIBS pkgnames library list_requires list_libs)
-  message("")
-  message("check pkg-config + flags for ${library}")
+  # message("")
+  # message("check pkg-config + flags for ${library}")
   MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME("${library}" pkg_libname pkg_libdir)
 
   foreach(a_pkg IN LISTS pkgnames)
     execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --exists
                     RESULT_VARIABLE _result_VARIABLE
                     OUTPUT_VARIABLE _pkgconfigDevNull )
-    message("check pkg-config --exists ${a_pkg}: ${_result_VARIABLE}")
+    # message("check pkg-config --exists ${a_pkg}: ${_result_VARIABLE}")
     if (_result_VARIABLE STREQUAL "0")
       execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --variable=libdir
                       RESULT_VARIABLE _result_VARIABLE
                       OUTPUT_VARIABLE _output_VARIABLE
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
-      message("check pkg-config --variable=libdir ${a_pkg}: ${_output_VARIABLE}")
-      message("${_output_VARIABLE} == ${pkg_libdir}")
+      # message("check pkg-config --variable=libdir ${a_pkg}: ${_output_VARIABLE}")
+      # message("${_output_VARIABLE} == ${pkg_libdir}")
       if ("${_output_VARIABLE}" STREQUAL "${pkg_libdir}")
         execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --libs
                         RESULT_VARIABLE _result_VARIABLE
                         OUTPUT_VARIABLE _output_VARIABLE
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
-        message("check pkg-config --libs ${a_pkg}: ${_output_VARIABLE}")
+        # message("check pkg-config --libs ${a_pkg}: ${_output_VARIABLE}")
         string(REGEX REPLACE "\/+$" "" _output_VARIABLE "${_output_VARIABLE}")
         string(FIND " ${_output_VARIABLE} " " -l${pkg_libname} " _pos)
         if (_pos GREATER -1)
@@ -730,7 +730,7 @@ function (APPEND_PKG_REQUIRES_OR_LIBS pkgnames library list_requires list_libs)
           return()
         endif() 
       else()
-        message("*** different directories")
+        # message("*** different directories")
       endif()
     endif()
   endforeach(a_pkg)
