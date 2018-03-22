@@ -677,8 +677,40 @@ if(PKG_CONFIG_EXECUTABLE)
   macro_ensure_version("0.18" "${_output_VAR}" PKG_CONFIG_VERSION_0_18)
 endif()
 
+# ---------------------------------------------------------------
+# generate conventional LIBS flags from pathname of the libraries
+#
+function (MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME pathname ldflags libs)
+  string(REGEX REPLACE "/[^/]+$" "/" libdir "${pathname}")
+
+  string(REGEX REPLACE "^.*/lib" "" libname "${pathname}")
+  if (${libname} MATCHES ".*\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
+    string(REGEX REPLACE "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$" "" libname "${libname}")
+  else()
+    string(REGEX REPLACE "\\${CMAKE_SHARED_LIBRARY_SUFFIX}$" "" libname "${libname}")
+  endif()
+
+  set("${ldflags}" "-L${libdir}" PARENT_SCOPE)
+  set("${libs}" "-l${libname}" PARENT_SCOPE)
+endfunction()
+
+# ---------------------------------------------------------------
+# if package is maganed by pkg-config, append it list_requires.
+# if not, append LDFLAGS + LIBS to list_libs.
+#
+function (APPEND_PKG_REQUIRES_OR_LIBS pkgname library list_requires list_libs)
+  execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${pkgname} --exists RETURN_VALUE _return_VALUE OUTPUT_VARIABLE _pkgconfigDevNull )
+  if (NOT _return_VALUE)
+    set(${list_requires} "${${list_requires}} ${pkgname}" PARENT_SCOPE)
+  else()
+    MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME("${library}" pkg_ldflags pkg_libs)
+    set(${list_libs} "${${list_libs}} ${pkg_ldflags} ${pkg_libs}" PARENT_SCOPE)
+  endif()
+endfunction()
+
 # collect dependencies managed by pkg-config, write to Requires.private
 set(cmake_pc_requires_private "")
+set(cmake_pc_libs_private "")
 if (WITH_FONTCONFIGURATION_FONTCONFIG)
   set(cmake_pc_requires_private "${cmake_pc_requires_private} fontconfig")
 endif()
@@ -694,9 +726,6 @@ endif()
 if (ENABLE_LIBOPENJPEG)
   set(cmake_pc_requires_private "${cmake_pc_requires_private} libopenjp2")
 endif()
-if (ENABLE_LIBJPEG)
-  set(cmake_pc_requires_private "${cmake_pc_requires_private} libjpeg")
-endif()
 if (ENABLE_LIBPNG)
   set(cmake_pc_requires_private "${cmake_pc_requires_private} libpng")
 endif()
@@ -707,14 +736,20 @@ if (ENABLE_LIBNSS)
   set(cmake_pc_requires_private "${cmake_pc_requires_private} nss")
 endif()
 
+if (ENABLE_LIBJPEG)
+  APPEND_PKG_REQUIRES_OR_LIBS(libjpeg "${JPEG_LIBRARY}" cmake_pc_requires_private cmake_pc_libs_private)
+endif()
+
 if(PKG_CONFIG_VERSION_0_18)
   set(PC_REQUIRES_POPPLER "")
   set(PC_REQUIRES_POPPLER_PRIVATE "Requires.private: ${cmake_pc_requires_private}")
   set(PC_REQUIRES_POPPLER_GLIB_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(PC_LIBS_POPPLER_PRIVATE "${cmake_pc_libs_private}")
 else()
   set(PC_REQUIRES_POPPLER "${cmake_pc_requires_private}")
   set(PC_REQUIRES_POPPLER_PRIVATE "")
   set(PC_REQUIRES_POPPLER_GLIB_PRIVATE "cairo = ${POPPLER_VERSION} ${cmake_pc_requires_private}")
+  set(PC_LIBS_POPPLER_PRIVATE "${cmake_pc_libs_private}")
 endif()
 
 poppler_create_install_pkgconfig(poppler.pc ${CMAKE_INSTALL_LIBDIR}/pkgconfig)

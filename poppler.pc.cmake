@@ -8,4 +8,5 @@ Version: @POPPLER_VERSION@
 @PC_REQUIRES_POPPLER_PRIVATE@
 
 Libs: -L${libdir} -lpoppler
+Libs.private: @PC_LIBS_POPPLER_PRIVATE@
 Cflags: -I${includedir}/poppler
