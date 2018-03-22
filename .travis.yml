@@ -10,7 +10,7 @@ script:
   - make VERBOSE=1
   - mkdir ../dist
   - make DESTDIR="$PWD/../dist" install
-  - pkg-config --list-all
+  - pkg-config --list-all | sort
   - cat $PWD/../dist/usr/local/lib/pkgconfig/poppler.pc
   - cat $PWD/../dist/usr/local/lib/pkgconfig/poppler-cpp.pc
   - cat $PWD/../dist/usr/local/lib/pkgconfig/poppler-glib.pc
