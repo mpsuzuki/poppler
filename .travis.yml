@@ -1,10 +1,10 @@
 language: cpp
 
 script:
-  - mkdir build-shared && cd build-shared
-  - cmake ..
-  - make VERBOSE=1
-  - cd ..
+#  - mkdir build-shared && cd build-shared
+#  - cmake ..
+#  - make VERBOSE=1
+#  - cd ..
   - mkdir build-static && cd build-static
   - cmake -DBUILD_SHARED_LIBS=OFF ..
   - make VERBOSE=1
