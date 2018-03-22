@@ -680,32 +680,58 @@ endif()
 # ---------------------------------------------------------------
 # generate conventional LIBS flags from pathname of the libraries
 #
-function (MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME pathname ldflags libs)
-  string(REGEX REPLACE "/[^/]+$" "/" libdir "${pathname}")
+function (MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME pathname libname libdir)
+  string(REGEX REPLACE "/[^/]+$" "/" _libdir "${pathname}")
 
-  string(REGEX REPLACE "^.*/lib" "" libname "${pathname}")
+  string(REGEX REPLACE "^.*/lib" "" _libname "${pathname}")
   if (${libname} MATCHES ".*\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
-    string(REGEX REPLACE "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$" "" libname "${libname}")
+    string(REGEX REPLACE "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$" "" _libname "${_libname}")
   else()
-    string(REGEX REPLACE "\\${CMAKE_SHARED_LIBRARY_SUFFIX}$" "" libname "${libname}")
+    string(REGEX REPLACE "\\${CMAKE_SHARED_LIBRARY_SUFFIX}$" "" _libname "${_libname}")
   endif()
 
-  set("${ldflags}" "-L${libdir}" PARENT_SCOPE)
-  set("${libs}" "-l${libname}" PARENT_SCOPE)
+  string(REGEX REPLACE "\/+$" "" _libdir "${_libdir}")
+
+  set("${libname}" "${_libname}" PARENT_SCOPE)
+  set("${libdir}" "${_libdir}" PARENT_SCOPE)
 endfunction()
 
 # ---------------------------------------------------------------
 # if package is maganed by pkg-config, append it list_requires.
 # if not, append LDFLAGS + LIBS to list_libs.
 #
-function (APPEND_PKG_REQUIRES_OR_LIBS pkgname library list_requires list_libs)
-  execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE} ${pkgname} --exists" RESULT_VALUE _result_VALUE OUTPUT_VARIABLE _pkgconfigDevNull )
-  if (_result_VALUE STREQUAL "0")
-    set(${list_requires} "${${list_requires}} ${pkgname}" PARENT_SCOPE)
-  else()
-    MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME("${library}" pkg_ldflags pkg_libs)
-    set(${list_libs} "${${list_libs}} ${pkg_ldflags} ${pkg_libs}" PARENT_SCOPE)
-  endif()
+function (APPEND_PKG_REQUIRES_OR_LIBS pkgnames library list_requires list_libs)
+  MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME("${library}" pkg_libname pkg_libdir)
+
+  foreach(a_pkg IN LISTS pkgnames)
+    execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --exists
+                    RESULT_VARIABLE _result_VARIABLE
+                    OUTPUT_VARIABLE _pkgconfigDevNull )
+    # message("check pkg-config --exists ${a_pkg}: ${_result_VARIABLE}")
+    if (_result_VARIABLE STREQUAL "0")
+      execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --variable=libdir
+                      RESULT_VARIABLE _result_VARIABLE
+                      OUTPUT_VARIABLE _output_VARIABLE
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+      # message("check pkg-config --variable=libdir ${a_pkg}: ${_output_VARIABLE}")
+      # message("${_output_VARIABLE} == ${pkg_libdir}?")
+      if ("${_output_VARIABLE}" STREQUAL "${pkg_libdir}")
+        execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --libs
+                        RESULT_VARIABLE _result_VARIABLE
+                        OUTPUT_VARIABLE _output_VARIABLE
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+        # message("check pkg-config --libs ${a_pkg}: ${_output_VARIABLE}")
+        string(REGEX REPLACE "\/+$" "" _output_VARIABLE "${_output_VARIABLE}")
+        string(FIND " ${_output_VARIABLE} " " -l${pkg_libname} " _pos)
+        if (_pos GREATER -1)
+          set(${list_requires} "${${list_requires}} ${a_pkg}" PARENT_SCOPE)
+          return()
+        endif() 
+      endif()
+    endif()
+  endforeach(a_pkg)
+
+  set(${list_libs} "${${list_libs}} -L${pkg_libdir} -l${pkg_libname}" PARENT_SCOPE)
 endfunction()
 
 # collect dependencies managed by pkg-config, write to Requires.private
@@ -737,7 +763,9 @@ if (ENABLE_LIBNSS)
 endif()
 
 if (ENABLE_LIBJPEG)
-  APPEND_PKG_REQUIRES_OR_LIBS(libjpeg "${JPEG_LIBRARY}" cmake_pc_requires_private cmake_pc_libs_private)
+  APPEND_PKG_REQUIRES_OR_LIBS("libjpeg;libjpeg8-turbo;libjpeg8;libjpeg9;libjpeg62"
+                              "${JPEG_LIBRARY}"
+                              cmake_pc_requires_private cmake_pc_libs_private)
 endif()
 
 if(PKG_CONFIG_VERSION_0_18)
