@@ -12,8 +12,8 @@ script:
 
 matrix:
   include:
-#    - dist: trusty
-#      compiler: gcc     
+    - dist: trusty
+      compiler: gcc     
 #      before_install:
 #        - for p in `dpkg -l | fgrep jpeg | fgrep dev | awk '{print $2}'` ; do echo "== " ${p} ; dpkg -L ${p} ; done
 #    - dist: trusty
@@ -25,7 +25,7 @@ matrix:
         - ( brew install libffi && brew link --force libffi ) || true
         - ( brew install cmake && brew link --force cmake ) || true
         - ( brew install pcre && brew link --force pcre ) || true
-        - ( brew install glib && brew link --force glib ) || true
+#        - ( brew install glib && brew link --force glib ) || true
         - ( brew install freetype && brew link --force freetype ) || true
         - ( brew install fontconfig && brew link --force fontconfig ) || true
         - ( brew install pixman && brew link --force pixman ) || true

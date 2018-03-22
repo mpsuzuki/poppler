@@ -265,6 +265,15 @@ std::string ustring::to_latin1() const
     return ret;
 }
 
+ustring ustring::from_utf16(const char *str, int len)
+{
+    ustring ret((len/2), 0);
+    for (int i = 0; i < len; i += 2) {
+      ret[i / 2] = (str[i] << 8) + (str[i + 1]);
+    }
+    return ret;
+}
+
 ustring ustring::from_utf8(const char *str, int len)
 {
     if (len <= 0) {
