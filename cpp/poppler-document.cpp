@@ -342,9 +342,21 @@ ustring document::info_key(const std::string &key) const
         return ustring();
     }
 
+    fprintf(stderr, "document::info_key(%s) ", key.c_str());
+    for (int i = 0; i < goo_value->getLength(); i ++ ) {
+      unsigned char c = goo_value->getChar(i);
+      fprintf(stderr, " 0x%04X", c);
+      if (0x20 <= c && c <= 0x7F) {
+        fprintf(stderr, "[%c]", c);
+      }
+    }
+    fprintf(stderr, "\n");
+
     if (goo_value->hasUnicodeMarker()) { // octet string of UTF-16BE, skip BOM
+      fprintf(stderr, "has BOM, ustring::from_utf16() is used\n");
       return ustring::from_utf16(goo_value->getCString() + 2, goo_value->getLength() - 2);
     } else {
+      fprintf(stderr, "no BOM, ustring::from_utf8() is used\n");
       return ustring::from_utf8(goo_value->getCString(), goo_value->getLength());
     }
 }

@@ -66,6 +66,14 @@ void toc_item_private::load(OutlineItem *item)
 {
     const Unicode *title_unicode = item->getTitle();
     const int title_length = item->getTitleLength();
+    fprintf(stderr, "toc_item_private::load() ");
+    for (int i = 0; i < title_length; i ++ ) {
+      fprintf(stderr, " 0x%04X", title_unicode[i]);
+      if (0x20 <= title_unicode[i] && title_unicode[i] <= 0x7F) {
+        fprintf(stderr, "[%c]", title_unicode[i]);
+      }
+    }
+    fprintf(stderr, "\n");
     title = detail::unicode_to_ustring(title_unicode, title_length);
     is_open = item->isOpen();
 }

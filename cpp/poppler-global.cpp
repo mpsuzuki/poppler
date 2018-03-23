@@ -231,6 +231,7 @@ byte_array ustring::to_utf8() const
         return byte_array();
     }
     const value_type *me_data = data();
+    fprintf(stderr, "ustring::to_utf8(): sizeof(value_type): %lu\n", sizeof(value_type));
     byte_array str(size()*sizeof(value_type));
     char *str_data = &str[0];
     size_t me_len_char = size()*sizeof(value_type);
@@ -246,6 +247,20 @@ byte_array ustring::to_utf8() const
             return byte_array();
         }
     }
+
+    fprintf(stderr, "ustring::to_utf8(): input: ");
+    for (size_t i = 0; i < size(); i ++) {
+        fprintf(stderr, " 0x%04X", data()[i]);
+    }
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "ustring::to_utf8(): output: ");
+    for (size_t i = 0; i < str.size() - str_len_left; i ++) {
+        fprintf(stderr, " 0x%02X", str[i]);
+    }
+    fprintf(stderr, "\n");
+
+
     str.resize(str.size() - str_len_left);
     return str;
 }
@@ -267,10 +282,13 @@ std::string ustring::to_latin1() const
 
 ustring ustring::from_utf16(const char *str, int len)
 {
+    fprintf(stderr, "ustring::from_utf16():");
     ustring ret((len/2), 0);
     for (int i = 0; i < len; i += 2) {
       ret[i / 2] = (str[i] << 8) + (str[i + 1]);
+      fprintf(stderr, " [0x%02X,0x%02X -> 0x%04X]", str[i], str[i+1], ret[i/2]);
     }
+    fprintf(stderr, "\n");
     return ret;
 }
 
