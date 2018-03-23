@@ -11,6 +11,7 @@ LDADD =						\
 	$(top_builddir)/cpp/libpoppler-cpp.la
 
 noinst_PROGRAMS =				\
+	encoding				\
 	jeroen-test				\
 	poppler-dump				\
 	poppler-render
@@ -25,3 +26,8 @@ jeroen-test.$(OBJEXT) : CXXFLAGS += -fexceptions
 
 jeroen_test_SOURCES = \
 	jeroen-test.cpp
+
+encoding.$(OBJEXT) : CXXFLAGS += -fexceptions
+
+encoding_SOURCES = \
+	encoding.cpp
