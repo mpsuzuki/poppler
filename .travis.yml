@@ -5,10 +5,6 @@ script:
   - cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_QT5=OFF -DENABLE_GLIB=OFF -DENABLE_LIBCURL=OFF -DENABLE_GOBJECT_INTROSPECTION=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/root ..
   - make install
   - export PKG_CONFIG_PATH=`pwd`/root/lib/pkgconfig/
-  - git clone git://github.com/jeroen/popplertest
-  - cd popplertest
-  - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs --static poppler-cpp) -liconv -pthread
-  - ./encoding ./hello.pdf | cat -e
 
 matrix:
   include:
@@ -16,6 +12,12 @@ matrix:
       compiler: gcc     
 #      before_install:
 #        - for p in `dpkg -l | fgrep jpeg | fgrep dev | awk '{print $2}'` ; do echo "== " ${p} ; dpkg -L ${p} ; done
+      after_script:
+         - git clone git://github.com/jeroen/popplertest
+         - cd popplertest
+         - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs --static poppler-cpp) -pthread
+         - ./encoding ./hello.pdf | cat -A
+
 #    - dist: trusty
 #      compiler: clang
     - os: osx
@@ -36,6 +38,12 @@ matrix:
         - ( brew install little-cms2 && brew link --force little-cms2 ) || true
 #        - ( brew install gtk+ && brew link --force gtk+ ) || true
         - brew remove gobject-introspection || true
+      after_script:
+         - git clone git://github.com/jeroen/popplertest
+         - cd popplertest
+         - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs --static poppler-cpp) -liconv -pthread
+         - ./encoding ./hello.pdf | cat -e
+
 #    - os: osx
 #      osx_image: xcode8.3
 #      before_install:
