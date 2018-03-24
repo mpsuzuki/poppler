@@ -23,3 +23,11 @@ target_link_libraries(poppler-dump poppler)
 
 cpp_add_simpletest(poppler-render poppler-render.cpp ${CMAKE_SOURCE_DIR}/utils/parseargs.cc)
 target_link_libraries(poppler-render poppler)
+
+add_definitions(-fexceptions)
+cpp_add_simpletest(jeroen-test jeroen-test.cpp)
+target_link_libraries(jeroen-test poppler)
+
+add_definitions(-fexceptions)
+cpp_add_simpletest(encoding encoding.cpp)
+target_link_libraries(encoding poppler)
