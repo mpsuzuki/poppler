@@ -108,9 +108,6 @@ if(CMAKE_USE_PTHREADS_INIT OR WIN32)
   set(MULTITHREADED ON)
 endif()
 
-# WORDS_BIGENDIAN is the default variable set by autoconf
-TEST_BIG_ENDIAN(WORDS_BIGENDIAN)
-
 # Enable these unconditionally.
 set(OPI_SUPPORT ON)
 set(TEXTOUT_WORD_LIST ON)
