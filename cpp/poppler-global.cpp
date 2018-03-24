@@ -57,6 +57,13 @@ struct MiniIconv
     iconv_t i_;
 };
 
+bool IsBE()
+{
+    unsigned short int number = 0x1;
+    unsigned char *numPtr = (unsigned char*)&number;
+    return (numPtr[0] == 0);
+};
+
 }
 
 using namespace poppler;
@@ -226,11 +233,7 @@ byte_array ustring::to_utf8() const
         return byte_array();
     }
 
-#ifdef WORDS_BIGENDIAN
-    MiniIconv ic("UTF-8", "UTF-16BE");
-#else
-    MiniIconv ic("UTF-8", "UTF-16LE");
-#endif
+    MiniIconv ic("UTF-8", ( IsBE() ? "UTF-16BE" : "UTF-16LE" ) );
     if (!ic.is_valid()) {
         return byte_array();
     }
@@ -305,11 +308,7 @@ ustring ustring::from_utf8(const char *str, int len)
         }
     }
 
-#ifdef WORDS_BIGENDIAN
-    MiniIconv ic("UTF-16BE", "UTF-8");
-#else
-    MiniIconv ic("UTF-16LE", "UTF-8");
-#endif
+    MiniIconv ic((IsBE() ? "UTF-16BE" : "UTF-16LE" ), "UTF-8");
     if (!ic.is_valid()) {
         return ustring();
     }
