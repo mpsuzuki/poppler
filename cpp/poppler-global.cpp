@@ -226,7 +226,11 @@ byte_array ustring::to_utf8() const
         return byte_array();
     }
 
-    MiniIconv ic("UTF-8", "UTF-16");
+#ifdef WORDS_BIGENDIAN
+    MiniIconv ic("UTF-8", "UTF-16BE");
+#else
+    MiniIconv ic("UTF-8", "UTF-16LE");
+#endif
     if (!ic.is_valid()) {
         return byte_array();
     }
@@ -265,6 +269,26 @@ std::string ustring::to_latin1() const
     return ret;
 }
 
+ustring ustring::from_utf16(const char *str, int len)
+{
+
+    // strlen for UTF-16 buffer.
+    if (len < 0) {
+        for (int i = 0; ; i += 2) {
+            if (str[i] == 0 && str[i + 1] == 0) {
+                len = i;
+                break;
+            }
+        }
+    }
+
+    ustring ret((len/2), 0);
+    for (int i = 0; i < len; i += 2) {
+        ret[i / 2] = (str[i] << 8) + (str[i + 1]);
+    }
+    return ret;
+}
+
 ustring ustring::from_utf8(const char *str, int len)
 {
     if (len <= 0) {
@@ -274,7 +298,11 @@ ustring ustring::from_utf8(const char *str, int len)
         }
     }
 
-    MiniIconv ic("UTF-16", "UTF-8");
+#ifdef WORDS_BIGENDIAN
+    MiniIconv ic("UTF-16BE", "UTF-8");
+#else
+    MiniIconv ic("UTF-16LE", "UTF-8");
+#endif
     if (!ic.is_valid()) {
         return ustring();
     }

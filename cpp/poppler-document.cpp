@@ -342,7 +342,14 @@ ustring document::info_key(const std::string &key) const
         return ustring();
     }
 
-    return ustring::from_utf8(goo_value->getCString(), goo_value->getLength());
+    if (goo_value->hasUnicodeMarker()) {
+        // if a BOM is found in the octet buffer, we assume as it is UTF-16.
+        // some iconv() generates UTF-8 with unneeded BOM in UTF-8 expression,
+        // the beginning BOM is skipped.
+        return ustring::from_utf16(goo_value->getCString() + 2, goo_value->getLength() - 2);
+    } else {
+        return ustring::from_utf8(goo_value->getCString(), goo_value->getLength());
+    }
 }
 
 /**

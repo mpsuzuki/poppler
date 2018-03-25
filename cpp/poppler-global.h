@@ -98,6 +98,9 @@ private:
     ustring(const std::string &);
     operator std::string() const;
     ustring& operator=(const std::string &);
+
+    static ustring from_utf16(const char *str, int len);
+    friend class document;
 };
 #ifdef _MSC_VER
 #pragma warning(pop)
