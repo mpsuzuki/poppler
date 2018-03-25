@@ -56,41 +56,6 @@ rectf detail::pdfrectangle_to_rectf(const PDFRectangle &pdfrect)
     return rectf(pdfrect.x1, pdfrect.y1, pdfrect.x2 - pdfrect.x1, pdfrect.y2 - pdfrect.y1);
 }
 
-ustring detail::unicode_GooString_to_ustring(const GooString *str)
-{
-    const char *data = str->getCString();
-    const int len = str->getLength();
-
-    int i = 0;
-    bool is_unicode = false;
-    if ((data[0] & 0xff) == 0xfe && (len > 1 && (data[1] & 0xff) == 0xff)) {
-        is_unicode = true;
-        i = 2;
-    }
-    ustring::size_type ret_len = len - i;
-    if (is_unicode) {
-        ret_len >>= 1;
-    }
-    ustring ret(ret_len, 0);
-    size_t ret_index = 0;
-    ustring::value_type u;
-    if (is_unicode) {
-        while (i < len) {
-            u = ((data[i] & 0xff) << 8) | (data[i + 1] & 0xff);
-            i += 2;
-            ret[ret_index++] = u;
-        }
-    } else {
-        while (i < len) {
-            u = data[i] & 0xff;
-            ++i;
-            ret[ret_index++] = u;
-        }
-    }
-
-    return ret;
-}
-
 ustring detail::unicode_to_ustring(const Unicode *u, int length)
 {
     ustring str(length * 2, 0);

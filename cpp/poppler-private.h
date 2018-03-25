@@ -50,7 +50,6 @@ void error_function(void *data, ErrorCategory category, Goffset pos, char *msg);
 
 rectf pdfrectangle_to_rectf(const PDFRectangle &pdfrect);
 
-ustring unicode_GooString_to_ustring(const GooString *str);
 ustring unicode_to_ustring(const Unicode *u, int length);
 GooString* ustring_to_unicode_GooString(const ustring &str);
 

@@ -163,7 +163,7 @@ ustring page::label() const
         return ustring();
     }
 
-    return detail::unicode_GooString_to_ustring(&goo);
+    return ustring::from_utf8(goo.getCString(), goo.getLength());
 }
 
 /**
@@ -285,7 +285,7 @@ ustring page::text(const rectf &r, text_layout_enum layout_mode) const
     } else {
         s.reset(td.getText(r.left(), r.top(), r.right(), r.bottom()));
     }
-    return ustring::from_utf8(s->getCString());
+    return ustring::from_utf8(s->getCString(), s->getLength());
 }
 
 /*
@@ -355,7 +355,7 @@ std::vector<text_box> page::text_list() const
             TextWord *word = word_list->get(i);
 
             std::unique_ptr<GooString> gooWord{word->getText()};
-            ustring ustr = detail::unicode_GooString_to_ustring(gooWord.get());
+            ustring ustr = ustring::from_utf8(gooWord->getCString(), gooWord->getLength());
 
             double xMin, yMin, xMax, yMax;
             word->getBBox(&xMin, &yMin, &xMax, &yMax);
