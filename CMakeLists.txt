@@ -420,7 +420,16 @@ if(ENABLE_SPLASH)
   )
 endif()
 if(FONTCONFIG_FOUND)
-  set(poppler_LIBS ${poppler_LIBS} ${FONTCONFIG_LIBRARIES})
+  if (${FONTCONFIG_LIBRARIES} MATCHES ".*\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
+    execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" fontconfig --libs --static
+                    RESULT_VARIABLE _result_VARIABLE
+                    OUTPUT_VARIABLE _output_VARIABLE
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
+    message("${FONTCONFIG_LIBRARIES} is static library, so dependency should be obtained by --libs --static: ${_output_VARIABLE}")
+    set(poppler_LIBS ${poppler_LIBS} ${_output_VARIABLE})
+  else() 
+    set(poppler_LIBS ${poppler_LIBS} ${FONTCONFIG_LIBRARIES})
+  endif()
 endif()
 
 if(JPEG_FOUND)
@@ -676,12 +685,121 @@ if(PKG_CONFIG_EXECUTABLE)
   exec_program(${PKG_CONFIG_EXECUTABLE} ARGS --version RETURN_VALUE _return_VALUE OUTPUT_VARIABLE _output_VAR)
   macro_ensure_version("0.18" "${_output_VAR}" PKG_CONFIG_VERSION_0_18)
 endif()
+
+# ---------------------------------------------------------------
+# generate conventional LIBS flags from pathname of the libraries
+#
+function (MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME pathname libname libdir)
+  string(REGEX REPLACE "/[^/]+$" "/" _libdir "${pathname}")
+
+  string(REGEX REPLACE "^.*/lib" "" _libname "${pathname}")
+  if (${libname} MATCHES ".*\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
+    string(REGEX REPLACE "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$" "" _libname "${_libname}")
+  else()
+    string(REGEX REPLACE "\\${CMAKE_SHARED_LIBRARY_SUFFIX}$" "" _libname "${_libname}")
+  endif()
+
+  string(REGEX REPLACE "\/+$" "" _libdir "${_libdir}")
+
+  set("${libname}" "${_libname}" PARENT_SCOPE)
+  set("${libdir}" "${_libdir}" PARENT_SCOPE)
+endfunction()
+
+# ---------------------------------------------------------------
+# if package is maganed by pkg-config, append it list_requires.
+# if not, append LDFLAGS + LIBS to list_libs.
+#
+function (APPEND_PKG_REQUIRES_OR_LIBS pkgnames library list_requires list_libs)
+  # message("")
+  # message("check pkg-config + flags for ${library}")
+  MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME("${library}" pkg_libname pkg_libdir)
+
+  foreach(a_pkg IN LISTS pkgnames)
+    execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --exists
+                    RESULT_VARIABLE _result_VARIABLE
+                    OUTPUT_VARIABLE _pkgconfigDevNull )
+    # message("check pkg-config --exists ${a_pkg}: ${_result_VARIABLE}")
+    if (_result_VARIABLE STREQUAL "0")
+      execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --variable=libdir
+                      RESULT_VARIABLE _result_VARIABLE
+                      OUTPUT_VARIABLE _output_VARIABLE
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+      # message("check pkg-config --variable=libdir ${a_pkg}: ${_output_VARIABLE}")
+      # message("${_output_VARIABLE} == ${pkg_libdir}")
+      if ("${_output_VARIABLE}" STREQUAL "${pkg_libdir}")
+        execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --libs
+                        RESULT_VARIABLE _result_VARIABLE
+                        OUTPUT_VARIABLE _output_VARIABLE
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+        # message("check pkg-config --libs ${a_pkg}: ${_output_VARIABLE}")
+        string(REGEX REPLACE "\/+$" "" _output_VARIABLE "${_output_VARIABLE}")
+        string(FIND " ${_output_VARIABLE} " " -l${pkg_libname} " _pos)
+        if (_pos GREATER -1)
+          set(${list_requires} "${${list_requires}} ${a_pkg}" PARENT_SCOPE)
+          return()
+        endif() 
+      else()
+        # message("*** different directories")
+      endif()
+    endif()
+  endforeach(a_pkg)
+
+  set(${list_libs} "${${list_libs}} -L${pkg_libdir} -l${pkg_libname}" PARENT_SCOPE)
+endfunction()
+
+# collect dependencies managed by pkg-config, write to Requires.private
+set(cmake_pc_requires_private "")
+set(cmake_pc_libs_private "")
+if (WITH_FONTCONFIGURATION_FONTCONFIG)
+  set(cmake_pc_requires_private "${cmake_pc_requires_private} fontconfig")
+endif()
+if (ENABLE_LIBCURL)
+  set(cmake_pc_requires_private "${cmake_pc_requires_private} libcurl")
+endif()
+if (ENABLE_NSS3)
+  set(cmake_pc_requires_private "${cmake_pc_requires_private} nss")
+endif()
+if (ENABLE_ZLIB)
+  set(cmake_pc_requires_private "${cmake_pc_requires_private} zlib")
+endif()
+if (ENABLE_CMS)
+  set(cmake_pc_requires_private "${cmake_pc_requires_private} lcms2")
+endif()
+if (ENABLE_LIBOPENJPEG)
+  set(cmake_pc_requires_private "${cmake_pc_requires_private} libopenjp2")
+endif()
+if (ENABLE_LIBNSS)
+  set(cmake_pc_requires_private "${cmake_pc_requires_private} nss")
+endif()
+
+if (ENABLE_LIBJPEG)
+  APPEND_PKG_REQUIRES_OR_LIBS("libjpeg;libjpeg8-turbo;libjpeg8;libjpeg9;libjpeg62"
+                              "${JPEG_LIBRARY}"
+                              cmake_pc_requires_private cmake_pc_libs_private)
+endif()
+if (ENABLE_LIBTIFF)
+  APPEND_PKG_REQUIRES_OR_LIBS("libtiff;libtiff-4"
+                              "${TIFF_LIBRARY}"
+                              cmake_pc_requires_private cmake_pc_libs_private)
+endif()
+if (ENABLE_LIBPNG)
+  APPEND_PKG_REQUIRES_OR_LIBS("libpng;libpng16;libpng12"
+                              "${PNG_LIBRARY}"
+                              cmake_pc_requires_private cmake_pc_libs_private)
+endif()
+
 if(PKG_CONFIG_VERSION_0_18)
-  set(PC_REQUIRES "")
-  set(PC_REQUIRES_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(PC_REQUIRES_POPPLER "")
+  set(PC_REQUIRES_POPPLER_PRIVATE "Requires.private: ${cmake_pc_requires_private}")
+  set(PC_REQUIRES_POPPLER_CPP_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(PC_REQUIRES_POPPLER_GLIB_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(PC_LIBS_POPPLER_PRIVATE "${cmake_pc_libs_private}")
 else()
-  set(PC_REQUIRES "poppler = ${POPPLER_VERSION}")
-  set(PC_REQUIRES_PRIVATE "")
+  set(PC_REQUIRES_POPPLER "${cmake_pc_requires_private}")
+  set(PC_REQUIRES_POPPLER_PRIVATE "")
+  set(PC_REQUIRES_POPPLER_CPP_PRIVATE "cairo = ${POPPLER_VERSION} ${cmake_pc_requires_private}")
+  set(PC_REQUIRES_POPPLER_GLIB_PRIVATE "cairo = ${POPPLER_VERSION} ${cmake_pc_requires_private}")
+  set(PC_LIBS_POPPLER_PRIVATE "${cmake_pc_libs_private}")
 endif()
 
 poppler_create_install_pkgconfig(poppler.pc ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
