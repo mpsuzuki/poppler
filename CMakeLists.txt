@@ -768,9 +768,6 @@ endif()
 if (ENABLE_LIBOPENJPEG)
   set(cmake_pc_requires_private "${cmake_pc_requires_private} libopenjp2")
 endif()
-if (ENABLE_LIBNSS)
-  set(cmake_pc_requires_private "${cmake_pc_requires_private} nss")
-endif()
 
 if (ENABLE_LIBJPEG)
   APPEND_PKG_REQUIRES_OR_LIBS("libjpeg;libjpeg8-turbo;libjpeg8;libjpeg9;libjpeg62"
