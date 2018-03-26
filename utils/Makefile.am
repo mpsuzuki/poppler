@@ -10,6 +10,7 @@ AM_CPPFLAGS =					\
 LDADD =						\
 	libparseargs.la				\
 	$(top_builddir)/poppler/libpoppler.la	\
+	$(PTHREAD_LIBS)				\
 	$(UTILS_LIBS)
 
 if BUILD_UTILS
