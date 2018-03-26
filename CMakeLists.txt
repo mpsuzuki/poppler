@@ -398,7 +398,6 @@ set(poppler_SRCS
   poppler/Rendition.cc
 )
 set(poppler_LIBS ${FREETYPE_LIBRARIES})
-list(APPEND poppler_LIBDIRS ${FREETYPE_LIBDIR})
 if(ENABLE_SPLASH)
   set(poppler_SRCS ${poppler_SRCS}
     poppler/SplashOutputDev.cc
@@ -422,7 +421,6 @@ if(ENABLE_SPLASH)
 endif()
 if(FONTCONFIG_FOUND)
   set(poppler_LIBS ${poppler_LIBS} ${FONTCONFIG_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${FONTCONFIG_LIBDIR})
 endif()
 
 if(JPEG_FOUND)
@@ -430,14 +428,12 @@ if(JPEG_FOUND)
     poppler/DCTStream.cc
   )
   set(poppler_LIBS ${poppler_LIBS} ${JPEG_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${JPEG_LIBDIR})
 endif()
 if(ENABLE_ZLIB)
   set(poppler_SRCS ${poppler_SRCS}
     poppler/FlateEncoder.cc
   )
   set(poppler_LIBS ${poppler_LIBS} ${ZLIB_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${ZLIB_LIBDIR})
 endif()
 if(ENABLE_ZLIB_UNCOMPRESS)
   set(poppler_SRCS ${poppler_SRCS}
@@ -450,21 +446,18 @@ if(ENABLE_LIBCURL)
     poppler/CurlPDFDocBuilder.cc
   )
   set(poppler_LIBS ${poppler_LIBS} ${CURL_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${CURL_LIBDIR})
 endif()
 if (ENABLE_NSS3)
   set(poppler_SRCS ${poppler_SRCS}
     poppler/SignatureHandler.cc
   )
   set(poppler_LIBS ${poppler_LIBS} ${NSS3_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${NSS3_LIBDIR})
 endif()
 if (LIBOPENJPEG2_FOUND)
   set(poppler_SRCS ${poppler_SRCS}
     poppler/JPEG2000Stream.cc
   )
   set(poppler_LIBS ${poppler_LIBS} ${LIBOPENJPEG2_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${LIBOPENJPEG2_LIBDIR})
 else ()
   set(poppler_SRCS ${poppler_SRCS}
     poppler/JPXStream.cc
@@ -472,7 +465,6 @@ else ()
 endif()
 if(USE_CMS)
   set(poppler_LIBS ${poppler_LIBS} ${LCMS2_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${LCMS2_LIBDIR})
 endif()
 if(WIN32)
   # use clean APIs
@@ -482,11 +474,9 @@ if(WIN32)
 endif()
 if(PNG_FOUND)
   set(poppler_LIBS ${poppler_LIBS} ${PNG_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${PNG_LIBDIR})
 endif()
 if(TIFF_FOUND)
   set(poppler_LIBS ${poppler_LIBS} ${TIFF_LIBRARIES})
-  list(APPEND poppler_LIBDIRS ${TIFF_LIBDIR})
 endif()
 
 if(MSVC)
