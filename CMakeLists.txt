@@ -686,36 +686,48 @@ endif()
 include(FindPkgCfgFromLdflags)
 set(cmake_pc_requires "")
 set(cmake_pc_libs "")
-if (WITH_FONTCONFIGURATION_FONTCONFIG)
+
+# dependencies we can assume pkg-config always
+if (FONTCONFIG_FOUND)
   set(cmake_pc_requires "${cmake_pc_requires} fontconfig")
 endif()
-if (ENABLE_LIBCURL)
+if (CURL_FOUND)
   set(cmake_pc_requires "${cmake_pc_requires} libcurl")
 endif()
-if (ENABLE_NSS3)
+if (NSS3_FOUND)
   set(cmake_pc_requires "${cmake_pc_requires} nss")
 endif()
-if (ENABLE_ZLIB)
-  set(cmake_pc_requires "${cmake_pc_requires} zlib")
-endif()
-if (ENABLE_CMS)
-  set(cmake_pc_requires "${cmake_pc_requires} lcms2")
-endif()
-if (ENABLE_LIBOPENJPEG)
+if (LIBOPENJPEG2_FOUND)
   set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
 endif()
 
-if (ENABLE_LIBJPEG)
+# dependencies we cannot assume pkg-config always
+if (ICONV_FOUND)
+  APPEND_PKG_REQUIRES_OR_LIBS("Iconv:iconv"
+                              "${ICONV_LIBRARIES}"
+                              cmake_pc_cpp_requires cmake_pc_cpp_libs)
+endif()
+if (LCMS2_FOUND)
+  APPEND_PKG_REQUIRES_OR_LIBS("lcms2"
+                              "${CMS_LIBRARIES}"
+                              cmake_pc_requires cmake_pc_libs)
+endif()
+if (ZLIB_FOUND)
+  APPEND_PKG_REQUIRES_OR_LIBS("zlib"
+                              "${ZLIB_LIBRARIES}"
+                              cmake_pc_requires cmake_pc_libs)
+endif()
+if (JPEG_FOUND)
   APPEND_PKG_REQUIRES_OR_LIBS("libjpeg;libjpeg8-turbo;libjpeg8;libjpeg9;libjpeg62"
                               "${JPEG_LIBRARY}"
                               cmake_pc_requires cmake_pc_libs)
 endif()
-if (ENABLE_LIBTIFF)
+if (TIFF_FOUND)
   APPEND_PKG_REQUIRES_OR_LIBS("libtiff;libtiff-4"
                               "${TIFF_LIBRARY}"
                               cmake_pc_requires cmake_pc_libs)
 endif()
-if (ENABLE_LIBPNG)
+if (PNG_FOUND)
   APPEND_PKG_REQUIRES_OR_LIBS("libpng;libpng16;libpng12"
                               "${PNG_LIBRARY}"
                               cmake_pc_requires cmake_pc_libs)
@@ -746,7 +758,8 @@ elseif(BUILD_SHARED_LIBS AND PKG_CONFIG_VERSION_0_18)
   #
   set(POPPLER_REQUIRES_PRIVATE "Requires.private: ${cmake_pc_requires}")
   set(POPPLER_LIBS_PRIVATE "Libs.private: ${cmake_pc_libs}")
-  set(POPPLER_CPP_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(POPPLER_CPP_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION} ${cmake_pc_cpp_requires}")
+  set(POPPLER_CPP_LIBS_PRIVATE  "Libs.private: poppler = ${cmake_pc_cpp_libs}")
   set(POPPLER_GLIB_REQUIRES_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
   set(POPPLER_QT5_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION}")
 
@@ -754,7 +767,8 @@ elseif(NOT(BUILD_SHARED_LIBS))
   set(POPPLER_REQUIRES "Requires: ${cmake_pc_requires}")
   set(POPPLER_LIBS_EXTRA "${cmake_pc_libs}")
 
-  set(POPPLER_CPP_REQUIRES_EXTRA  "poppler = ${POPPLER_VERSION}")
+  set(POPPLER_CPP_REQUIRES_EXTRA  "poppler = ${POPPLER_VERSION} ${cmake_pc_cpp_requires}")
+  set(POPPLER_CPP_LIBS_EXTRA      "${cmake_pc_cpp_libs}")
   set(POPPLER_GLIB_REQUIRES_EXTRA "poppler = ${POPPLER_VERSION}")
   set(POPPLER_QT5_REQUIRES_EXTRA  "poppler = ${POPPLER_VERSION}")
 
