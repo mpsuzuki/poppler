@@ -677,75 +677,13 @@ if(PKG_CONFIG_EXECUTABLE)
   macro_ensure_version("0.18" "${_output_VAR}" PKG_CONFIG_VERSION_0_18)
 endif()
 
-# ---------------------------------------------------------------
-# generate conventional LIBS flags from pathname of the libraries
-#
-function (MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME pathname libname libdir)
-  string(REGEX REPLACE "/[^/]+$" "/" _libdir "${pathname}")
 
-  string(REGEX REPLACE "^.*/lib" "" _libname "${pathname}")
-  if (${libname} MATCHES ".*\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
-    string(REGEX REPLACE "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$" "" _libname "${_libname}")
-  else()
-    string(REGEX REPLACE "\\${CMAKE_SHARED_LIBRARY_SUFFIX}$" "" _libname "${_libname}")
-  endif()
+# if archive library of poppler is being built, it cannot hold
+# the dependency. collect dependencies managed by pkg-config,
+# write to Requires. other dependencies (e.g. no appropriate
+# pkg-config module is found), write to Libs.
 
-  string(REGEX REPLACE "\/+$" "" _libdir "${_libdir}")
-
-  set("${libname}" "${_libname}" PARENT_SCOPE)
-  set("${libdir}" "${_libdir}" PARENT_SCOPE)
-endfunction()
-
-# ---------------------------------------------------------------
-# if package is maganed by pkg-config, append it list_requires.
-# if not, append LDFLAGS + LIBS to list_libs.
-#
-function (APPEND_PKG_REQUIRES_OR_LIBS pkgnames library list_requires list_libs)
-  # message("")
-  # message("check pkg-config + flags for ${library}")
-  MAKE_LDFLAGS_AND_LIBS_FROM_LIBRARY_PATHNAME("${library}" pkg_libname pkg_libdir)
-
-  foreach(a_pkg IN LISTS pkgnames)
-    execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --exists
-                    RESULT_VARIABLE _result_VARIABLE
-                    OUTPUT_VARIABLE _pkgconfigDevNull )
-    # message("check pkg-config --exists ${a_pkg}: ${_result_VARIABLE}")
-    if (_result_VARIABLE STREQUAL "0")
-      execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --variable=libdir
-                      RESULT_VARIABLE _result_VARIABLE
-                      OUTPUT_VARIABLE _output_VARIABLE
-                      OUTPUT_STRIP_TRAILING_WHITESPACE)
-      # message("check pkg-config --variable=libdir ${a_pkg}: ${_output_VARIABLE}")
-      # message("${_output_VARIABLE} == ${pkg_libdir}")
-      if ("${_output_VARIABLE}" STREQUAL "${pkg_libdir}")
-        execute_process(COMMAND "${PKG_CONFIG_EXECUTABLE}" ${a_pkg} --libs
-                        RESULT_VARIABLE _result_VARIABLE
-                        OUTPUT_VARIABLE _output_VARIABLE
-                        OUTPUT_STRIP_TRAILING_WHITESPACE)
-        # message("check pkg-config --libs ${a_pkg}: ${_output_VARIABLE}")
-        string(REGEX REPLACE "\/+$" "" _output_VARIABLE "${_output_VARIABLE}")
-        string(FIND " ${_output_VARIABLE} " " -l${pkg_libname} " _pos)
-        if (_pos GREATER -1)
-          set(${list_requires} "${${list_requires}} ${a_pkg}" PARENT_SCOPE)
-          return()
-        endif() 
-      else()
-        # message("*** different directories")
-      endif()
-    endif()
-  endforeach(a_pkg)
-
-  set(${list_libs} "${${list_libs}} -L${pkg_libdir} -l${pkg_libname}" PARENT_SCOPE)
-endfunction()
-
-# if archive library of poppler is being built, it cannot hold the dependency.
-# collect dependencies managed by pkg-config, write to Requires.
-# other dependencies (out of pkg-config), write to Libs.
-# 
-# we cannot guarantee as the resulted archive library is suitable
-# for fullly static linking (e.g. consider macOS without libc.a),
-# we don't use Require.private & Libs.private.
-#
+include(FindPkgCfgFromLdflags)
 set(cmake_pc_requires "")
 set(cmake_pc_libs "")
 if (WITH_FONTCONFIGURATION_FONTCONFIG)
@@ -795,7 +733,24 @@ if (CMAKE_USE_PTHREADS_INIT)
   endif()
 endif()
 
-if(NOT(BUILD_SHARED_LIBS) AND NOT(WIN32))
+# 
+# to guarantee "pkg-config --libs poppler" always valid,
+# we use Requires + Libs instead of Requires.private,
+# if archive library is being built.
+#
+if(WIN32)
+
+elseif(BUILD_SHARED_LIBS AND PKG_CONFIG_VERSION_0_18)
+  #
+  # too old pkg-config-0.18 cannot hold private values
+  #
+  set(POPPLER_REQUIRES_PRIVATE "Requires.private: ${cmake_pc_requires}")
+  set(POPPLER_LIBS_PRIVATE "Libs.private: ${cmake_pc_libs}")
+  set(POPPLER_CPP_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(POPPLER_GLIB_REQUIRES_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(POPPLER_QT5_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION}")
+
+elseif(NOT(BUILD_SHARED_LIBS))
   set(POPPLER_REQUIRES "Requires: ${cmake_pc_requires}")
   set(POPPLER_LIBS_EXTRA "${cmake_pc_libs}")
 
@@ -803,37 +758,6 @@ if(NOT(BUILD_SHARED_LIBS) AND NOT(WIN32))
   set(POPPLER_GLIB_REQUIRES_EXTRA "poppler = ${POPPLER_VERSION}")
   set(POPPLER_QT5_REQUIRES_EXTRA  "poppler = ${POPPLER_VERSION}")
 
-  set(POPPLER_CPP_LIBS_EXTRA "")
-  set(POPPLER_GLIB_LIBS_EXTRA "")
-  set(POPPLER_QT5_LIBS_EXTRA "")
-
-  if(PKG_CONFIG_VERSION_0_18)
-    set(POPPLER_REQUIRES_PRIVATE "Requires.private: ")
-    set(POPPLER_LIBS_PRIVATE "Libs.private: ")
-
-    set(POPPLER_CPP_REQUIRES_PRIVATE "Requires.private: ")
-    set(POPPLER_CPP_LIBS_PRIVATE "Libs.private: ")
-
-    set(POPPLER_GLIB_REQUIRES_PRIVATE "Requires.private: ")
-    set(POPPLER_GLIB_LIBS_PRIVATE "Libs.private: ")
-
-    set(POPPLER_QT5_REQUIRES_PRIVATE "Requires.private: ")
-    set(POPPLER_QT5_LIBS_PRIVATE "Libs.private: ")
-
-  else()
-    set(POPPLER_REQUIRES_PRIVATE "")
-    set(POPPLER_LIBS_PRIVATE "")
-
-    set(POPPLER_CPP_REQUIRES_PRIVATE "")
-    set(POPPLER_CPP_LIBS_PRIVATE "")
-
-    set(POPPLER_GLIB_REQUIRES_PRIVATE "")
-    set(POPPLER_GLIB_LIBS_PRIVATE "")
-
-    set(POPPLER_QT5_REQUIRES_PRIVATE "")
-    set(POPPLER_QT5_LIBS_PRIVATE "")
-
-  endif()
 endif()
 
 poppler_create_install_pkgconfig(poppler.pc ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
