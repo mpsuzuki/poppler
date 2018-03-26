@@ -5,8 +5,9 @@ includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
 Name: poppler
 Description: PDF rendering library
 Version: @POPPLER_VERSION@
-@PC_REQUIRES_POPPLER_PRIVATE@
+@POPPLER_REQUIRES@
+@POPPLER_REQUIRES_PRIVATE@
 
-Libs: -L${libdir} -lpoppler
-Libs.private: @PC_LIBS_POPPLER_PRIVATE@
 Cflags: -I${includedir}/poppler
+Libs: -L${libdir} -lpoppler @POPPLER_LIBS_EXTRA@
+@POPPLER_LIBS_PRIVATE@
