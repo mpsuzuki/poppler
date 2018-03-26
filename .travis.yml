@@ -5,11 +5,15 @@ script:
   - cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_GOBJECT_INTROSPECTION=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/root ..
   - cat poppler.pc
   - cat poppler-cpp.pc
+  - cat poppler-glib.pc
+  - cat poppler-qt5.pc
   - cd ..
   - mkdir build-static && cd build-static
   - cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_GOBJECT_INTROSPECTION=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/root ..
   - cat poppler.pc
   - cat poppler-cpp.pc
+  - cat poppler-glib.pc
+  - cat poppler-qt5.pc
   - make install
   - export PKG_CONFIG_PATH=`pwd`/root/lib/pkgconfig/
 
@@ -22,7 +26,7 @@ matrix:
       after_script:
          - git clone git://github.com/jeroen/popplertest
          - cd popplertest
-         - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs --static poppler-cpp) -pthread
+         - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs --static poppler-cpp)
          - ./encoding ./hello.pdf | cat -A
 
 #    - dist: trusty
@@ -48,7 +52,7 @@ matrix:
       after_script:
          - git clone git://github.com/jeroen/popplertest
          - cd popplertest
-         - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs --static poppler-cpp) -liconv -pthread
+         - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs --static poppler-cpp)
          - ./encoding ./hello.pdf | cat -e
 
 #    - os: osx
