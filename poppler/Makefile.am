@@ -327,7 +327,7 @@ libpoppler_la_LIBADD =				\
 	$(win32_libs)
 
 libpoppler_la_LDFLAGS =				\
-	-version-info 70:0:0			\
+	-version-info @POPPLER_SO_VERSION@	\
 	@create_shared_lib@			\
 	@auto_import_flags@
 
