@@ -11,6 +11,18 @@ m4_define([poppler_version_micro],m4_esyscmd_s([
 
 m4_define([poppler_version],[poppler_version_major.poppler_version_minor.poppler_version_micro])
 
+dnl
+dnl GET_SOVERSION_FROM_CMAKELIST(path-cmakelists-txt, library-name, output-variable)
+dnl
+AC_DEFUN([GET_SOVERSION_FROM_CMAKELIST], [
+	AC_MSG_CHECKING([$1 for soversion of $2])
+	[$3]=`tr "\t" " " < [$1] | \
+	sed 's/(/ ( /g;s/)/ ) /g;s/^ *//;s/ *$//;s/  */ /g;' | \
+	awk '/set_target_properties \( [$2] PROPERTIES VERSION .* SOVERSION/{print $[6]}' | \
+	head -1 | tr "." ":"`
+	AC_MSG_RESULT(${$3})
+])
+
 AC_PREREQ(2.59)
 AC_INIT([poppler],[poppler_version],[https://bugs.freedesktop.org/enter_bug.cgi?product=poppler])
 AC_CONFIG_MACRO_DIR([m4])
@@ -44,6 +56,21 @@ PKG_PROG_PKG_CONFIG
 
 dnl ##### Export the version
 AC_DEFINE_UNQUOTED([POPPLER_VERSION], ["poppler_version"], [Defines the poppler version])
+
+dnl ##########################################################################
+
+GET_SOVERSION_FROM_CMAKELIST(${srcdir}/CMakeLists.txt, poppler, POPPLER_SO_VERSION)
+GET_SOVERSION_FROM_CMAKELIST(${srcdir}/cpp/CMakeLists.txt, poppler-cpp, POPPLER_CPP_SO_VERSION)
+GET_SOVERSION_FROM_CMAKELIST(${srcdir}/glib/CMakeLists.txt, poppler-glib, POPPLER_GLIB_SO_VERSION)
+GET_SOVERSION_FROM_CMAKELIST(${srcdir}/qt5/src/CMakeLists.txt, poppler-qt5, POPPLER_QT5_SO_VERSION)
+
+AC_SUBST(POPPLER_SO_VERSION)
+AC_SUBST(POPPLER_CPP_SO_VERSION)
+AC_SUBST(POPPLER_GLIB_SO_VERSION)
+AC_SUBST(POPPLER_QT5_SO_VERSION)
+
+dnl ##########################################################################
+
 
 dnl Enable these unconditionally.
 AC_DEFINE([OPI_SUPPORT], [1], [Generate OPI comments in PS output.])
