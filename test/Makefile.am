@@ -52,15 +52,17 @@ perf_test_SOURCES =					\
 
 perf_test_LDADD =				\
 	$(top_builddir)/poppler/libpoppler.la	\
-	$(FREETYPE_LIBS)					\
-	$(X_EXTRA_LIBS)
+	$(FREETYPE_LIBS)			\
+	$(X_EXTRA_LIBS)				\
+	$(PTHREAD_LIBS)
 
 pdf_fullrewrite_SOURCES =				\
 	pdf-fullrewrite.cc
 
 pdf_fullrewrite_LDADD =					\
 	$(top_builddir)/utils/libparseargs.la		\
-	$(top_builddir)/poppler/libpoppler.la
+	$(top_builddir)/poppler/libpoppler.la		\
+	$(PTHREAD_LIBS)
 
 EXTRA_DIST =					\
 	goostring-format-checker		\
