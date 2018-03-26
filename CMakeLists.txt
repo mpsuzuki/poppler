@@ -703,13 +703,13 @@ endif()
 
 # dependencies we cannot assume pkg-config always
 if (ICONV_FOUND)
-  APPEND_PKG_REQUIRES_OR_LIBS("Iconv:iconv"
+  APPEND_PKG_REQUIRES_OR_LIBS("Iconv;iconv"
                               "${ICONV_LIBRARIES}"
                               cmake_pc_cpp_requires cmake_pc_cpp_libs)
 endif()
 if (LCMS2_FOUND)
   APPEND_PKG_REQUIRES_OR_LIBS("lcms2"
-                              "${CMS_LIBRARIES}"
+                              "${LCMS2_LIBRARIES}"
                               cmake_pc_requires cmake_pc_libs)
 endif()
 if (ZLIB_FOUND)
