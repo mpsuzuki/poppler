@@ -8,7 +8,8 @@ AM_CPPFLAGS =					\
 LDADD =						\
 	$(top_builddir)/utils/libparseargs.la	\
 	$(top_builddir)/poppler/libpoppler.la	\
-	$(top_builddir)/cpp/libpoppler-cpp.la
+	$(top_builddir)/cpp/libpoppler-cpp.la	\
+	$(PTHREAD_LIBS)
 
 noinst_PROGRAMS =				\
 	poppler-dump				\
