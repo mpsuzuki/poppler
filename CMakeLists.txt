@@ -678,68 +678,86 @@ if(PKG_CONFIG_EXECUTABLE)
   macro_ensure_version("0.18" "${_output_VAR}" PKG_CONFIG_VERSION_0_18)
 endif()
 
-include(CheckLinkModePkgConfig)
-# collect dependencies managed by pkg-config, write to Requires.private
+# if archive library of poppler is being built, it cannot hold
+# the dependency. collect dependencies managed by pkg-config,
+# write to Requires. other dependencies (e.g. no appropriate
+# pkg-config module is found), write to Libs.
+
+include(FindPkgCfgFromLdflags)
 set(cmake_pc_requires "")
-set(cmake_pc_requires_private "")
 set(cmake_pc_libs "")
-set(cmake_pc_libs_private "")
+if (WITH_FONTCONFIGURATION_FONTCONFIG)
+  set(cmake_pc_requires "${cmake_pc_requires} fontconfig")
+endif()
+if (ENABLE_LIBCURL)
+  set(cmake_pc_requires "${cmake_pc_requires} libcurl")
+endif()
+if (ENABLE_NSS3)
+  set(cmake_pc_requires "${cmake_pc_requires} nss")
+endif()
+if (ENABLE_ZLIB)
+  set(cmake_pc_requires "${cmake_pc_requires} zlib")
+endif()
+if (ENABLE_CMS)
+  set(cmake_pc_requires "${cmake_pc_requires} lcms2")
+endif()
+if (ENABLE_LIBOPENJPEG)
+  set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
+endif()
 
-foreach(v IN LISTS poppler_LIBS)
-  if (${v} MATCHES "\\${CMAKE_SHARED_LIBRARY_SUFFIX}$")
-    list(APPEND poppler_deplibs ${v})
-  elseif (${v} MATCHES "\\${CMAKE_STATIC_LIBRARY_SUFFIX}$")
-    list(APPEND poppler_deplibs ${v})
+if (ENABLE_LIBJPEG)
+  APPEND_PKG_REQUIRES_OR_LIBS("libjpeg;libjpeg8-turbo;libjpeg8;libjpeg9;libjpeg62"
+                              "${JPEG_LIBRARY}"
+                              cmake_pc_requires cmake_pc_libs)
+endif()
+if (ENABLE_LIBTIFF)
+  APPEND_PKG_REQUIRES_OR_LIBS("libtiff;libtiff-4"
+                              "${TIFF_LIBRARY}"
+                              cmake_pc_requires cmake_pc_libs)
+endif()
+if (ENABLE_LIBPNG)
+  APPEND_PKG_REQUIRES_OR_LIBS("libpng;libpng16;libpng12"
+                              "${PNG_LIBRARY}"
+                              cmake_pc_requires cmake_pc_libs)
+endif()
+if (CMAKE_USE_PTHREADS_INIT)
+  string(FIND "libpthread${CMAKE_SHARED_LIBRARY_SUFFIX}" "${poppler_LIBS}" _pos)
+  if (_pos LESS 0)
+    string(FIND "libpthread${CMAKE_STATIC_LIBRARY_SUFFIX}" "${poppler_LIBS}" _pos)
+  endif()
+
+  if (_pos LESS 0)
+    set(cmake_pc_libs "${cmake_pc_libs} -pthread")
   else()
-    list(APPEND cmake_pc_requires ${v})
+    set(cmake_pc_libs "${cmake_pc_libs} -lpthread")
   endif()
-endforeach(v)
-message("poppler_deplibs ${poppler_deplibs}")
-message("cmake_pc_requires ${cmake_pc_requires}")
+endif()
 
-# -------------------------------------------------------
-macro(APPEND_PKG_TO_REQ_IF_LINKED _modname _linked)
-  set("${_linked}" FALSE)
-  CHECK_PKG_LINKMODE("${_modname}" "${poppler_deplibs}" poppler_deplibs _link_mode)
-  if (NOT("${_link_mode}" STREQUAL "not"))
-    list(APPEND cmake_pc_requires "${_modname}")
-    set("${_linked}" TRUE)
-  endif()
-endmacro(APPEND_PKG_TO_REQ_IF_LINKED)
+# 
+# to guarantee "pkg-config --libs poppler" always valid,
+# we use Requires + Libs instead of Requires.private,
+# if archive library is being built.
+#
+if(WIN32)
 
-APPEND_PKG_TO_REQ_IF_LINKED("fontconfig" linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libcurl"    linked)
-APPEND_PKG_TO_REQ_IF_LINKED("nss"        linked)
-APPEND_PKG_TO_REQ_IF_LINKED("zlib"       linked)
-APPEND_PKG_TO_REQ_IF_LINKED("lcms2"      linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libopenjp2" linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libjpeg"    linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libjpeg8-turbo" linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libjpeg8"   linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libjpeg9"   linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libjpeg62"  linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libtiff"    linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libtiff-4"  linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libpng"     linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libpng16"   linked)
-APPEND_PKG_TO_REQ_IF_LINKED("libpng12"   linked)
+elseif(BUILD_SHARED_LIBS AND PKG_CONFIG_VERSION_0_18)
+  #
+  # too old pkg-config-0.18 cannot hold private values
+  #
+  set(POPPLER_REQUIRES_PRIVATE "Requires.private: ${cmake_pc_requires}")
+  set(POPPLER_LIBS_PRIVATE "Libs.private: ${cmake_pc_libs}")
+  set(POPPLER_CPP_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(POPPLER_GLIB_REQUIRES_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
+  set(POPPLER_QT5_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION}")
 
-set(cmake_pc_libs ${poppler_deplibs})
-message("Requires: ${cmake_pc_requires}")
-message("Libs: ${cmake_pc_libs}")
+elseif(NOT(BUILD_SHARED_LIBS))
+  set(POPPLER_REQUIRES "Requires: ${cmake_pc_requires}")
+  set(POPPLER_LIBS_EXTRA "${cmake_pc_libs}")
 
-if(PKG_CONFIG_VERSION_0_18)
-  set(PC_REQUIRES_POPPLER "")
-  set(PC_REQUIRES_POPPLER_PRIVATE "Requires.private: ${cmake_pc_requires_private}")
-  set(PC_REQUIRES_POPPLER_CPP_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
-  set(PC_REQUIRES_POPPLER_GLIB_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
-  set(PC_LIBS_POPPLER_PRIVATE "${cmake_pc_libs_private}")
-else()
-  set(PC_REQUIRES_POPPLER "${cmake_pc_requires_private}")
-  set(PC_REQUIRES_POPPLER_PRIVATE "")
-  set(PC_REQUIRES_POPPLER_CPP_PRIVATE "cairo = ${POPPLER_VERSION} ${cmake_pc_requires_private}")
-  set(PC_REQUIRES_POPPLER_GLIB_PRIVATE "cairo = ${POPPLER_VERSION} ${cmake_pc_requires_private}")
-  set(PC_LIBS_POPPLER_PRIVATE "${cmake_pc_libs_private}")
+  set(POPPLER_CPP_REQUIRES_EXTRA  "poppler = ${POPPLER_VERSION}")
+  set(POPPLER_GLIB_REQUIRES_EXTRA "poppler = ${POPPLER_VERSION}")
+  set(POPPLER_QT5_REQUIRES_EXTRA  "poppler = ${POPPLER_VERSION}")
+
 endif()
 
 poppler_create_install_pkgconfig(poppler.pc ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
