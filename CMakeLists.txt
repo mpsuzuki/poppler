@@ -745,6 +745,11 @@ if (CMAKE_USE_PTHREADS_INIT)
   endif()
 endif()
 
+string(REPLACE " -lc " "" cmake_pc_libs " ${cmake_pc_libs} ")
+string(REPLACE " -lc " "" cmake_pc_cpp_libs " ${cmake_pc_cpp_libs} ")
+string(STRIP "${cmake_pc_libs}" cmake_pc_libs)
+string(STRIP "${cmake_pc_cpp_libs}" cmake_pc_cpp_libs)
+
 # 
 # to guarantee "pkg-config --libs poppler" always valid,
 # we use Requires + Libs instead of Requires.private,
