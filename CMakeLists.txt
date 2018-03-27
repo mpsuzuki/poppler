@@ -28,7 +28,35 @@ function(PKG_SEARCH_AVAILABLE_MODULE _found_pkg pkg_list)
       return()
     endif()
   endforeach(_pkg)
-endfunction()
+endfunction(PKG_SEARCH_AVAILABLE_MODULE)
+
+#
+# GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE([list-of-pathnames] [module])
+#
+# do not invoke pkg-config again. this function uses the
+# variables which are already defined by previous invocation.
+#
+function(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE _pathnames _pkg)
+  set(_founds "")
+  foreach (b IN LISTS ${_pkg}_LIBRARIES)
+    set(_found FALSE)
+    foreach(d IN LISTS ${_pkg}_LIBDIR)
+      foreach(s IN LISTS CMAKE_SHARED_LIBRARY_SUFFIX CMAKE_STATIC_LIBRARY_SUFFIX)
+        set(p "${d}/lib${b}${s}")
+        if (EXISTS "${p}")
+          message("${p}")
+          set(_found TRUE)
+          set(_founds "${_founds} ${p}")
+          break()
+        endif()
+      endforeach(s)
+      if (_found)
+        break()
+      endif()
+    endforeach(d)
+  endforeach(b)
+  set("${_pathnames}" "${_founds}" PARENT_SCOPE)
+endfunction(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE)
 
 if (WIN32)
   message("-- Using win32 threads")
@@ -718,7 +746,7 @@ set(cmake_pc_libs "")
 
 # find_package(ZLIB) constructs library pathname
 if (ENABLE_ZLIB)
-  if (PC_ZLIB_FOUND)
+  if (PC_ZLIB_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} zlib")
   else()
     set(cmake_pc_libs "${cmake_pc_libs} ${ZLIB_LIBRARIES}")
@@ -727,7 +755,7 @@ endif()
 
 # FindFontconfig can use pkg-config, but constructs library pathname
 if (FONTCONFIG_FOUND)
-  if (PC_FONTCONFIG_FOUND)
+  if (PC_FONTCONFIG_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} fontconfig")
   else()
     set(cmake_pc_libs "${cmake_pc_libs} ${FONTCONFIG_LIBRARIES}")
@@ -736,63 +764,66 @@ endif()
 
 # FindLCMS2 uses pkg-config, but constructs library pathname
 if (LCMS2_FOUND)
-  if (PC_LCMS2_FOUND)
+  if (PC_LCMS2_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} lcms2")
   else()
     set(cmake_pc_libs "${cmake_pc_libs} ${LCMS2_LIBRARIES}")
   endif()
 endif()
 
-# FindCURL does not use pkg-config, result is library pathname
+# FindCURL does not use pkg-config, constructs library pathname
 if (CURL_FOUND)
-  if (PC_LIBCURL_FOUND)
+  if (PC_LIBCURL_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} libcurl")
   else()
     set(cmake_pc_libs "${cmake_pc_libs} ${CURL_LIBRARIES}")
   endif()
 endif()
 
-# FindNSS3 just invoke pkg-config results, result is cmake list
+# FindNSS3 just invoke pkg-config, returns cmake list of --libs
 if (NSS3_FOUND)
-  if (PC_NSS_FOUND)
+  if (PC_NSS_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} nss")
   else()
-    set(_nss3_ldflags "${NSS3_LDFLAGS}")
-    string(REPLACE ";" " " _nss3_ldflags "${NSS3_LDFLAGS}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_nss3_ldflags}")
+    GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE(_nss3_pathnames NSS3)
+    set(cmake_pc_libs "${cmake_pc_libs} ${_nss3_pathnames}")
   endif()
 endif()
 
-# FindLIBOPENJPEG2 fills LIBOPENJPEG2_LIBRARIES by library body name.
+# FindLIBOPENJPEG2 just invoke pkg-config, returns cmake list of --libs
 if (LIBOPENJPEG2_FOUND)
-  if (PC_LIBOPENJP2_FOUND)
+  if (PC_LIBOPENJP2_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
   else()
-    set(cmake_pc_libs "${cmake_pc_libs} ${LIBOPENJPEG2_LIBDIR}/${LIBOPENJPEG2_LDFLAGS}")
+    GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE(_openjp2_pathnames LIBOPENJPEG2)
+    set(cmake_pc_libs "${cmake_pc_libs} ${_openjp2_pathnames}")
   endif()
 endif()
 
+# FindJPEG does not use pkg-config, constructs library pathname
 if (WITH_JPEG)
-  if (PC_LIBJPEG_FOUND)
+  if (PC_LIBJPEG_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBJPEG_MODULE_NAME}")
   else()
-    set(cmake_pc_libs "${cmake_pc_libs} ${JPEG_LIBRARY}")
+    set(cmake_pc_libs "${cmake_pc_libs} ${JPEG_LIBRARIES}")
   endif()
 endif()
 
+# FindTIFF does not use pkg-config, constructs library pathname
 if (WITH_TIFF)
-  if (PC_LIBTIFF_FOUND)
+  if (PC_LIBTIFF_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBTIFF_MODULE_NAME}")
   else()
-    set(cmake_pc_libs "${cmake_pc_libs} ${TIFF_LIBRARY_RELEASE}")
+    set(cmake_pc_libs "${cmake_pc_libs} ${TIFF_LIBRARIES}")
   endif()
 endif()
 
+# FindPNG does not use pkg-config, constructs library pathname
 if (WITH_PNG)
-  if (PC_LIBPNG_FOUND)
+  if (PC_LIBPNG_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBPNG_MODULE_NAME}")
   else()
-    set(cmake_pc_libs "${cmake_pc_libs} ${PNG_LIBRARY_RELEASE}")
+    set(cmake_pc_libs "${cmake_pc_libs} ${PNG_LIBRARIES}")
   endif()
 endif()
 
