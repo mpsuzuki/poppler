@@ -1,6 +1,7 @@
 language: cpp
 
 script:
+  - pkg-config --list-all | sort
   - mkdir build-shared && cd build-shared
   - cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_GOBJECT_INTROSPECTION=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/root ..
   - cat poppler.pc
