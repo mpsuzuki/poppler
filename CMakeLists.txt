@@ -714,7 +714,47 @@ set(cmake_pc_requires "")
 set(cmake_pc_libs "")
 
 #
-# dependencies we can expect of pkg-config exist
+# dependencies checked by pkg-config only
+#
+
+# FindNSS3 just invokes pkg-config, returns cmake list of --libs
+if (NSS3_FOUND)
+  set(cmake_pc_requires "${cmake_pc_requires} nss")
+endif()
+
+# FindLIBOPENJPEG2 just invokes pkg-config, returns cmake list of --libs
+if (LIBOPENJPEG2_FOUND)
+  set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
+endif()
+
+#
+# dependencies checked by pkg-config but sometimes different
+#
+
+# FindFontconfig tries pkg-config too, but constructs library pathname
+#  even if PC_FONTCONFIG_FOUND is false, FONTCONFIG_FOUND could be true.
+#
+if (FONTCONFIG_FOUND)
+  if (PC_FONTCONFIG_FOUND)
+    set(cmake_pc_requires "${cmake_pc_requires} fontconfig")
+  else()
+    set(cmake_pc_libs "${cmake_pc_libs} ${FONTCONFIG_LIBRARIES}")
+  endif()
+endif()
+
+# FindLCMS2 tries pkg-config too, but constructs library pathname
+#  even if PC_LCMS2_FOUND is false, LCMS2_FOUND could be true.
+#
+if (LCMS2_FOUND)
+  if (PC_LCMS2_FOUND)
+    set(cmake_pc_requires "${cmake_pc_requires} lcms2")
+  else()
+    set(cmake_pc_libs "${cmake_pc_libs} ${LCMS2_LIBRARIES}")
+  endif()
+endif()
+
+#
+# dependencies checked without pkg-config
 #
 
 # find_package(ZLIB) constructs library pathname
@@ -726,44 +766,12 @@ if (ENABLE_ZLIB)
   endif()
 endif()
 
-# FindFontconfig can use pkg-config, but constructs library pathname
-if (FONTCONFIG_FOUND)
-  if (PC_FONTCONFIG_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} fontconfig")
-  else()
-    set(cmake_pc_libs "${cmake_pc_libs} ${FONTCONFIG_LIBRARIES}")
-  endif()
-endif()
-
-# FindLCMS2 uses pkg-config, but constructs library pathname
-if (LCMS2_FOUND)
-  if (PC_LCMS2_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} lcms2")
-  else()
-    set(cmake_pc_libs "${cmake_pc_libs} ${LCMS2_LIBRARIES}")
-  endif()
-endif()
-
 # FindCURL does not use pkg-config, constructs library pathname
 if (CURL_FOUND)
   if (PC_LIBCURL_FOUND)
     set(cmake_pc_requires "${cmake_pc_requires} libcurl")
   else()
     set(cmake_pc_libs "${cmake_pc_libs} ${CURL_LIBRARIES}")
-  endif()
-endif()
-
-# FindNSS3 just invoke pkg-config, returns cmake list of --libs
-if (NSS3_FOUND)
-  if (PC_NSS_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} nss")
-  endif()
-endif()
-
-# FindLIBOPENJPEG2 just invoke pkg-config, returns cmake list of --libs
-if (LIBOPENJPEG2_FOUND)
-  if (PC_LIBOPENJP2_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
   endif()
 endif()
 
