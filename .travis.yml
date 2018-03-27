@@ -27,7 +27,7 @@ matrix:
       after_script:
          - git clone git://github.com/jeroen/popplertest
          - cd popplertest
-         - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs poppler-cpp)
+         - g++ -Wl,-v -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs poppler-cpp)
          - ./encoding ./hello.pdf | cat -A
 
 #    - dist: trusty
@@ -53,7 +53,7 @@ matrix:
       after_script:
          - git clone git://github.com/jeroen/popplertest
          - cd popplertest
-         - g++ -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs poppler-cpp)
+         - g++ -Wl,-v -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs poppler-cpp)
          - ./encoding ./hello.pdf | cat -e
 
 #    - os: osx
