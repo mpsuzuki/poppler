@@ -16,8 +16,8 @@ script:
   - test -r poppler-glib.pc && cat poppler-glib.pc || echo not found
   - test -r poppler-qt5.pc && cat poppler-qt5.pc || echo not found
   - env PKG_CONFIG_PATH=`pwd` pkg-config --libs poppler-cpp
-#  - make install
-#  - export PKG_CONFIG_PATH=`pwd`/root/lib/pkgconfig/
+  - make install
+  - export PKG_CONFIG_PATH=`pwd`/root/lib/pkgconfig/
 
 matrix:
   include:
@@ -28,7 +28,7 @@ matrix:
       after_script:
          - git clone git://github.com/jeroen/popplertest
          - cd popplertest
-         - g++ -Wl,-v -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs poppler-cpp)
+         - g++ -v -Wl,-v -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs poppler-cpp)
          - ./encoding ./hello.pdf | cat -A
 
 #    - dist: trusty
@@ -54,7 +54,7 @@ matrix:
       after_script:
          - git clone git://github.com/jeroen/popplertest
          - cd popplertest
-         - g++ -Wl,-v -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs poppler-cpp)
+         - g++ -v -Wl,-v -std=c++11 encoding.cpp -o encoding $(pkg-config --cflags --libs poppler-cpp)
          - ./encoding ./hello.pdf | cat -e
 
 #    - os: osx
