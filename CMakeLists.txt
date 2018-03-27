@@ -20,6 +20,7 @@ include(MacroBoolTo01)
 # this function does not set xxx_CFLAGS xxx_LIBS etc.
 #
 function(PKG_SEARCH_AVAILABLE_MODULE _found_pkg pkg_list)
+  set(_PKG_FOUND FALSE)
   foreach(_pkg IN LISTS pkg_list)
     pkg_check_modules(_PKG "${_pkg}")
     if (_PKG_FOUND)
