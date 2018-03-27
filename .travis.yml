@@ -13,10 +13,11 @@ script:
   - cmake -DBUILD_SHARED_LIBS=OFF -DENABLE_GOBJECT_INTROSPECTION=OFF -DCMAKE_INSTALL_PREFIX=`pwd`/root ..
   - cat poppler.pc
   - cat poppler-cpp.pc
+  - export PKG_CONFIG_PATH=`pwd`/root/lib/pkgconfig/
   - test -r poppler-glib.pc && cat poppler-glib.pc || echo not found
   - test -r poppler-qt5.pc && cat poppler-qt5.pc || echo not found
-  - make install
-  - export PKG_CONFIG_PATH=`pwd`/root/lib/pkgconfig/
+  - pkg-config --libs poppler-cpp
+#  - make install
 
 matrix:
   include:
