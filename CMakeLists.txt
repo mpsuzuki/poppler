@@ -727,7 +727,7 @@ endif()
 
 # FindFontconfig can use pkg-config, but constructs library pathname
 if (FONTCONFIG_FOUND)
-  if (PC_FONTCONFIG)
+  if (PC_FONTCONFIG_FOUND)
     set(cmake_pc_requires "${cmake_pc_requires} fontconfig")
   else()
     set(cmake_pc_libs "${cmake_pc_libs} ${FONTCONFIG_LIBRARIES}")
