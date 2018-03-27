@@ -22,8 +22,8 @@ matrix:
   include:
     - dist: trusty
       compiler: gcc     
-#      before_install:
-#        - for p in `dpkg -l | fgrep jpeg | fgrep dev | awk '{print $2}'` ; do echo "== " ${p} ; dpkg -L ${p} ; done
+      before_install:
+        - for p in `dpkg -l | fgrep jpeg | fgrep dev | awk '{print $2}'` ; do echo "== " ${p} ; dpkg -L ${p} ; done
       after_script:
          - git clone git://github.com/jeroen/popplertest
          - cd popplertest
