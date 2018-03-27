@@ -10,6 +10,26 @@ include(MacroOptionalFindPackage)
 find_package(PkgConfig)
 include(MacroEnsureVersion)
 include(MacroBoolTo01)
+
+#
+# PKG_SEARCH_AVAILABLE_MODULE([var-name-of-found-module] [modules])
+# 
+# there is pkg_search_module(), but it does not clarify
+# which module was found.
+#
+# this function does not set xxx_CFLAGS xxx_LIBS etc.
+#
+function(PKG_SEARCH_AVAILABLE_MODULE _found_pkg pkg_list)
+  foreach(_pkg IN LISTS pkg_list)
+    pkg_check_modules(_PKG "${_pkg}")
+    if (_PKG_FOUND)
+      set("${_found_pkg}_FOUND" TRUE PARENT_SCOPE)
+      set("${_found_pkg}_MODULE_NAME" "${_pkg}" PARENT_SCOPE)
+      return()
+    endif()
+  endforeach(_pkg)
+endfunction()
+
 if (WIN32)
   message("-- Using win32 threads")
 else()
@@ -188,6 +208,7 @@ if(ENABLE_CPP)
 endif()
 if(ENABLE_ZLIB)
   find_package(ZLIB)
+  pkg_check_modules(PC_ZLIB zlib)
   set(ENABLE_ZLIB ${ZLIB_FOUND})
 endif()
 if(ENABLE_ZLIB_UNCOMPRESS AND NOT ENABLE_ZLIB)
@@ -197,6 +218,7 @@ endif()
 set(WITH_OPENJPEG FALSE)
 if(ENABLE_LIBOPENJPEG STREQUAL "openjpeg2")
   find_package(LIBOPENJPEG2)
+  pkg_check_modules(PC_LIBOPENJP2 libopenjp2)
   set(WITH_OPENJPEG ${LIBOPENJPEG2_FOUND})
   if(NOT LIBOPENJPEG2_FOUND)
     message(FATAL_ERROR "Install libopenjpeg2 before trying to build poppler. You can also decide to use the internal unmaintained JPX decoder or none at all.")
@@ -221,6 +243,7 @@ endif()
 if(ENABLE_LIBCURL)
   find_package(CURL)
   if(CURL_FOUND)
+    pkg_check_modules(PC_LIBCURL libcurl)
     include_directories(${CURL_INCLUDE_DIR})
     set(POPPLER_HAS_CURL_SUPPORT ON)
   else()
@@ -257,18 +280,22 @@ if(ENABLE_ZLIB)
 endif()
 
 if (NSS3_FOUND)
+  pkg_check_modules(PC_NSS nss)
   add_definitions(${NSS3_CFLAGS})
   set(ENABLE_NSS3 ON)
 endif()
 if(JPEG_FOUND)
   include_directories(${JPEG_INCLUDE_DIR})
+  PKG_SEARCH_AVAILABLE_MODULE(PC_LIBJPEG libjpeg libjpeg8-turbo libjpeg8 libjpeg9 libjpeg62)
 endif()
 if(PNG_FOUND)
   include_directories(${PNG_INCLUDE_DIR})
+  PKG_SEARCH_AVAILABLE_MODULE(PC_LIBPNG libpng libpng16 libpng12)
   set(ENABLE_LIBPNG ON)
 endif()
 if(TIFF_FOUND)
   include_directories(${TIFF_INCLUDE_DIR})
+  PKG_SEARCH_AVAILABLE_MODULE(PC_LIBTIFF libtiff libtiff-4)
   set(ENABLE_LIBTIFF ON)
 endif()
 if(LIBOPENJPEG2_FOUND)
@@ -682,59 +709,51 @@ endif()
 # write to Requires. other dependencies (e.g. no appropriate
 # pkg-config module is found), write to Libs.
 
-include(FindPkgCfgFromLdflags)
 set(cmake_pc_requires "")
 set(cmake_pc_libs "")
 
-# dependencies we can assume pkg-config always
-if (FONTCONFIG_FOUND)
+# dependencies we can expect of pkg-config exist
+if (PC_ZLIB_FOUND)
+  set(cmake_pc_requires "${cmake_pc_requires} zlib")
+endif()
+if (PC_FONTCONFIG_FOUND)
   set(cmake_pc_requires "${cmake_pc_requires} fontconfig")
 endif()
-if (CURL_FOUND)
+if (PC_LCMS2_FOUND)
+  set(cmake_pc_requires "${cmake_pc_requires} lcms2")
+endif()
+if (PC_LIBCURL_FOUND)
   set(cmake_pc_requires "${cmake_pc_requires} libcurl")
 endif()
-if (NSS3_FOUND)
+if (PC_NSS_FOUND)
   set(cmake_pc_requires "${cmake_pc_requires} nss")
 endif()
-if (LIBOPENJPEG2_FOUND)
+if (PC_LIBOPENJP2_FOUND)
   set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
 endif()
+if (PC_LIBJPEG_FOUND)
+  set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBJPEG_MODULE_NAME}")
+endif()
+if (PC_LIBTIFF_FOUND)
+  set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBTIFF_MODULE_NAME}")
+endif()
+if (PC_LIBPNG_FOUND)
+  set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBPNG_MODULE_NAME}")
+endif()
 
-# dependencies we cannot assume pkg-config always
+# extra dependencies without no pc files are provided
 if (ICONV_FOUND)
-  APPEND_PKG_REQUIRES_OR_LIBS("Iconv;iconv"
-                              "${ICONV_LIBRARIES}"
-                              cmake_pc_cpp_requires cmake_pc_cpp_libs)
+  # remove uneeded -lc from ICONV_LIBRARIES (the pathname of libiconv, not -liconv)
+  set(_iconv_libraries "${ICONV_LIBRARIES}")
+  string(REGEX REPLACE "^.*/[Ll][Ii][Bb][Cc]\\${CMAKE_SHARED_LIBRARY_SUFFIX}\$" "" _iconv_libraries "${_iconv_libraries}")
+  string(REGEX REPLACE "^.*/[Ll][Ii][Bb][Cc]\\${CMAKE_STATIC_LIBRARY_SUFFIX}\$" "" _iconv_libraries "${_iconv_libraries}")
+  set(cmake_pc_cpp_libs "${cmake_pc_cpp_libs} ${_iconv_libraries}")
 endif()
-if (LCMS2_FOUND)
-  APPEND_PKG_REQUIRES_OR_LIBS("lcms2"
-                              "${LCMS2_LIBRARIES}"
-                              cmake_pc_requires cmake_pc_libs)
-endif()
-if (ZLIB_FOUND)
-  APPEND_PKG_REQUIRES_OR_LIBS("zlib"
-                              "${ZLIB_LIBRARIES}"
-                              cmake_pc_requires cmake_pc_libs)
-endif()
-if (JPEG_FOUND)
-  APPEND_PKG_REQUIRES_OR_LIBS("libjpeg;libjpeg8-turbo;libjpeg8;libjpeg9;libjpeg62"
-                              "${JPEG_LIBRARY}"
-                              cmake_pc_requires cmake_pc_libs)
-endif()
-if (TIFF_FOUND)
-  APPEND_PKG_REQUIRES_OR_LIBS("libtiff;libtiff-4"
-                              "${TIFF_LIBRARY}"
-                              cmake_pc_requires cmake_pc_libs)
-endif()
-if (PNG_FOUND)
-  APPEND_PKG_REQUIRES_OR_LIBS("libpng;libpng16;libpng12"
-                              "${PNG_LIBRARY}"
-                              cmake_pc_requires cmake_pc_libs)
-endif()
+
 if (CMAKE_USE_PTHREADS_INIT)
-  string(FIND "libpthread${CMAKE_SHARED_LIBRARY_SUFFIX}" "${poppler_LIBS}" _pos)
+  string(FIND "/libpthread${CMAKE_SHARED_LIBRARY_SUFFIX}" "${poppler_LIBS}" _pos)
   if (_pos LESS 0)
-    string(FIND "libpthread${CMAKE_STATIC_LIBRARY_SUFFIX}" "${poppler_LIBS}" _pos)
+    string(FIND "/libpthread${CMAKE_STATIC_LIBRARY_SUFFIX}" "${poppler_LIBS}" _pos)
   endif()
 
   if (_pos LESS 0)
@@ -760,10 +779,10 @@ elseif(BUILD_SHARED_LIBS AND PKG_CONFIG_VERSION_0_18)
   #
   # too old pkg-config-0.18 cannot hold private values
   #
-  set(POPPLER_REQUIRES_PRIVATE "Requires.private: ${cmake_pc_requires}")
-  set(POPPLER_LIBS_PRIVATE "Libs.private: ${cmake_pc_libs}")
+  set(POPPLER_REQUIRES_PRIVATE      "Requires.private: ${cmake_pc_requires}")
+  set(POPPLER_LIBS_PRIVATE          "Libs.private: ${cmake_pc_libs}")
   set(POPPLER_CPP_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION} ${cmake_pc_cpp_requires}")
-  set(POPPLER_CPP_LIBS_PRIVATE  "Libs.private: poppler = ${cmake_pc_cpp_libs}")
+  set(POPPLER_CPP_LIBS_PRIVATE      "Libs.private: ${cmake_pc_cpp_libs}")
   set(POPPLER_GLIB_REQUIRES_PRIVATE "Requires.private: poppler = ${POPPLER_VERSION}")
   set(POPPLER_QT5_REQUIRES_PRIVATE  "Requires.private: poppler = ${POPPLER_VERSION}")
 
