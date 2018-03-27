@@ -31,31 +31,69 @@ function(PKG_SEARCH_AVAILABLE_MODULE _found_pkg pkg_list)
 endfunction(PKG_SEARCH_AVAILABLE_MODULE)
 
 #
-# GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE([list-of-pathnames] [module])
+# GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE_SHARED([completed] [list-of-pathnames] [module])
 #
 # do not invoke pkg-config again. this function uses the
 # variables which are already defined by previous invocation.
 #
-function(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE _pathnames _pkg)
-  set(_founds "")
+function(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE_SHARED _completed _pathnames _pkg)
+  set("${_completed}" TRUE PARENT_SCOPE)
   foreach (b IN LISTS ${_pkg}_LIBRARIES)
-    set(_found FALSE)
-    foreach(d IN LISTS ${_pkg}_LIBDIR)
-      foreach(s IN LISTS CMAKE_SHARED_LIBRARY_SUFFIX CMAKE_STATIC_LIBRARY_SUFFIX)
-        set(p "${d}/lib${b}${s}")
-        if (EXISTS "${p}")
-          message("${p}")
-          set(_found TRUE)
-          set(_founds "${_founds} ${p}")
-          break()
-        endif()
-      endforeach(s)
-      if (_found)
-        break()
-      endif()
-    endforeach(d)
+    set(p "${${_pkg}_LIBDIR}/lib${b}${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    if (EXISTS "${p}")
+      set(_founds "${_founds} ${p}")
+    else()
+      set("${_completed}" FALSE PARENT_SCOPE)
+    endif()
   endforeach(b)
   set("${_pathnames}" "${_founds}" PARENT_SCOPE)
+endfunction(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE_SHARED)
+
+#
+# GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE_STATIC([completed] [list-of-pathnames] [module])
+#
+# do not invoke pkg-config again. this function uses the
+# variables which are already defined by previous invocation.
+#
+function(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE_STATIC _completed _pathnames _pkg)
+  set("${_completed}" TRUE PARENT_SCOPE)
+  foreach (b IN LISTS ${_pkg}_STATIC_LIBRARIES)
+    set(p "${${_pkg}_LIBDIR}/lib${b}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    if (EXISTS "${p}")
+      set(_founds "${_founds} ${p}")
+    else()
+      set("${_completed}" FALSE PARENT_SCOPE)
+    endif()
+  endforeach(b)
+  set("${_pathnames}" "${_founds}" PARENT_SCOPE)
+endfunction(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE_STATIC)
+
+#
+# GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE([completed] [list-of-pathnames] [module])
+#
+# do not invoke pkg-config again. this function uses the
+# variables which are already defined by previous invocation.
+#
+function(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE _completed _pathnames _pkg)
+  GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE_SHARED(__completed __pathnames_shared ${_pkg})
+  if (__completed)
+    message("*** checking all shared lib for ${_pkg} completed: ${__pathnames_shared}")
+    set("${_completed}" TRUE PARENT_SCOPE)
+    set("${_pathnames}" "${__pathnames_shared}" PARENT_SCOPE)
+    return()
+  endif()
+  
+  GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE_STATIC(__completed __pathnames_static ${_pkg})
+  if (__completed)
+    message("*** checking all static lib for ${_pkg} completed: ${_pathnames_static}")
+    set("${_completed}" TRUE PARENT_SCOPE)
+    set("${_pathnames}" "${__pathnames_static}" PARENT_SCOPE)
+    return()
+  endif()
+
+  set("${_completed}" FALSE PARENT_CODE)
+  set("${_pathnames}" ${__pathnames_shared} PARENT_CODE)
+
 endfunction(GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE)
 
 if (WIN32)
@@ -785,7 +823,7 @@ if (NSS3_FOUND)
   if (PC_NSS_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} nss")
   else()
-    GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE(_nss3_pathnames NSS3)
+    GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE(_completed _nss3_pathnames NSS3)
     set(cmake_pc_libs "${cmake_pc_libs} ${_nss3_pathnames}")
   endif()
 endif()
@@ -795,7 +833,7 @@ if (LIBOPENJPEG2_FOUND)
   if (PC_LIBOPENJP2_FOUND AND MAXIMIZE_PKG_CONFIG_DEPENDENCY)
     set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
   else()
-    GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE(_openjp2_pathnames LIBOPENJPEG2)
+    GET_LIBRARY_PATHNAMES_FROM_PKG_CONFIG_MODULE(_completed _openjp2_pathnames LIBOPENJPEG2)
     set(cmake_pc_libs "${cmake_pc_libs} ${_openjp2_pathnames}")
   endif()
 endif()
@@ -853,6 +891,10 @@ string(REPLACE " -lc " "" cmake_pc_libs " ${cmake_pc_libs} ")
 string(REPLACE " -lc " "" cmake_pc_cpp_libs " ${cmake_pc_cpp_libs} ")
 string(STRIP "${cmake_pc_libs}" cmake_pc_libs)
 string(STRIP "${cmake_pc_cpp_libs}" cmake_pc_cpp_libs)
+
+string(REPLACE ";" " " cmake_pc_requires "${cmake_pc_requires}")
+string(REPLACE ";" " " cmake_pc_libs     "${cmake_pc_libs}")
+string(REPLACE ";" " " cmake_pc_cpp_libs "${cmake_pc_cpp_libs}")
 
 # 
 # to guarantee "pkg-config --libs poppler" always valid,
