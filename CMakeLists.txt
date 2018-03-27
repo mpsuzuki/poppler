@@ -419,7 +419,6 @@ if(ENABLE_SPLASH)
     splash/SplashXPathScanner.cc
   )
 endif()
-
 if(FONTCONFIG_FOUND)
   set(poppler_LIBS ${poppler_LIBS} ${FONTCONFIG_LIBRARIES})
 endif()
