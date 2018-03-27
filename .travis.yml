@@ -15,7 +15,7 @@ script:
   - cat poppler-cpp.pc
   - test -r poppler-glib.pc && cat poppler-glib.pc || echo not found
   - test -r poppler-qt5.pc && cat poppler-qt5.pc || echo not found
-  - make install
+#  - make install
   - export PKG_CONFIG_PATH=`pwd`/root/lib/pkgconfig/
 
 matrix:
