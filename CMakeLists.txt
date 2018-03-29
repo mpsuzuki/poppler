@@ -739,7 +739,7 @@ endif()
 
 # FindLIBOPENJPEG2 just invokes pkg-config, if LIBOPENJPEG2_xxx are not given.
 if (LIBOPENJPEG2_FOUND)
-  if (PC_LIBOPENJP2)
+  if (PC_LIBOPENJP2_FOUND)
     set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
   else()
     MAKE_LDFLAGS_FROM_LIBPATHS(_libopenjpeg2_ldflags "${LIBOPENJPEG2_LIBRARIES}")
