@@ -29,6 +29,13 @@
 namespace poppler
 {
 
+/**
+ \class poppler::text_box poppler-page.h "poppler/cpp/poppler-page.h"
+
+ A class holding poppler::ustring object and poppler::rectf object,
+ used to express a word at a position with a size.
+
+ */
 struct text_box_data;
 class POPPLER_CPP_EXPORT text_box
 {
@@ -40,23 +47,44 @@ public:
     ~text_box();
 
     ustring   text() const;
+
+
+    /**
+       Get a bbox for this word.
+
+       \returns rectf the bounding box for this word.
+     */
     rectf     bbox() const;
 
     /**
-       Get a bbox for the i-th glyph
+       Get a bbox for the i-th glyph in this word.
 
-       This method returns a rectf of the bounding box for
-       the i-th glyph in the text_box.
+       \param i an index to specify a glyph.
 
-       \note The text_box object owns the rectf objects,
+       \returns a rectf of the bounding box for the i-th glyph
+                in the text_box.
+
+       \note The returned rectf object is owned by text_box object,
        the caller is not needed to free them.
 
        \warning For too large glyph index, rectf(0,0,0,0)
-       is returned. The number of the glyphs and ustring
-       codepoints might be different in some complex scripts.
+       is returned. The number of the glyphs and that of
+       ustring codepoints might be different in some complex
+       scripts.
      */
     rectf     char_bbox(size_t i) const;
+
+    /**
+       Check if a recognizable space exists between this and next %text_box.
+
+       It is useful to determine how the words should be concatenated,
+       "<this><next>" or "<this> <next>".
+
+       \returns a boolean if a recognizable space follows to this %text_box.
+
+     */
     bool      has_space_after() const;
+
 private:
     text_box(text_box_data *data);
 
