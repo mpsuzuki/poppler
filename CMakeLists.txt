@@ -36,9 +36,9 @@ endfunction(PKG_SEARCH_AVAILABLE_MODULE)
 #
 function(MAKE_LDFLAGS_FROM_LIBPATHS _ldflags _libpaths)
   foreach(_libpath IN LISTS _libpaths)
-    string(REGEX REPLACE "/[^/]*$" "" _libdir "${_libpath}")
+    get_filename_component(_libdir "${_libpath}" DIRECTORY)
+    get_filename_component(_lib "${_libpath}" NAME)
 
-    string(REGEX REPLACE "^.*/" "" _lib "${_libpath}")
     string(REGEX REPLACE "(\\${CMAKE_STATIC_LIBRARY_SUFFIX}|\\${CMAKE_SHARED_LIBRARY_SUFFIX})$" "" _lib "${_lib}")
     string(REGEX REPLACE "^lib" "" _lib "${_lib}")
 
