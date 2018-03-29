@@ -268,22 +268,22 @@ ustring page::text(const rectf &r) const
 
  \since 0.16
  */
-ustring page::text(const rectf &r, text_layout_enum layout_mode) const
+ustring page::text(const rectf &rect, text_layout_enum layout_mode) const
 {
     std::unique_ptr<GooString> s;
     const GBool use_raw_order = (layout_mode == raw_order_layout);
     TextOutputDev td(nullptr, gFalse, 0, use_raw_order, gFalse);
     d->doc->doc->displayPage(&td, d->index + 1, 72, 72, 0, false, true, false);
-    if (r.is_empty()) {
-        PDFRectangle *rect = d->page->getCropBox();
+    if (rect.is_empty()) {
+        PDFRectangle *cbox = d->page->getCropBox();
         const int rotate = d->page->getRotate();
         if (rotate == 90 || rotate == 270) {
-            std::swap(rect->x1, rect->y1);
-            std::swap(rect->x2, rect->y2);
+            std::swap(cbox->x1, cbox->y1);
+            std::swap(cbox->x2, cbox->y2);
         }
-        s.reset(td.getText(rect->x1, rect->y1, rect->x2, rect->y2));
+        s.reset(td.getText(cbox->x1, cbox->y1, cbox->x2, cbox->y2));
     } else {
-        s.reset(td.getText(r.left(), r.top(), r.right(), r.bottom()));
+        s.reset(td.getText(rect.left(), rect.top(), rect.right(), rect.bottom()));
     }
     return ustring::from_utf8(s->getCString(), s->getLength());
 }
