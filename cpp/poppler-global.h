@@ -80,6 +80,16 @@ typedef unsigned int /* time_t */ time_type;
 #pragma warning(push)
 #pragma warning(disable: 4251) /* class 'A' needs to have dll interface for to be used by clients of class 'B'. */
 #endif
+
+/**
+ \class poppler::ustring poppler-global.h "poppler/cpp/poppler-global.h"
+
+ An UTF-16 string, derived class of std::basic_string<unsigned short>.
+ \note The endian of this object is same with that of unsigned short.
+ \warning Depending on how the object is constructed or how iconv()
+          behaves, BOM may exist or may not.
+
+ */
 class POPPLER_CPP_EXPORT ustring : public std::basic_string<unsigned short>
 {
 public:

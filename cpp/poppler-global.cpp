@@ -211,6 +211,18 @@ ustring::ustring()
 {
 }
 
+/**
+
+ Create %ustring object with specified length and filled by specified character.
+
+ \param len the number of UTF-16 buffer the resulted object.
+ \param ch an UTF-16 character for the initialization.
+
+ \note this method cannot take surrogate character for the initialization.
+
+ \returns new %ustring object.
+
+*/
 ustring::ustring(size_type len, value_type ch)
     : std::basic_string<value_type>(len, ch)
 {
@@ -220,6 +232,15 @@ ustring::~ustring()
 {
 }
 
+/**
+
+ Create std::byte_array filled by an UTF-8 string converted by iconv().
+ \note if the source %ustring includes a BOM and iconv() keeps a BOM for UTF-8,
+       the resulted UTF-8 includes it.
+
+ \returns new %std::byte_array object including UTF-8 string.
+
+*/
 byte_array ustring::to_utf8() const
 {
     if (!size()) {
@@ -254,6 +275,13 @@ byte_array ustring::to_utf8() const
     return str;
 }
 
+/**
+
+ Create std::string filled by a Latin-1 string converted by simple typecast to char.
+ \warning non-Latin-1 characters (like BOM) in %ustring object are converted to the incorrect characters in the output.
+ \returns new %std::string object including Latin-1.
+
+*/
 std::string ustring::to_latin1() const
 {
     if (!size()) {
@@ -289,6 +317,18 @@ ustring ustring::from_utf16(const char *str, int len)
     return ret;
 }
 
+/**
+
+ Create %ustring object filled by an UTF-16 data converted by iconv(), from given UTF-8 data.
+ The endian of resulted UTF-16 is fitting to the native endian of the platform.
+
+ \param str a pointer to the buffer filled by UTF-8 data.
+ \param len length of the buffer %str. iconv() terminates the conversion at the specified length.
+            if it is not given, std::strlen() is used to determine the length of the input.
+
+ \returns new %ustring object.
+
+*/
 ustring ustring::from_utf8(const char *str, int len)
 {
     if (len <= 0) {
@@ -307,7 +347,7 @@ ustring ustring::from_utf8(const char *str, int len)
         return ustring();
     }
 
-    // +1, because iconv inserts byte order marks
+    // +1, because iconv may insert BOM.
     ustring ret(len+1, 0);
     char *ret_data = reinterpret_cast<char *>(&ret[0]);
     char *str_data = const_cast<char *>(str);
@@ -329,6 +369,15 @@ ustring ustring::from_utf8(const char *str, int len)
     return ret;
 }
 
+/**
+
+ Create %ustring object filled by an UTF-16 data converted by simple casting from std::string.
+
+ \param str a pointer to the std::string object including Latin-1 data.
+
+ \returns new %ustring object, no BOM is inserted.
+
+*/
 ustring ustring::from_latin1(const std::string &str)
 {
     const size_type l = str.size();
