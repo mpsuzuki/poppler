@@ -316,6 +316,16 @@ rectf text_box::char_bbox(size_t i) const
     return rectf(0, 0, 0, 0);
 }
 
+/**
+ \fn text_box::has_space_after()
+
+ Returns whether a recognizable space exists between this and next word.
+ It is useful to determine how the words should be concatenated,
+ "<this><next>" or "<this> <next>".
+
+ \returns a boolean if a recognizable space follows to this %text_box.
+ 
+ */
 bool text_box::has_space_after() const
 {
     return m_data->has_space_after;
