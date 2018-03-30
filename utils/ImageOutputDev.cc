@@ -232,7 +232,10 @@ void ImageOutputDev::listImage(GfxState *state, Object *ref, Stream *str,
     printf("[none]     ");
   }
 
+  printf("cur=(% 6.1f,% 6.1f)", state->getCurX(), state->getCurY());
+
   double *mat = state->getCTM();
+  printf("ctm=(% 6.1f,% 6.1f,% 6.1f,% 6.1f,% 6.1f,% 6.1f)", mat[0], mat[1], mat[2], mat[3], mat[4], mat[5]);
   double width2 = mat[0] + mat[2];
   double height2 = mat[1] + mat[3];
   double xppi = fabs(width*72.0/width2) + 0.5;
