@@ -47,6 +47,31 @@ function(MAKE_LDFLAGS_FROM_LIBPATHS _ldflags _libpaths)
   set("${_ldflags}" "${__ldflags}" PARENT_SCOPE)
 endfunction(MAKE_LDFLAGS_FROM_LIBPATHS)
 
+#
+# APPEND_PC_REQS_OR_LIBS([var-use-a-lib-or-not],
+#                        [var-found-pc-module-or-not],
+#                        [var-reqs-out], [var-reqs-in], [var-mod-name]
+#                        [var-libs-out], [var-libs-in], [var-xlate-libs])
+#
+function(APPEND_PC_REQS_OR_LIBS _with_lib _pc_found _reqs_out _reqs_in _mod_name _libs_out _libs_in _libs _xlate_libs)
+  if (NOT ("${_with_lib}"))
+    return() 
+  endif()
+
+  if ("${_pc_found}")
+    set("${_reqs_out}" "${_reqs_in} ${_mod_name}" PARENT_SCOPE)
+    return()
+  endif()
+
+  if ("${_xlate_libs}")
+    MAKE_LDFLAGS_FROM_LIBPATH(_libs "${_libs}")
+  endif()
+
+  set("${_libs_out}" "${_libs_in} ${_libs}")
+endfunction(APPEND_PC_REQS_OR_LIBS)
+
+
+
 if (WIN32)
   message("-- Using win32 threads")
 else()
@@ -738,14 +763,9 @@ if (NSS3_FOUND)
 endif()
 
 # FindLIBOPENJPEG2 just invokes pkg-config, if LIBOPENJPEG2_xxx are not given.
-if (LIBOPENJPEG2_FOUND)
-  if (PC_LIBOPENJP2_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} libopenjp2")
-  else()
-    MAKE_LDFLAGS_FROM_LIBPATHS(_libopenjpeg2_ldflags "${LIBOPENJPEG2_LIBRARIES}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_libopenjpeg2_ldflags}")
-  endif()
-endif()
+APPEND_PC_REQS_OR_LIBS("${LIBOPENJPEG2_FOUND}" "${PC_LIBOPENJP2_FOUND}"
+                       cmake_pc_requires "${cmake_pc_requires}" "libopenjp2"
+                       cmake_pc_libs     "${cmake_pc_libs}"     "${LIBOPENJPEG2_LIBRARIES}" TRUE)
 
 #
 # dependencies checked by pkg-config but sometimes different
@@ -754,80 +774,47 @@ endif()
 # FindFontconfig tries pkg-config too, but constructs library pathname
 #  even if PC_FONTCONFIG_FOUND is false, FONTCONFIG_FOUND could be true.
 #
-if (FONTCONFIG_FOUND)
-  if (PC_FONTCONFIG_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} fontconfig")
-  else()
-    MAKE_LDFLAGS_FROM_LIBPATHS(_fontconfig_ldflags "${FONTCONFIG_LIBRARIES}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_fontconfig_ldflags}")
-  endif()
-endif()
+APPEND_PC_REQS_OR_LIBS("${FONTCONFIG_FOUND}" "${PC_FONTCONFIG_FOUND}"
+                       cmake_pc_requires "${cmake_pc_requires}" "fontconfig"
+                       cmake_pc_libs     "${cmake_pc_libs}"     "${FONTCONFIG_LIBRARIES}" TRUE)
 
 # FindLCMS2 tries pkg-config too, but constructs library pathname
 #  even if PC_LCMS2_FOUND is false, LCMS2_FOUND could be true.
 #
-if (LCMS2_FOUND)
-  if (PC_LCMS2_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} lcms2")
-  else()
-    MAKE_LDFLAGS_FROM_LIBPATHS(_lcms2_ldflags "${LCMS2_LIBRARIES}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_lcms2_ldflags}")
-  endif()
-endif()
+APPEND_PC_REQS_OR_LIBS("${LCMS2_FOUND}" "${PC_LCMS2_FOUND}"
+                       cmake_pc_requires "${cmake_pc_requires}" "lcms2"
+                       cmake_pc_libs     "${cmake_pc_libs}"     "${FONTCONFIG_LIBRARIES}" TRUE)
 
 #
 # dependencies checked without pkg-config
 #
 
 # find_package(ZLIB) constructs library pathname
-if (ENABLE_ZLIB)
-  if (PC_ZLIB_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} zlib")
-  else()
-    MAKE_LDFLAGS_FROM_LIBPATHS(_zlib_ldflags "${ZLIB_LIBRARIES}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_zlib_ldflags}")
-  endif()
-endif()
+APPEND_PC_REQS_OR_LIBS("${ENABLE_ZLIB}" "${PC_ZLIB_FOUND}"
+                       cmake_pc_requires "${cmake_pc_requires}" "zlib"
+                       cmake_pc_libs     "${cmake_pc_libs}"     "${ZLIB_LIBRARIES}" TRUE)
+
 
 # FindCURL does not use pkg-config, constructs library pathname
-if (CURL_FOUND)
-  if (PC_LIBCURL_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} libcurl")
-  else()
-    MAKE_LDFLAGS_FROM_LIBPATHS(_curl_ldflags "${CURL_LIBRARIES}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_curl_ldflags}")
-  endif()
-endif()
+APPEND_PC_REQS_OR_LIBS("${CURL_FOUND}" "${PC_LIBCURL_FOUND}"
+                       cmake_pc_requires "${cmake_pc_requires}" "libcurl"
+                       cmake_pc_libs     "${cmake_pc_libs}"     "${CURL_LIBRARIES}" TRUE)
+
 
 # FindJPEG does not use pkg-config, constructs library pathname
-if (WITH_JPEG)
-  if (PC_LIBJPEG_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBJPEG_MODULE_NAME}")
-  else()
-    MAKE_LDFLAGS_FROM_LIBPATHS(_jpeg_ldflags "${JPEG_LIBRARIES}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_jpeg_ldflags}")
-  endif()
-endif()
+APPEND_PC_REQS_OR_LIBS("${WITH_JPEG}" "${PC_LIBJPEG_FOUND}"
+                       cmake_pc_requires "${cmake_pc_requires}" "${PC_LIBJPEG_MODULE_NAME}"
+                       cmake_pc_libs     "${cmake_pc_libs}"     "${JPEG_LIBRARIES}" TRUE)
 
 # FindTIFF does not use pkg-config, constructs library pathname
-if (WITH_TIFF)
-  if (PC_LIBTIFF_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBTIFF_MODULE_NAME}")
-  else()
-    MAKE_LDFLAGS_FROM_LIBPATHS(_tiff_ldflags "${TIFF_LIBRARIES}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_tiff_ldflags}")
-  endif()
-endif()
+APPEND_PC_REQS_OR_LIBS("${WITH_TIFF}" "${PC_LIBTIFF_FOUND}"
+                       cmake_pc_requires "${cmake_pc_requires}" "${PC_LIBTIFF_MODULE_NAME}"
+                       cmake_pc_libs     "${cmake_pc_libs}"     "${TIFF_LIBRARIES}" TRUE)
 
 # FindPNG does not use pkg-config, constructs library pathname
-if (WITH_PNG)
-  if (PC_LIBPNG_FOUND)
-    set(cmake_pc_requires "${cmake_pc_requires} ${PC_LIBPNG_MODULE_NAME}")
-  else()
-    MAKE_LDFLAGS_FROM_LIBPATHS(_png_ldflags "${PNG_LIBRARIES}")
-    set(cmake_pc_libs "${cmake_pc_libs} ${_png_ldflags}")
-  endif()
-endif()
+APPEND_PC_REQS_OR_LIBS("${WITH_PNG}" "${PC_LIBPNG_FOUND}"
+                       cmake_pc_requires "${cmake_pc_requires}" "${PC_LIBPNG_MODULE_NAME}"
+                       cmake_pc_libs     "${cmake_pc_libs}"     "${PNG_LIBRARIES}" TRUE)
 
 # extra dependencies without no pc files are provided
 if (ICONV_FOUND)
