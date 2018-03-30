@@ -45,7 +45,7 @@ function(MAKE_LDFLAGS_FROM_LIBPATHS _ldflags _libpaths)
     set(__ldflags "${__ldflags} ${CMAKE_LIBRARY_PATH_FLAG}${_libdir} ${CMAKE_LINK_LIBRARY_FLAG}${_lib}")
   endforeach(_libpath)
   set("${_ldflags}" "${__ldflags}" PARENT_SCOPE)
-endfunction(MAKE_LDFLAGS_FROM_LIBPATH)
+endfunction(MAKE_LDFLAGS_FROM_LIBPATHS)
 
 if (WIN32)
   message("-- Using win32 threads")
