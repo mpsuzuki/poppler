@@ -753,6 +753,13 @@ endif()
 set(cmake_pc_requires "")
 set(cmake_pc_libs "")
 
+macro(AppendPcReqsOrLibs _with_lib _pc_found _mod_name _libs _xlate_libs)
+  APPEND_PC_REQS_OR_LIBS("${_with_lib}" "${_pc_found}"
+                         cmake_pc_requires "${cmake_pc_requires}" "${_mod_name}"
+                         cmake_pc_libs     "${cmake_pc_libs}"     "${_libs}" "${_xlate_libs}")
+endmacro(AppendPcReqsOrLibs)
+
+
 #
 # dependencies checked by pkg-config only
 #
