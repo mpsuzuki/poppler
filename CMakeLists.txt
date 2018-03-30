@@ -32,7 +32,7 @@ function(PKG_SEARCH_AVAILABLE_MODULE _found_pkg pkg_list)
 endfunction(PKG_SEARCH_AVAILABLE_MODULE)
 
 #
-# MAKE_LDFLAGS_FROM_LIBPATH([var-ldflags+libs] [libpath])
+# MAKE_LDFLAGS_FROM_LIBPATHS([var-ldflags+libs] [libpath])
 #
 function(MAKE_LDFLAGS_FROM_LIBPATHS _ldflags _libpaths)
   foreach(_libpath IN LISTS _libpaths)
@@ -64,7 +64,7 @@ function(APPEND_PC_REQS_OR_LIBS _with_lib _pc_found _reqs_out _reqs_in _mod_name
   endif()
 
   if ("${_xlate_libs}")
-    MAKE_LDFLAGS_FROM_LIBPATH(_libs "${_libs}")
+    MAKE_LDFLAGS_FROM_LIBPATHS(_libs "${_libs}")
   endif()
 
   set("${_libs_out}" "${_libs_in} ${_libs}")
