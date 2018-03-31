@@ -66,6 +66,9 @@
 #ifdef CAIRO_HAS_PDF_SURFACE
 #include <cairo-pdf.h>
 #endif
+#ifdef CAIRO_HAS_SCRIPT_SURFACE
+#include <cairo-script.h>
+#endif
 #ifdef CAIRO_HAS_SVG_SURFACE
 #include <cairo-svg.h>
 #endif
@@ -80,6 +83,7 @@ static GBool eps = gFalse;
 static GBool pdf = gFalse;
 static GBool printToWin32 = gFalse;
 static GBool printdlg = gFalse;
+static GBool script = gFalse;
 static GBool svg = gFalse;
 static GBool tiff = gFalse;
 
@@ -161,6 +165,10 @@ static const ArgDesc argDesc[] = {
 #ifdef CAIRO_HAS_PDF_SURFACE
   {"-pdf",    argFlag,     &pdf,           0,
    "generate a PDF file"},
+#endif
+#ifdef CAIRO_HAS_SCRIPT_SURFACE
+  {"-script",    argFlag,  &script,        0,
+   "generate a CairoScript file"},
 #endif
 #ifdef CAIRO_HAS_SVG_SURFACE
   {"-svg",    argFlag,     &svg,           0,
@@ -634,6 +642,11 @@ static void beginDocument(GooString *inputFileName, GooString *outputFileName, d
 #ifdef CAIRO_HAS_PDF_SURFACE
       surface = cairo_pdf_surface_create_for_stream(writeStream, output_file, w, h);
 #endif
+    } else if (script) {
+#ifdef CAIRO_HAS_SCRIPT_SURFACE
+      cairo_device_t*  cairo_dev = cairo_script_create_for_stream(writeStream, output_file);
+      surface = cairo_script_surface_create(cairo_dev, CAIRO_CONTENT_COLOR_ALPHA, w, h);
+#endif
     } else if (svg) {
 #ifdef CAIRO_HAS_SVG_SURFACE
       surface = cairo_svg_surface_create_for_stream(writeStream, output_file, w, h);
@@ -847,7 +860,7 @@ static GooString *getOutputFileName(GooString *fileName, GooString *outputName)
   if (outputName) {
     if (outputName->cmp("-") == 0) {
       if (printToWin32 || (!printing && !singleFile)) {
-	fprintf(stderr, "Error: stdout may only be used with the ps, eps, pdf, svg output options or if -singlefile is used.\n");
+	fprintf(stderr, "Error: stdout may only be used with the ps, eps, pdf, script, svg output options or if -singlefile is used.\n");
 	exit(99);
       }
       return new GooString("fd://0");
@@ -898,6 +911,8 @@ static GooString *getOutputFileName(GooString *fileName, GooString *outputName)
     name->append(".eps");
   else if (pdf)
     name->append(".pdf");
+  else if (script)
+    name->append(".cs");
   else if (svg)
     name->append(".svg");
 
@@ -966,13 +981,14 @@ int main(int argc, char *argv[]) {
                 (pdf ? 1 : 0) +
                 (printToWin32 ? 1 : 0) +
                 (printdlg ? 1 : 0) +
+                (script ? 1 : 0) +
                 (svg ? 1 : 0);
   if (num_outputs == 0) {
-    fprintf(stderr, "Error: one of the output format options (-png, -jpeg, -ps, -eps, -pdf, -print, -printdlg, -svg) must be used.\n");
+    fprintf(stderr, "Error: one of the output format options (-png, -jpeg, -ps, -eps, -pdf, -print, -printdlg, -script, -svg) must be used.\n");
     exit(99);
   }
   if (num_outputs > 1) {
-    fprintf(stderr, "Error: use only one of the output format options (-png, -jpeg, -ps, -eps, -pdf, -printdlg, -print, -svg).\n");
+    fprintf(stderr, "Error: use only one of the output format options (-png, -jpeg, -ps, -eps, -pdf, -printdlg, -print, -script, -svg).\n");
     exit(99);
   }
   if (png || jpeg || tiff)
