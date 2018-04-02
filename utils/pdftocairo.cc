@@ -72,6 +72,9 @@
 #ifdef CAIRO_HAS_SVG_SURFACE
 #include <cairo-svg.h>
 #endif
+#ifdef CAIRO_HAS_XML_SURFACE
+#include <cairo-xml.h>
+#endif
 
 #include "pdftocairo-win32.h"
 
@@ -86,6 +89,7 @@ static GBool printdlg = gFalse;
 static GBool script = gFalse;
 static GBool svg = gFalse;
 static GBool tiff = gFalse;
+static GBool xml = gFalse;
 
 static int firstPage = 1;
 static int lastPage = 0;
@@ -173,6 +177,10 @@ static const ArgDesc argDesc[] = {
 #ifdef CAIRO_HAS_SVG_SURFACE
   {"-svg",    argFlag,     &svg,           0,
    "generate a Scalable Vector Graphics (SVG) file"},
+#endif
+#ifdef CAIRO_HAS_XML_SURFACE
+  {"-xml",    argFlag,     &xml,           0,
+   "generate a XML file"},
 #endif
 #ifdef CAIRO_HAS_WIN32_SURFACE
   {"-print",    argFlag,     &printToWin32,       0,
@@ -652,6 +660,11 @@ static void beginDocument(GooString *inputFileName, GooString *outputFileName, d
       surface = cairo_svg_surface_create_for_stream(writeStream, output_file, w, h);
       cairo_svg_surface_restrict_to_version (surface, CAIRO_SVG_VERSION_1_2);
 #endif
+    } else if (xml) {
+#ifdef CAIRO_HAS_XML_SURFACE
+      cairo_device_t*  cairo_dev = cairo_xml_create_for_stream(writeStream, output_file);
+      surface = cairo_xml_surface_create(cairo_dev, CAIRO_CONTENT_COLOR_ALPHA, w, h);
+#endif
     }
 #ifdef CAIRO_HAS_WIN32_SURFACE
     if (printToWin32)
@@ -860,7 +873,7 @@ static GooString *getOutputFileName(GooString *fileName, GooString *outputName)
   if (outputName) {
     if (outputName->cmp("-") == 0) {
       if (printToWin32 || (!printing && !singleFile)) {
-	fprintf(stderr, "Error: stdout may only be used with the ps, eps, pdf, script, svg output options or if -singlefile is used.\n");
+	fprintf(stderr, "Error: stdout may only be used with the ps, eps, pdf, script, svg, xml output options or if -singlefile is used.\n");
 	exit(99);
       }
       return new GooString("fd://0");
@@ -915,6 +928,8 @@ static GooString *getOutputFileName(GooString *fileName, GooString *outputName)
     name->append(".cs");
   else if (svg)
     name->append(".svg");
+  else if (xml)
+    name->append(".xml");
 
   return name;
 }
@@ -982,13 +997,14 @@ int main(int argc, char *argv[]) {
                 (printToWin32 ? 1 : 0) +
                 (printdlg ? 1 : 0) +
                 (script ? 1 : 0) +
+                (xml ? 1 : 0) +
                 (svg ? 1 : 0);
   if (num_outputs == 0) {
-    fprintf(stderr, "Error: one of the output format options (-png, -jpeg, -ps, -eps, -pdf, -print, -printdlg, -script, -svg) must be used.\n");
+    fprintf(stderr, "Error: one of the output format options (-png, -jpeg, -ps, -eps, -pdf, -print, -printdlg, -script, -svg, -xml) must be used.\n");
     exit(99);
   }
   if (num_outputs > 1) {
-    fprintf(stderr, "Error: use only one of the output format options (-png, -jpeg, -ps, -eps, -pdf, -printdlg, -print, -script, -svg).\n");
+    fprintf(stderr, "Error: use only one of the output format options (-png, -jpeg, -ps, -eps, -pdf, -printdlg, -print, -script, -svg, -xml).\n");
     exit(99);
   }
   if (png || jpeg || tiff)
