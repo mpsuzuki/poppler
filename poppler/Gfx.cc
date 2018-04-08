@@ -703,6 +703,8 @@ void Gfx::display(Object *obj, GBool topLevel) {
 }
 
 void Gfx::go(GBool topLevel) {
+  fprintf(stdout, "Gfx::go()\n");
+
   Object obj;
   Object args[maxArgs];
   int numArgs, i;
@@ -714,6 +716,7 @@ void Gfx::go(GBool topLevel) {
   lastAbortCheck = 0;
   numArgs = 0;
   obj = parser->getObj();
+  fprintf(stdout, "  get first object\n");
   while (!obj.isEOF()) {
     commandAborted = gFalse;
 
@@ -735,7 +738,9 @@ void Gfx::go(GBool topLevel) {
       }
 
       // Run the operation
+      fprintf(stdout, "    Gfx::execOp(%s)...", obj.getCmd());
       execOp(&obj, args, numArgs);
+      fprintf(stdout, "\n");
 
       // Update the profile information
       if (unlikely(profileCommands)) {
@@ -770,6 +775,7 @@ void Gfx::go(GBool topLevel) {
 
       // did the command throw an exception
       if (commandAborted) {
+        fprintf(stdout, "    command aborted with exception, break\n");
 	// don't propogate; recursive drawing comes from Form XObjects which
 	// should probably be drawn in a separate context anyway for caching
 	commandAborted = gFalse;
@@ -778,6 +784,7 @@ void Gfx::go(GBool topLevel) {
 
       // check for an abort
       if (abortCheckCbk) {
+        fprintf(stdout, "    break the loop by previous abort\n");
 	if (updateLevel - lastAbortCheck > 10) {
 	  if ((*abortCheckCbk)(abortCheckCbkData)) {
 	    break;
@@ -788,6 +795,7 @@ void Gfx::go(GBool topLevel) {
 
     // got an argument - save it
     } else if (numArgs < maxArgs) {
+      fprintf(stdout, "    save as argument #%d\n", numArgs);
       args[numArgs++] = std::move(obj);
     // too many arguments - something is wrong
     } else {
@@ -802,6 +810,11 @@ void Gfx::go(GBool topLevel) {
 
     // grab the next object
     obj = parser->getObj();
+    if (obj.isEOF()) {
+      fprintf(stdout, "  get next object (EOF)\n");
+    } else {
+      fprintf(stdout, "  get next object\n");
+    }
   }
 
   // args at end with no command
@@ -1812,8 +1825,10 @@ void Gfx::opFill(Object args[], int numArgs) {
   if (state->isPath()) {
     if (ocState) {
       if (state->getFillColorSpace()->getMode() == csPattern) {
+        fprintf(stdout, "      call Gfx::doPatternFill(gFalse)\n");
 	doPatternFill(gFalse);
       } else {
+        fprintf(stdout, "      call out->fill(state)\n");
 	out->fill(state);
       }
     }
@@ -1935,17 +1950,21 @@ void Gfx::doPatternFill(GBool eoFill) {
   // skip them if we're only doing text extraction, since they almost
   // certainly don't contain any text
   if (!out->needNonText()) {
+    fprintf(stdout, "        Gfx::doPatternFill(): surface is text only, return immediately\n");
     return;
   }
 
   if (!(pattern = state->getFillPattern())) {
+    fprintf(stdout, "        Gfx::doPatternFill(): state->getFillPattern() failed, return immediately\n");
     return;
   }
   switch (pattern->getType()) {
   case 1:
+    fprintf(stdout, "        Gfx::doPatternFill(): pattern type 1\n");
     doTilingPatternFill((GfxTilingPattern *)pattern, gFalse, eoFill, gFalse);
     break;
   case 2:
+    fprintf(stdout, "        Gfx::doPatternFill(): pattern type 2\n");
     doShadingPatternFill((GfxShadingPattern *)pattern, gFalse, eoFill, gFalse);
     break;
   default:
