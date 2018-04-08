@@ -43,13 +43,16 @@
 #include <stddef.h>
 #include <ctype.h>
 #include <math.h>
+#include <cmath>
 #include "goo/gmem.h"
 #include "goo/NetPBMWriter.h"
 #include "goo/PNGWriter.h"
 #include "goo/TiffWriter.h"
 #include "Error.h"
-#include "GfxState.h"
 #include "Object.h"
+#include "Gfx.h"
+#include "GfxState.h"
+#include "Page.h"
 #include "Stream.h"
 #include "JBIG2Stream.h"
 #include "ImageOutputDev.h"
@@ -90,6 +93,10 @@ void ImageOutputDev::setFilename(const char *fileExt) {
   } else {
     sprintf(fileName, "%s-%03d.%s", fileRoot, imgNum, fileExt);
   }
+}
+
+void ImageOutputDev::startDoc(PDFDoc *docA) {
+  doc = docA;
 }
 
 
@@ -681,13 +688,184 @@ void ImageOutputDev::writeImage(GfxState *state, Object *ref, Stream *str,
       embedStr->restore();
 }
 
-GBool ImageOutputDev::tilingPatternFill(GfxState *state, Gfx *gfx, Catalog *cat, Object *str,
+GBool ImageOutputDev::tilingPatternFill(GfxState *state, Gfx *gfxA, Catalog *cat, Object *str,
 				  double *pmat, int paintType, int tilingType, Dict *resDict,
 				  double *mat, double *bbox,
 				  int x0, int y0, int x1, int y1,
 				  double xStep, double yStep) {
-  return gTrue;
+#if 0
   // do nothing -- this avoids the potentially slow loop in Gfx.cc
+  return gTrue;
+#else
+  PDFRectangle box;
+  Gfx *gfx;
+  double width, height;
+  int surface_width, surface_height, result_width, result_height, i;
+  int repeatX, repeatY;
+  Matrix m1, m2;
+  double matc[6];
+  double *ctm, savedCTM[6];
+  double kx, ky, sx, sy;
+  GBool retValue = gFalse;
+
+  width = bbox[2] - bbox[0];
+  height = bbox[3] - bbox[1];
+
+  if (xStep != width || yStep != height)
+    return gFalse;
+
+  // calculate offsets
+  ctm = state->getCTM();
+  m2.init(ctm[0], ctm[1], ctm[2], ctm[3], ctm[4], ctm[5]);
+  this->ctmStack.push_back(m2);
+  for (i = 0; i < 6; ++i) {
+    savedCTM[i] = ctm[i];
+  }
+  state->concatCTM(mat[0], mat[1], mat[2], mat[3], mat[4], mat[5]);
+  state->concatCTM(1, 0, 0, 1, bbox[0], bbox[1]);
+  ctm = state->getCTM();
+  for (i = 0; i < 6; ++i) {
+    if (!std::isfinite(ctm[i])) {
+      state->setCTM(savedCTM[0], savedCTM[1], savedCTM[2], savedCTM[3], savedCTM[4], savedCTM[5]);
+      return gFalse;
+    }
+  }
+  matc[4] = x0 * xStep * ctm[0] + y0 * yStep * ctm[2] + ctm[4];
+  matc[5] = x0 * xStep * ctm[1] + y0 * yStep * ctm[3] + ctm[5];
+  if (fabs(ctm[1]) > fabs(ctm[0])) {
+    kx = -ctm[1];
+    ky = ctm[2] - (ctm[0] * ctm[3]) / ctm[1];
+  } else {
+    kx = ctm[0];
+    ky = ctm[3] - (ctm[1] * ctm[2]) / ctm[0];
+  }
+  result_width = (int) ceil(fabs(kx * width * (x1 - x0)));
+  result_height = (int) ceil(fabs(ky * height * (y1 - y0)));
+  kx = state->getHDPI() / 72.0;
+  ky = state->getVDPI() / 72.0;
+  m1.m[0] = (pmat[0] == 0) ? fabs(pmat[2]) * kx : fabs(pmat[0]) * kx;
+  m1.m[1] = 0;
+  m1.m[2] = 0;
+  m1.m[3] = (pmat[3] == 0) ? fabs(pmat[1]) * ky : fabs(pmat[3]) * ky;
+  m1.m[4] = 0;
+  m1.m[5] = 0;
+  m1.transform(width, height, &kx, &ky);
+  surface_width = (int) ceil (fabs(kx));
+  surface_height = (int) ceil (fabs(ky));
+
+  sx = (double) result_width / (surface_width * (x1 - x0));
+  sy = (double) result_height / (surface_height * (y1 - y0));
+  m1.m[0] *= sx;
+  m1.m[3] *= sy;
+  m1.transform(width, height, &kx, &ky);
+
+  if(fabs(kx) < 1 && fabs(ky) < 1) {
+    kx = std::min<double>(kx, ky);
+    ky = 2 / kx;
+    m1.m[0] *= ky;
+    m1.m[3] *= ky;
+    m1.transform(width, height, &kx, &ky);
+    surface_width = (int) ceil (fabs(kx));
+    surface_height = (int) ceil (fabs(ky));
+    repeatX = x1 - x0;
+    repeatY = y1 - y0;
+  } else {
+    if ((unsigned long) surface_width * surface_height > 0x800000L) {
+      state->setCTM(savedCTM[0], savedCTM[1], savedCTM[2], savedCTM[3], savedCTM[4], savedCTM[5]);
+      return gFalse;
+    }
+    while(fabs(kx) > 16384 || fabs(ky) > 16384) {
+      // limit pattern bitmap size
+      m1.m[0] /= 2;
+      m1.m[3] /= 2;
+      m1.transform(width, height, &kx, &ky);
+    }
+    surface_width = (int) ceil (fabs(kx));
+    surface_height = (int) ceil (fabs(ky));
+    // adjust repeat values to completely fill region
+    repeatX = result_width / surface_width;
+    repeatY = result_height / surface_height;
+    if (surface_width * repeatX < result_width)
+      repeatX++;
+    if (surface_height * repeatY < result_height)
+      repeatY++;
+    if (x1 - x0 > repeatX)
+      repeatX = x1 - x0;
+    if (y1 - y0 > repeatY)
+      repeatY = y1 - y0;
+  }
+  // restore CTM and calculate rotate and scale with rounded matric
+  state->setCTM(savedCTM[0], savedCTM[1], savedCTM[2], savedCTM[3], savedCTM[4], savedCTM[5]);
+  state->concatCTM(mat[0], mat[1], mat[2], mat[3], mat[4], mat[5]);
+  state->concatCTM(width * repeatX, 0, 0, height * repeatY, bbox[0], bbox[1]);
+  ctm = state->getCTM();
+  matc[0] = ctm[0];
+  matc[1] = ctm[1];
+  matc[2] = ctm[2];
+  matc[3] = ctm[3];
+
+  if (surface_width == 0 || surface_height == 0 || repeatX * repeatY <= 4) {
+    state->setCTM(savedCTM[0], savedCTM[1], savedCTM[2], savedCTM[3], savedCTM[4], savedCTM[5]);
+    return gFalse;
+  }
+  m1.transform(bbox[0], bbox[1], &kx, &ky);
+  m1.m[4] = -kx;
+  m1.m[5] = -ky;
+
+  box.x1 = bbox[0]; box.y1 = bbox[1];
+  box.x2 = bbox[2]; box.y2 = bbox[3];
+  gfx = new Gfx(doc, this, resDict, &box, nullptr, nullptr, nullptr, gfxA->getXRef());
+  // set pattern transformation matrix
+  gfx->getState()->setCTM(m1.m[0], m1.m[1], m1.m[2], m1.m[3], m1.m[4], m1.m[5]);
+  updateCTM(gfx->getState(), m1.m[0], m1.m[1], m1.m[2], m1.m[3], m1.m[4], m1.m[5]);
+  gfx->display(str);
+
+  if (fabs(matc[1]) > fabs(matc[0])) {
+    kx = -matc[1];
+    ky = matc[2] - (matc[0] * matc[3]) / matc[1];
+  } else {
+    kx = matc[0];
+    ky = matc[3] - (matc[1] * matc[2]) / matc[0];
+  }
+  kx = result_width / (fabs(kx) + 1);
+  ky = result_height / (fabs(ky) + 1);
+  state->concatCTM(kx, 0, 0, ky, 0, 0);
+  ctm = state->getCTM();
+  matc[0] = ctm[0];
+  matc[1] = ctm[1];
+  matc[2] = ctm[2];
+  matc[3] = ctm[3];
+  GBool minorAxisZero = matc[1] == 0 && matc[2] == 0;
+  if (matc[0] > 0 && minorAxisZero && matc[3] > 0) {
+    double ctmTileOrigin[6];
+
+    ctm = state->getCTM();
+    ctmTileOrigin[0] = ctm[0];
+    ctmTileOrigin[1] = ctm[1];
+    ctmTileOrigin[2] = ctm[2];
+    ctmTileOrigin[3] = ctm[3];
+    ctmTileOrigin[4] = ctm[4];
+    ctmTileOrigin[5] = ctm[5];
+
+    // draw the tiles
+    for (int y = 0; y < repeatY; ++y) {
+      for (int x = 0; x < repeatX; ++x) {
+        x0 = floor(matc[4]) + x * width;
+        y0 = floor(matc[5]) + y * height;
+        state->setCTM(ctmTileOrigin[0], ctmTileOrigin[1], ctmTileOrigin[2],
+                      ctmTileOrigin[3], x0, y0);
+        gfxA->display(str);
+      }
+    }
+    state->setCTM(ctmTileOrigin[0], ctmTileOrigin[1], ctmTileOrigin[2],
+                  ctmTileOrigin[3], ctmTileOrigin[4], ctmTileOrigin[5]);
+  } else {
+    gfxA->display(str);
+  }
+  retValue = gTrue;
+  delete gfx;
+  return retValue;
+#endif
 }
 
 void ImageOutputDev::drawImageMask(GfxState *state, Object *ref, Stream *str,

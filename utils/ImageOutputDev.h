@@ -37,7 +37,10 @@
 #include <stdio.h>
 #include "goo/gtypes.h"
 #include "goo/ImgWriter.h"
+#include "GfxState.h"
 #include "OutputDev.h"
+
+#include <vector>
 
 class GfxState;
 
@@ -104,6 +107,9 @@ public:
 
   // Does this device need non-text content?
   GBool needNonText() override { return gTrue; }
+
+  // Called to indicate that a new PDF document has been loaded.
+  void startDoc(PDFDoc *docA);
 
   // Start a page
   void startPage(int pageNumA, GfxState *state, XRef *xref)  override
@@ -175,6 +181,10 @@ private:
   int pageNum;			// current page number
   int imgNum;			// current image number
   GBool ok;			// set up ok?
+
+  PDFDoc* doc;
+  std::vector<Matrix> ctmStack; // to calculate the position & metrics of the tile component.
+
 };
 
 #endif
