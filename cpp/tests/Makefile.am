@@ -12,6 +12,7 @@ LDADD =						\
 	$(PTHREAD_LIBS)
 
 noinst_PROGRAMS =				\
+	encoding				\
 	poppler-dump				\
 	poppler-render
 
@@ -20,3 +21,8 @@ poppler_dump_SOURCES =				\
 
 poppler_render_SOURCES =			\
 	poppler-render.cpp
+
+encoding.$(OBJEXT) : CXXFLAGS += -fexceptions
+
+encoding_SOURCES =				\
+	encoding.cpp
