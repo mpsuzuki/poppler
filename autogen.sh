@@ -2,6 +2,16 @@
 
 NOCONFIGURE="yes"
 
+POPPLER_MAJOR_VERSION=`sed -n '/POPPLER_MAJOR_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{print $NF}'`
+POPPLER_MINOR_VERSION=`sed -n '/POPPLER_MINOR_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{print $NF}'`
+POPPLER_MICRO_VERSION=`sed -n '/POPPLER_MICRO_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{print $NF}'`
+
+sed \
+	< configure.ac.in > configure.ac \
+	-e "s:@POPPLER_MAJOR_VERSION@:${POPPLER_MAJOR_VERSION}:g" \
+	-e "s:@POPPLER_MINOR_VERSION@:${POPPLER_MINOR_VERSION}:g" \
+	-e "s:@POPPLER_MICRO_VERSION@:${POPPLER_MICRO_VERSION}:g"
+
 # Package name
 PKG_NAME=${PKG_NAME:-Poppler}
 srcdir=$(dirname $0)

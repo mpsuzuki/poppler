@@ -29,6 +29,7 @@ endif
 SUBDIRS = goo fofi $(splash_subdir) poppler utils $(glib_subdir) test $(qt5_subdir) $(cpp_subdir)
 
 EXTRA_DIST =					\
+	configure.ac.in				\
 	COPYING3				\
 	README.contributors			\
 	README-XPDF				\

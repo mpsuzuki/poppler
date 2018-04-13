@@ -1,7 +1,7 @@
 
-m4_define([poppler_version_major],[0])
-m4_define([poppler_version_minor],[63])
-m4_define([poppler_version_micro],[0])
+m4_define([poppler_version_major],[@POPPLER_MAJOR_VERSION@])
+m4_define([poppler_version_minor],[@POPPLER_MINOR_VERSION@])
+m4_define([poppler_version_micro],[@POPPLER_MICRO_VERSION@])
 
 m4_define([poppler_version],[poppler_version_major.poppler_version_minor.poppler_version_micro])
 
