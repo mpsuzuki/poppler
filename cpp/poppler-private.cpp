@@ -23,6 +23,7 @@
 #include "poppler-private.h"
 
 #include "GooString.h"
+#include "PDFDocEncoding.h"
 #include "Page.h"
 
 #include <ctime>
@@ -82,7 +83,7 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
         }
     } else {
         while (i < len) {
-            u = data[i] & 0xff;
+            u = pdfDocEncoding[ data[i] & 0xff ];
             ++i;
             ret[ret_index++] = u;
         }
@@ -93,7 +94,7 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
 
 ustring detail::unicode_to_ustring(const Unicode *u, int length)
 {
-    ustring str(length * 2, 0);
+    ustring str(length, 0);
     ustring::iterator it = str.begin();
     const Unicode *uu = u;
     for (int i = 0; i < length; ++i) {

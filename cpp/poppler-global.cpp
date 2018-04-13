@@ -247,7 +247,16 @@ byte_array ustring::to_utf8() const
         }
     }
     str.resize(str.size() - str_len_left);
-    return str;
+
+    if (str.size() >= 3 && str[0] == 0xEE && str[1] == 0xBB && str[2] == 0xBF) {
+        byte_array  str_without_bom(str.size() - 3);
+        for (size_t i = 3; i < str.size(); i +=1) {
+            str_without_bom.emplace_back(str[i]);
+        }
+        return str_without_bom;
+    } else {
+        return str;
+    }
 }
 
 std::string ustring::to_latin1() const
@@ -265,6 +274,26 @@ std::string ustring::to_latin1() const
     return ret;
 }
 
+ustring ustring::from_utf16be(const char *str, int len)
+{
+
+    // strlen for UTF-16BE buffer.
+    if (len < 0) {
+        for (int i = 0; ; i += 2) {
+            if (str[i] == 0 && str[i + 1] == 0) {
+                len = i;
+                break;
+            }
+        }
+    }
+
+    ustring ret((len/2), 0);
+    for (int i = 0; i < len; i += 2) {
+        ret[i / 2] = (str[i] << 8) + (str[i + 1]);
+    }
+    return ret;
+}
+
 ustring ustring::from_utf8(const char *str, int len)
 {
     if (len <= 0) {
@@ -274,31 +303,29 @@ ustring ustring::from_utf8(const char *str, int len)
         }
     }
 
-    MiniIconv ic("UTF-16", "UTF-8");
+    bool has_utf8_bom = ( 3 > len ) ? false : ( (str[0] == 0xEE && str[1] == 0xBB && str[2] == 0xBF) ? true : false );
+    MiniIconv ic("UTF-16BE", "UTF-8");
     if (!ic.is_valid()) {
         return ustring();
     }
 
-    // +1, because iconv inserts byte order marks
-    ustring ret(len+1, 0);
-    char *ret_data = reinterpret_cast<char *>(&ret[0]);
+    // +2, because we insert BOM explicitly
+    byte_array  utf16be;
+    char *ret_data;
+    if (has_utf8_bom) {
+      utf16be.reserve(2 + (len * 4));
+      utf16be[0] = 0xFE;
+      utf16be[1] = 0xFF;
+      ret_data = reinterpret_cast<char *>(&utf16be[2]);
+    } else { 
+      utf16be.reserve(len * 4);
+      ret_data = reinterpret_cast<char *>(&utf16be[0]);
+    }
     char *str_data = const_cast<char *>(str);
     size_t str_len_char = len;
-    size_t ret_len_left = ret.size() * sizeof(ustring::value_type);
+    size_t ret_len_left = utf16be.size() - 2;
     size_t ir = iconv(ic, (ICONV_CONST char **)&str_data, &str_len_char, &ret_data, &ret_len_left);
-    if ((ir == (size_t)-1) && (errno == E2BIG)) {
-        const size_t delta = ret_data - reinterpret_cast<char *>(&ret[0]);
-        ret_len_left += ret.size()*sizeof(ustring::value_type);
-        ret.resize(ret.size() * 2);
-        ret_data = reinterpret_cast<char *>(&ret[0]) + delta;
-        ir = iconv(ic, (ICONV_CONST char **)&str_data, &str_len_char, &ret_data, &ret_len_left);
-        if (ir == (size_t)-1) {
-            return ustring();
-        }
-    }
-    ret.resize(ret.size() - ret_len_left/sizeof(ustring::value_type));
-
-    return ret;
+    return ustring::from_utf16be(reinterpret_cast<char *>(&utf16be[0]), utf16be.size() - ret_len_left);
 }
 
 ustring ustring::from_latin1(const std::string &str)
