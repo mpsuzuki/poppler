@@ -236,11 +236,12 @@ byte_array ustring::to_utf8() const
     size_t me_len_char = size()*sizeof(value_type);
     size_t str_len_left = str.size();
 
-    printf("src <");
+    printf("\n");
+    printf("from_ustring() (");
     for (size_t j = 0; j < me_len_char; j ++) {
-        printf("%02x", (unsigned char)me_data[j]);
+        printf("\\u%04x", (unsigned short)me_data[j]);
     }
-    printf(">\n");
+    printf(")\n");
 
     size_t ir = iconv(ic, (ICONV_CONST char **)&me_data, &me_len_char, &str_data, &str_len_left);
     if ((ir == (size_t)-1) && (errno == E2BIG)) {
@@ -256,11 +257,12 @@ byte_array ustring::to_utf8() const
     }
     str.resize(str.size() - str_len_left);
 
-    printf("dst <");
+    printf("to_utf8 <");
     for (size_t j = 0; j < str.size(); j ++) {
         printf("%02x", (unsigned char)str[j]);
     }
     printf(">\n");
+    printf("\n");
 
 
     if (str.size() >= 3 && str[0] == 0xEE && str[1] == 0xBB && str[2] == 0xBF) {

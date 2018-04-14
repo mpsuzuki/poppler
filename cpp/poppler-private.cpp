@@ -65,7 +65,8 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
     int i = 0;
     bool is_unicode = false;
 
-    printf("<");
+    printf("\n");
+    printf("from_GooString <");
     for (size_t j = 0; j < len; j++) {
         printf("%02x", (unsigned char)data[j]);
     }
@@ -73,11 +74,13 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
 
     if ((data[0] & 0xff) == 0xfe && (len > 1 && (data[1] & 0xff) == 0xff)) {
         is_unicode = true;
-        i = 2;
     }
-    ustring::size_type ret_len = len - i;
+    ustring::size_type ret_len = len;
     if (is_unicode) {
         ret_len >>= 1;
+    } else {
+        // add BOM explicitly for PDFDocEncoding.
+        ret_len += 1;
     }
     ustring ret(ret_len, 0);
     size_t ret_index = 0;
@@ -90,6 +93,7 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
             ret[ret_index++] = u;
         }
     } else {
+        ret[ret_index++] = 0xFEFF;
         while (i < len) {
             u = pdfDocEncoding[ data[i] & 0xff ];
             ++i;
@@ -97,11 +101,12 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
         }
     }
 
-    printf("<");
+    printf("to_ustring() (");
     for (size_t j = 0; j < ret_index; j ++) {
         printf("\\u%04x", (unsigned short)ret[j]);
     }
-    printf(">\n");
+    printf(")\n");
+    printf("\n");
 
     return ret;
 }
