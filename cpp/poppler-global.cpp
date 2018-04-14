@@ -289,7 +289,7 @@ static bool has_bom_utf8(const char *c, int len)
     if ( 3 > len )
         return false;
 
-    if (c[0] == 0xEE && c[1] == 0xBB && c[2] == 0xBF)
+    if (c[0] == 0xEF && c[1] == 0xBB && c[2] == 0xBF)
         return true;
 
     return false;
@@ -303,15 +303,33 @@ ustring ustring::from_utf8(const char *str, int len)
             return ustring();
         }
     }
-
+    printf("orig utf8 <");
+    for (int i = 0; i < len; i ++) {
+        printf("%02x", (char)str[i]);
+    }
+    printf(">\n");
     
     char* str_bom_utf8_null = reinterpret_cast<char *>(std::malloc(len + 4));
-    if (has_bom_utf8(str, len))
-        std::strncpy(str_bom_utf8_null, "\xEE\xBB\xBF\x00", 4);
+    if (!has_bom_utf8(str, len)) {
+        str_bom_utf8_null[0] = 0xEF;
+        str_bom_utf8_null[1] = 0xBB;
+        str_bom_utf8_null[2] = 0xBF;
+        str_bom_utf8_null[3] = 0x00;
+    }
     std::strncat(str_bom_utf8_null, str, len);
 
+    printf("fixed utf8 <");
+    for (int i = 0; i < len + 4; i ++) {
+        printf("%02x", (unsigned char)str_bom_utf8_null[i]);
+    }
+    printf(">\n");
     int utf16_count;
     uint16_t* utf16_buff = utf8ToUtf16((const char*)str_bom_utf8_null, &utf16_count);
+    printf("dst utf16 (");
+    for (int i = 0; i < utf16_count; i ++) {
+        printf("\\u%04x", utf16_buff[i]);
+    }
+    printf(")\n");
 
     ustring ret(utf16_count, 0);
     for (int i = 0; i < utf16_count; i ++)
