@@ -257,7 +257,7 @@ byte_array ustring::to_utf8() const
 
     printf("dst <");
     for (size_t j = 0; j < str.size(); j ++) {
-        printf("%02x", (unsigned char)str_data[j]);
+        printf("%02x", (unsigned char)str[j]);
     }
     printf(">\n");
 
