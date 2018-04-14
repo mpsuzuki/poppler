@@ -228,36 +228,31 @@ byte_array ustring::to_utf8() const
         return byte_array();
     }
 
-    MiniIconv ic("UTF-8", "UTF-16");
-    if (!ic.is_valid()) {
-        return byte_array();
+    uint16_t* utf16_buff = reinterpret_cast<uint16_t*>(std::malloc(sizeof(uint16_t) * (size() + 1)));
+    for (size_t i = 0; i < size(); i++) {
+        utf16_buff[i] = data()[i];
     }
-    const value_type *me_data = data();
-    byte_array str(size()*sizeof(value_type));
-    char *str_data = &str[0];
-    size_t me_len_char = size()*sizeof(value_type);
-    size_t str_len_left = str.size();
-    size_t ir = iconv(ic, (ICONV_CONST char **)&me_data, &me_len_char, &str_data, &str_len_left);
-    if ((ir == (size_t)-1) && (errno == E2BIG)) {
-        const size_t delta = str_data - &str[0];
-        str_len_left += str.size();
-        str.resize(str.size() * 2);
-        str_data = &str[delta];
-        ir = iconv(ic, (ICONV_CONST char **)&me_data, &me_len_char, &str_data, &str_len_left);
-        if (ir == (size_t)-1) {
-            return byte_array();
-        }
-    }
-    str.resize(str.size() - str_len_left);
-    if (str.size() >= 3 && str[0] == 0xEE && str[1] == 0xBB && str[2] == 0xBF) {
-        byte_array  str_without_bom(str.size() - 3);
-        for (size_t i = 3; i < str.size(); i +=1) {
-            str_without_bom.emplace_back(str[i]);
-        }
-        return str_without_bom;
+    utf16_buff[size()] = 0;
+
+    int utf8_len;
+    char* utf8_buff = utf16ToUtf8(utf16_buff, &utf8_len);
+
+    byte_array ret;
+    printf("utf8_buff <%02x%02x%02x...>\n", (unsigned char)utf8_buff[0], (unsigned char)utf8_buff[1], (unsigned char)utf8_buff[2]);
+    if ((unsigned char)utf8_buff[0] == 0xEF && (unsigned char)utf8_buff[1] == 0xBB && (unsigned char)utf8_buff[2] == 0xBF) {
+        printf("ustring::to_utf8() got UTF-8 with BOM\n");
+        ret.reserve(utf8_len - 3);
+        ret.assign(utf8_buff + 3, utf8_buff + utf8_len);
     } else {
-        return str;
+        printf("ustring::to_utf8() got UTF-8 without BOM\n");
+        ret.reserve(utf8_len);
+        ret.assign(utf8_buff, utf8_buff + utf8_len);
     }
+
+    gfree(utf8_buff);
+    std::free(utf16_buff);
+
+    return ret;
 }
 
 std::string ustring::to_latin1() const
