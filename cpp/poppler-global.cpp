@@ -244,6 +244,7 @@ byte_array ustring::to_utf8() const
 
     size_t ir = iconv(ic, (ICONV_CONST char **)&me_data, &me_len_char, &str_data, &str_len_left);
     if ((ir == (size_t)-1) && (errno == E2BIG)) {
+        printf("  iconv() returns -1, errno == E2BIG\n");
         const size_t delta = str_data - &str[0];
         str_len_left += str.size();
         str.resize(str.size() * 2);
