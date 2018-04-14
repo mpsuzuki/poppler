@@ -235,17 +235,8 @@ byte_array ustring::to_utf8() const
     char *str_data = &str[0];
     size_t me_len_char = size()*sizeof(value_type);
     size_t str_len_left = str.size();
-
-    printf("\n");
-    printf("from_ustring() (");
-    for (size_t j = 0; j < me_len_char; j ++) {
-        printf("\\u%04x", (unsigned short)me_data[j]);
-    }
-    printf(")\n");
-
     size_t ir = iconv(ic, (ICONV_CONST char **)&me_data, &me_len_char, &str_data, &str_len_left);
     if ((ir == (size_t)-1) && (errno == E2BIG)) {
-        printf("  iconv() returns -1, errno == E2BIG\n");
         const size_t delta = str_data - &str[0];
         str_len_left += str.size();
         str.resize(str.size() * 2);
@@ -256,15 +247,6 @@ byte_array ustring::to_utf8() const
         }
     }
     str.resize(str.size() - str_len_left);
-
-    printf("to_utf8 <");
-    for (size_t j = 0; j < str.size(); j ++) {
-        printf("%02x", (unsigned char)str[j]);
-    }
-    printf(">\n");
-    printf("\n");
-
-
     if (str.size() >= 3 && str[0] == 0xEE && str[1] == 0xBB && str[2] == 0xBF) {
         byte_array  str_without_bom(str.size() - 3);
         for (size_t i = 3; i < str.size(); i +=1) {
@@ -291,20 +273,63 @@ std::string ustring::to_latin1() const
     return ret;
 }
 
+size_t ustring::count_utf16(const char *str, size_t limit)
+{
+    for (size_t i = 0; 0 == limit || (i + 1) < limit; i += 2) { 
+        if (str[i] == 0 && str[i + 1] == 0) {
+            return (i / 2);
+        }        
+    }
+}
+
+size_t ustring::count_utf8(const char *c, size_t limit)
+{
+    size_t i = 0;
+    while (*c != 0) { // octet for 8-bit case
+        if (*c <= 0x7F) {
+            c ++;
+            i ++;
+        } else if (*c <= 0xC1) { // following octet in multi-octet cases
+            c ++;
+            i ++;
+        } else if (*c <= 0xDF) { // initial octet of 2-octet case
+            c += 2;
+            i ++;
+        } else if (*c <= 0xEF) { // initial octet of 3-octet case
+            c += 3;
+            i ++;
+        } else if (*c <= 0xF7) { // initial octet of 4-octet case
+            c += 4;
+            i ++;
+        } else if (*c <= 0xFB) { // initial octet of 5-octet case
+            c += 5;
+            i ++;
+        } else if (*c <= 0xFD) { // initial octet of 6-octet case
+            c += 6;
+            i ++;
+        } else { // should not occur, conflicting UTF-16 BOM
+            c ++;
+            i ++;
+        }
+    }
+    return i;
+}
+
+bool ustring::has_bom_utf8(const char *c)
+{
+    if ( 3 > len )
+        return false;
+
+    if (c[0] == 0xEE && c[1] == 0xBB && c[2] == 0xBF)
+        return true;
+
+    return false;
+}
+
 ustring ustring::from_utf16be(const char *str, int len)
 {
 
-    // strlen for UTF-16BE buffer.
-    if (len < 0) {
-        for (int i = 0; ; i += 2) {
-            if (str[i] == 0 && str[i + 1] == 0) {
-                len = i;
-                break;
-            }
-        }
-    }
-
-    ustring ret((len/2), 0);
+    ustring ret(ustring::count_utf16(str), 0);
     for (int i = 0; i < len; i += 2) {
         ret[i / 2] = (str[i] << 8) + (str[i + 1]);
     }
@@ -320,24 +345,28 @@ ustring ustring::from_utf8(const char *str, int len)
         }
     }
 
-    bool has_utf8_bom = ( 3 > len ) ? false : ( (str[0] == 0xEE && str[1] == 0xBB && str[2] == 0xBF) ? true : false );
+    // by explicit specification of endian, iconv() returns BOM-less UTF-16 even if source UTF-8 has BOM
     MiniIconv ic("UTF-16BE", "UTF-8");
     if (!ic.is_valid()) {
         return ustring();
     }
 
-    // +2, because we insert BOM explicitly
     byte_array  utf16be;
     char *ret_data;
-    if (has_utf8_bom) {
-      utf16be.reserve(2 + (len * 4));
-      utf16be[0] = 0xFE;
-      utf16be[1] = 0xFF;
-      ret_data = reinterpret_cast<char *>(&utf16be[2]);
-    } else { 
-      utf16be.reserve(len * 4);
-      ret_data = reinterpret_cast<char *>(&utf16be[0]);
+
+    if (ustring::has_bom_utf8(str)) {
+        utf16be.reserve(ustring::count_utf8(str) * 2);
+    } else {
+        // +2 octets, because we may insert BOM, if source UTF-8 has no BOM.
+        utf16be.reserve(2 + ustring::count_utf8(str) * 2);
     }
+
+    // count_utf8 counts BOM, but iconv() would remove it.
+    // we add it manually.
+    utf16be[0] = 0xFE;
+    utf16be[1] = 0xFF;
+    ret_data = reinterpret_cast<char *>(&utf16be[2]);
+
     char *str_data = const_cast<char *>(str);
     size_t str_len_char = len;
     size_t ret_len_left = utf16be.size() - 2;
@@ -352,9 +381,11 @@ ustring ustring::from_latin1(const std::string &str)
         return ustring();
     }
     const char *c = str.data();
-    ustring ret(l, 0);
+    // we insert BOM explicitly
+    ustring ret(l + 1, 0);
+    ret[0] = 0xFEFF;
     for (size_type i = 0; i < l; ++i) {
-        ret[i] = *c++;
+        ret[i + 1] = *c++;
     }
     return ret;
 }
