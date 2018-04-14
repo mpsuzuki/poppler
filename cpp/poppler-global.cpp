@@ -26,6 +26,8 @@
 #include "poppler-private.h"
 
 #include "DateInfo.h"
+#include "UTF.h"
+#include "gmem.h"
 
 #include <algorithm>
 
@@ -273,7 +275,7 @@ std::string ustring::to_latin1() const
     return ret;
 }
 
-size_t ustring::count_utf16(const char *str, size_t limit)
+static size_t count_utf16(const char *str, size_t limit)
 {
     for (size_t i = 0; 0 == limit || (i + 1) < limit; i += 2) { 
         if (str[i] == 0 && str[i + 1] == 0) {
@@ -282,40 +284,7 @@ size_t ustring::count_utf16(const char *str, size_t limit)
     }
 }
 
-size_t ustring::count_utf8(const char *c, size_t limit)
-{
-    size_t i = 0;
-    while (*c != 0) { // octet for 8-bit case
-        if (*c <= 0x7F) {
-            c ++;
-            i ++;
-        } else if (*c <= 0xC1) { // following octet in multi-octet cases
-            c ++;
-            i ++;
-        } else if (*c <= 0xDF) { // initial octet of 2-octet case
-            c += 2;
-            i ++;
-        } else if (*c <= 0xEF) { // initial octet of 3-octet case
-            c += 3;
-            i ++;
-        } else if (*c <= 0xF7) { // initial octet of 4-octet case
-            c += 4;
-            i ++;
-        } else if (*c <= 0xFB) { // initial octet of 5-octet case
-            c += 5;
-            i ++;
-        } else if (*c <= 0xFD) { // initial octet of 6-octet case
-            c += 6;
-            i ++;
-        } else { // should not occur, conflicting UTF-16 BOM
-            c ++;
-            i ++;
-        }
-    }
-    return i;
-}
-
-bool ustring::has_bom_utf8(const char *c)
+static bool has_bom_utf8(const char *c, int len)
 {
     if ( 3 > len )
         return false;
@@ -324,16 +293,6 @@ bool ustring::has_bom_utf8(const char *c)
         return true;
 
     return false;
-}
-
-ustring ustring::from_utf16be(const char *str, int len)
-{
-
-    ustring ret(ustring::count_utf16(str), 0);
-    for (int i = 0; i < len; i += 2) {
-        ret[i / 2] = (str[i] << 8) + (str[i + 1]);
-    }
-    return ret;
 }
 
 ustring ustring::from_utf8(const char *str, int len)
@@ -345,33 +304,21 @@ ustring ustring::from_utf8(const char *str, int len)
         }
     }
 
-    // by explicit specification of endian, iconv() returns BOM-less UTF-16 even if source UTF-8 has BOM
-    MiniIconv ic("UTF-16BE", "UTF-8");
-    if (!ic.is_valid()) {
-        return ustring();
-    }
+    
+    char* str_bom_utf8_null = reinterpret_cast<char *>(std::malloc(len + 4));
+    if (has_bom_utf8(str, len))
+        std::strncpy(str_bom_utf8_null, "\xEE\xBB\xBF\x00", 4);
+    std::strncat(str_bom_utf8_null, str, len);
 
-    byte_array  utf16be;
-    char *ret_data;
+    int utf16_count;
+    uint16_t* utf16_buff = utf8ToUtf16((const char*)str_bom_utf8_null, &utf16_count);
 
-    if (ustring::has_bom_utf8(str)) {
-        utf16be.reserve(ustring::count_utf8(str) * 2);
-    } else {
-        // +2 octets, because we may insert BOM, if source UTF-8 has no BOM.
-        utf16be.reserve(2 + ustring::count_utf8(str) * 2);
-    }
+    ustring ret(utf16_count, 0);
+    for (int i = 0; i < utf16_count; i ++)
+        ret[i] = utf16_buff[i];
+    gfree(utf16_buff);
 
-    // count_utf8 counts BOM, but iconv() would remove it.
-    // we add it manually.
-    utf16be[0] = 0xFE;
-    utf16be[1] = 0xFF;
-    ret_data = reinterpret_cast<char *>(&utf16be[2]);
-
-    char *str_data = const_cast<char *>(str);
-    size_t str_len_char = len;
-    size_t ret_len_left = utf16be.size() - 2;
-    size_t ir = iconv(ic, (ICONV_CONST char **)&str_data, &str_len_char, &ret_data, &ret_len_left);
-    return ustring::from_utf16be(reinterpret_cast<char *>(&utf16be[0]), utf16be.size() - ret_len_left);
+    return ret;
 }
 
 ustring ustring::from_latin1(const std::string &str)
