@@ -65,13 +65,6 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
     int i = 0;
     bool is_unicode = false;
 
-    printf("\n");
-    printf("from_GooString <");
-    for (size_t j = 0; j < len; j++) {
-        printf("%02x", (unsigned char)data[j]);
-    }
-    printf(">\n");
-
     if ((data[0] & 0xff) == 0xfe && (len > 1 && (data[1] & 0xff) == 0xff)) {
         is_unicode = true;
     }
@@ -100,13 +93,6 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
             ret[ret_index++] = u;
         }
     }
-
-    printf("to_ustring() (");
-    for (size_t j = 0; j < ret_index; j ++) {
-        printf("\\u%04x", (unsigned short)ret[j]);
-    }
-    printf(")\n");
-    printf("\n");
 
     return ret;
 }

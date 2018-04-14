@@ -36,30 +36,7 @@
 #include <ios>
 #include <iostream>
 
-#include <iconv.h>
-
 #include "config.h"
-
-namespace
-{
-
-struct MiniIconv
-{
-    MiniIconv(const char *to_code, const char *from_code)
-        : i_(iconv_open(to_code, from_code))
-    {}
-    ~MiniIconv()
-    { if (is_valid()) iconv_close(i_); }
-    MiniIconv(const MiniIconv &) = delete;
-    MiniIconv& operator=(const MiniIconv &) = delete;
-    bool is_valid() const
-    { return i_ != (iconv_t)-1; }
-    operator iconv_t() const
-    { return i_; }
-    iconv_t i_;
-};
-
-}
 
 using namespace poppler;
 
@@ -238,13 +215,10 @@ byte_array ustring::to_utf8() const
     char* utf8_buff = utf16ToUtf8(utf16_buff, &utf8_len);
 
     byte_array ret;
-    printf("utf8_buff <%02x%02x%02x...>\n", (unsigned char)utf8_buff[0], (unsigned char)utf8_buff[1], (unsigned char)utf8_buff[2]);
     if ((unsigned char)utf8_buff[0] == 0xEF && (unsigned char)utf8_buff[1] == 0xBB && (unsigned char)utf8_buff[2] == 0xBF) {
-        printf("ustring::to_utf8() got UTF-8 with BOM\n");
         ret.reserve(utf8_len - 3);
         ret.assign(utf8_buff + 3, utf8_buff + utf8_len);
     } else {
-        printf("ustring::to_utf8() got UTF-8 without BOM\n");
         ret.reserve(utf8_len);
         ret.assign(utf8_buff, utf8_buff + utf8_len);
     }
@@ -298,11 +272,6 @@ ustring ustring::from_utf8(const char *str, int len)
             return ustring();
         }
     }
-    printf("orig utf8 <");
-    for (int i = 0; i < len; i ++) {
-        printf("%02x", (char)str[i]);
-    }
-    printf(">\n");
     
     char* str_bom_utf8_null = reinterpret_cast<char *>(std::malloc(len + 4));
     if (!has_bom_utf8(str, len)) {
@@ -313,18 +282,8 @@ ustring ustring::from_utf8(const char *str, int len)
     }
     std::strncat(str_bom_utf8_null, str, len);
 
-    printf("fixed utf8 <");
-    for (int i = 0; i < len + 4; i ++) {
-        printf("%02x", (unsigned char)str_bom_utf8_null[i]);
-    }
-    printf(">\n");
     int utf16_count;
     uint16_t* utf16_buff = utf8ToUtf16((const char*)str_bom_utf8_null, &utf16_count);
-    printf("dst utf16 (");
-    for (int i = 0; i < utf16_count; i ++) {
-        printf("\\u%04x", utf16_buff[i]);
-    }
-    printf(")\n");
 
     ustring ret(utf16_count, 0);
     for (int i = 0; i < utf16_count; i ++)
