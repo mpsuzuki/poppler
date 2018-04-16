@@ -205,27 +205,47 @@ byte_array ustring::to_utf8() const
         return byte_array();
     }
 
-    uint16_t* utf16_buff = reinterpret_cast<uint16_t*>(std::malloc(sizeof(uint16_t) * (size() + 1)));
-    for (size_t i = 0; i < size(); i++) {
-        utf16_buff[i] = data()[i];
+#if 0
+    uint16_t* utf16_buff = new uint16_t[size() + 1];
+
+    int i = 0;
+    if (data()[0] == 0xFEFF)
+        i++;
+    for (int j = 0; i < size(); i++, j++)
+        utf16_buff[j] = data()[i];
+    utf16_buff[j] = 0;
+#else
+    int utf16_len = size();
+    const uint16_t* utf16_buff = reinterpret_cast<const uint16_t *>(data());
+    if (utf16_buff[0] == 0xFEFF) {
+        utf16_buff ++;
+        utf16_len --;
     }
-    utf16_buff[size()] = 0;
+#endif
 
-    int utf8_len;
-    char* utf8_buff = utf16ToUtf8(utf16_buff, &utf8_len);
-
-    byte_array ret;
-    if ((unsigned char)utf8_buff[0] == 0xEF && (unsigned char)utf8_buff[1] == 0xBB && (unsigned char)utf8_buff[2] == 0xBF) {
-        ret.reserve(utf8_len - 3);
-        ret.assign(utf8_buff + 3, utf8_buff + utf8_len);
-    } else {
-        ret.reserve(utf8_len);
-        ret.assign(utf8_buff, utf8_buff + utf8_len);
+    printf("ustring::to_utf8 input (");
+    for (int i = 0; i < utf16_len; i ++) {
+      if (i > 0)
+        printf(" ");
+      printf("\\u%04X", utf16_buff[i]);
     }
+    printf(")\n");
+    int utf8_len = utf16CountUtf8Bytes(utf16_buff);
+    byte_array ret(utf8_len + 1);
+    utf16ToUtf8(utf16_buff, reinterpret_cast<char *>(ret.data()), utf8_len + 1, size());
+    ret.resize(std::strlen(ret.data()));
 
-    gfree(utf8_buff);
-    std::free(utf16_buff);
+    printf("ustring::to_utf8 output <");
+    for (int i = 0; i < utf8_len; i ++) {
+        if (i > 0)
+          printf(" ");
+        printf("%02x", (unsigned char)ret[i]);
+    }
+    printf(">\n");
 
+#if 0
+    delete utf16_buff;
+#endif
     return ret;
 }
 
@@ -242,15 +262,6 @@ std::string ustring::to_latin1() const
         ret[i] = (char)*me++;
     }
     return ret;
-}
-
-static size_t count_utf16(const char *str, size_t limit)
-{
-    for (size_t i = 0; 0 == limit || (i + 1) < limit; i += 2) { 
-        if (str[i] == 0 && str[i + 1] == 0) {
-            return (i / 2);
-        }        
-    }
 }
 
 static bool has_bom_utf8(const char *c, int len)
@@ -273,22 +284,30 @@ ustring ustring::from_utf8(const char *str, int len)
         }
     }
     
-    char* str_bom_utf8_null = reinterpret_cast<char *>(std::malloc(len + 4));
-    if (!has_bom_utf8(str, len)) {
-        str_bom_utf8_null[0] = 0xEF;
-        str_bom_utf8_null[1] = 0xBB;
-        str_bom_utf8_null[2] = 0xBF;
-        str_bom_utf8_null[3] = 0x00;
+    char* str_bom_utf8_null = new char[len + 4];
+    str_bom_utf8_null[0] = 0;
+    if (!has_bom_utf8(str, len))
+        std::strcpy(str_bom_utf8_null, "\xEF\xBB\xBF");
+    std::strncat(str_bom_utf8_null, str, len + 4);
+
+    printf("ustring::from_utf8 input<");
+    for (int i = 0; i < len + 4; i ++) {
+        printf("%02x", (unsigned char)str_bom_utf8_null[i]);
     }
-    std::strncat(str_bom_utf8_null, str, len);
+    printf(">\n");
 
-    int utf16_count;
-    uint16_t* utf16_buff = utf8ToUtf16((const char*)str_bom_utf8_null, &utf16_count);
+    int utf16_count = utf8CountUtf16CodeUnits((const char*)str_bom_utf8_null);
+    ustring ret(utf16_count + 2, 0);
+    utf8ToUtf16((const char*)str_bom_utf8_null,
+                (uint16_t *)reinterpret_cast<const uint16_t *>(ret.data()),
+                 utf16_count + 2, len + 4);
 
-    ustring ret(utf16_count, 0);
-    for (int i = 0; i < utf16_count; i ++)
-        ret[i] = utf16_buff[i];
-    gfree(utf16_buff);
+    printf("ustring::from_utf8 output(");
+    for (int i = 0; i < utf16_count; i ++) {
+        if (i > 0) printf(" ");
+        printf("\\u%04X", (unsigned short)ret[i]);
+    }
+    printf(")\n");
 
     return ret;
 }
