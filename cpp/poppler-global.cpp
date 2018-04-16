@@ -242,6 +242,8 @@ std::string ustring::to_latin1() const
     const size_type mylength = size();
     std::string ret(mylength, '\0');
     const value_type *me = data();
+    if (me[0] == 0xFEFF)
+        me ++;
     for (size_type i = 0; i < mylength; ++i) {
         ret[i] = (char)*me++;
     }
