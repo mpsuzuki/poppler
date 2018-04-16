@@ -275,11 +275,21 @@ ustring ustring::from_utf8(const char *str, int len)
     std::strncat(str_bom_utf8_null, str, len + 4);
 
     int utf16_count = utf8CountUtf16CodeUnits((const char*)str_bom_utf8_null);
-    ustring ret(utf16_count + 2, 0);
-    utf8ToUtf16((const char*)str_bom_utf8_null,
-                (uint16_t *)reinterpret_cast<const uint16_t *>(ret.data()),
-                 utf16_count + 2, len + 4);
 
+#if 0xFFFFU == USHRT_MAX
+    ustring ret(utf16_count + 1, 0);
+    const uint16_t* utf16_buff = reinterpret_cast<const uint16_t *>(ret.data());
+#else
+    ustring ret(utf16_count + 1);
+    uint16_t* utf16_buff = new uint16_t[utf16_count + 1](0);
+#endif
+    utf8ToUtf16((const char*)str_bom_utf8_null, (uint16_t*)utf16_buff, 
+                 utf16_count + 1, len + 4);
+#if 0xFFFFU != USHRT_MAX
+    for (int i = 0; i < utf16_count + 1; i ++)
+        ret[i] = utf16_buff[i];
+    delete utf16_buff;
+#endif
     return ret;
 }
 
