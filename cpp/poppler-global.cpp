@@ -205,30 +205,26 @@ byte_array ustring::to_utf8() const
     }
 
 #if 0xFFFFU == USHRT_MAX
-    int utf16_len = size();
     const uint16_t* utf16_buff = reinterpret_cast<const uint16_t *>(data());
-    if (utf16_buff[0] == 0xFEFF) {
-        utf16_buff ++;
-        utf16_len --;
-    }
 #else
-    uint16_t* utf16_buff = new uint16_t[size() + 1];
-
-    int i = 0;
-    if (data()[0] == 0xFEFF)
-        i++;
-    for (int j = 0; i < size(); i++, j++)
-        utf16_buff[j] = data()[i];
-    utf16_buff[j] = 0;
+    const uint16_t* utf16_begin = new uint16_t[utf16_len];
+    const uint16_t* utf16_buff = utf16_begin;
+    const unsigned short *me = data();
+   
+    for (int i = 0; i < size(); i++)
+        utf16_buff[i] = (uint16_t)me[i];
 #endif
+    const uint16_t* utf16_end = utf16_buff + size();
+    if (utf16_buff[0] == 0xFEFF)
+        utf16_buff ++;
 
-    int utf8_len = utf16CountUtf8Bytes(utf16_buff);
-    byte_array ret(utf8_len + 1);
-    utf16ToUtf8(utf16_buff, reinterpret_cast<char *>(ret.data()), utf8_len + 1, size());
+    const int utf8_len = utf16CountUtf8Bytes(utf16_buff);
+    byte_array ret(utf8_len + 1, '\0');
+    utf16ToUtf8(utf16_buff, reinterpret_cast<char *>(ret.data()), utf8_len + 1, utf16_end - utf16_buff);
     ret.resize(std::strlen(ret.data()));
 
 #if 0xFFFFU != USHRT_MAX
-    delete utf16_buff;
+    delete utf16_begin;
 #endif
     return ret;
 }
@@ -239,12 +235,12 @@ std::string ustring::to_latin1() const
         return std::string();
     }
 
-    const size_type mylength = size();
-    std::string ret(mylength, '\0');
     const value_type *me = data();
-    if (me[0] == 0xFEFF)
+    const value_type *me_end = me + size();
+    if (*me == 0xFEFF)
         me ++;
-    for (size_type i = 0; i < mylength; ++i) {
+    std::string ret(me_end - me, '\0');
+    for (size_type i = 0; me < me_end; ++i) {
         ret[i] = (char)*me++;
     }
     return ret;
@@ -270,25 +266,22 @@ ustring ustring::from_utf8(const char *str, int len)
         }
     }
     
-    char* str_bom_utf8_null = new char[len + 4];
-    str_bom_utf8_null[0] = 0;
-    if (!has_bom_utf8(str, len))
-        std::strcpy(str_bom_utf8_null, "\xEF\xBB\xBF");
-    std::strncat(str_bom_utf8_null, str, len + 4);
+    int utf16_count = utf8CountUtf16CodeUnits(str);
+    if (has_bom_utf8(str, len)) {
+        str += 3;       // skip BOM
+        len -= 3;       // skip BOM
+        utf16_count --; // skip BOM
+    }
 
-    int utf16_count = utf8CountUtf16CodeUnits((const char*)str_bom_utf8_null);
-
-#if 0xFFFFU == USHRT_MAX
     ustring ret(utf16_count + 1, 0);
+#if 0xFFFFU == USHRT_MAX
     const uint16_t* utf16_buff = reinterpret_cast<const uint16_t *>(ret.data());
 #else
-    ustring ret(utf16_count + 1);
-    uint16_t* utf16_buff = new uint16_t[utf16_count + 1](0);
+    const uint16_t* utf16_buff = new uint16_t[utf16_count + 1](0);
 #endif
-    utf8ToUtf16((const char*)str_bom_utf8_null, (uint16_t*)utf16_buff, 
-                 utf16_count + 1, len + 4);
+    utf8ToUtf16(str, (uint16_t*)utf16_buff, utf16_count + 1, len);
 #if 0xFFFFU != USHRT_MAX
-    for (int i = 0; i < utf16_count + 1; i ++)
+    for (int i = 0; i < utf16_count; i ++)
         ret[i] = utf16_buff[i];
     delete utf16_buff;
 #endif
@@ -302,15 +295,13 @@ ustring ustring::from_latin1(const std::string &str)
         return ustring();
     }
     const char *c = str.data();
-    // we insert BOM explicitly
-    ustring ret(l + 1, 0);
-    ret[0] = 0xFEFF;
-    for (size_type i = 0; i < l; ++i) {
-        ret[i + 1] = *c++;
-    }
+
+    ustring ret(l, 0);
+    for (size_type i = 0; i < l; ++i)
+        ret[i] = *c++;
+
     return ret;
 }
-
 
 /**
  Converts a string representing a PDF date to a value compatible with time_t.

@@ -59,35 +59,32 @@ rectf detail::pdfrectangle_to_rectf(const PDFRectangle &pdfrect)
 
 ustring detail::unicode_GooString_to_ustring(const GooString *str)
 {
-    const char *data = str->getCString();
     const int len = str->getLength();
+    const char *data = str->getCString();
+    const char *data_end = data + len;
 
-    int i = 0;
     bool is_unicode = false;
     if ((data[0] & 0xff) == 0xfe && (len > 1 && (data[1] & 0xff) == 0xff)) {
         is_unicode = true;
+        data += 2; // skip BOM
     }
     ustring::size_type ret_len = len;
     if (is_unicode) {
         ret_len >>= 1;
-    } else {
-        // add BOM explicitly for PDFDocEncoding.
-        ret_len += 1;
     }
     ustring ret(ret_len, 0);
     size_t ret_index = 0;
     ustring::value_type u;
     if (is_unicode) {
-        while (i < len) {
-            u = ((data[i] & 0xff) << 8) | (data[i + 1] & 0xff);
-            i += 2;
+        while (data < data_end) {
+            u = ((*data & 0xff) << 8) | (*(data + 1) & 0xff);
+            data += 2;
             ret[ret_index++] = u;
         }
     } else {
-        ret[ret_index++] = 0xFEFF;
-        while (i < len) {
-            u = pdfDocEncoding[ data[i] & 0xff ];
-            ++i;
+        while (data < data_end) {
+            u = pdfDocEncoding[ *data & 0xff ];
+            data ++;
             ret[ret_index++] = u;
         }
     }
