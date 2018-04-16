@@ -27,7 +27,6 @@
 
 #include "DateInfo.h"
 #include "UTF.h"
-#include "gmem.h"
 
 #include <algorithm>
 
@@ -205,7 +204,14 @@ byte_array ustring::to_utf8() const
         return byte_array();
     }
 
-#if 0
+#if 0xFFFFU == USHRT_MAX
+    int utf16_len = size();
+    const uint16_t* utf16_buff = reinterpret_cast<const uint16_t *>(data());
+    if (utf16_buff[0] == 0xFEFF) {
+        utf16_buff ++;
+        utf16_len --;
+    }
+#else
     uint16_t* utf16_buff = new uint16_t[size() + 1];
 
     int i = 0;
@@ -214,36 +220,14 @@ byte_array ustring::to_utf8() const
     for (int j = 0; i < size(); i++, j++)
         utf16_buff[j] = data()[i];
     utf16_buff[j] = 0;
-#else
-    int utf16_len = size();
-    const uint16_t* utf16_buff = reinterpret_cast<const uint16_t *>(data());
-    if (utf16_buff[0] == 0xFEFF) {
-        utf16_buff ++;
-        utf16_len --;
-    }
 #endif
 
-    printf("ustring::to_utf8 input (");
-    for (int i = 0; i < utf16_len; i ++) {
-      if (i > 0)
-        printf(" ");
-      printf("\\u%04X", utf16_buff[i]);
-    }
-    printf(")\n");
     int utf8_len = utf16CountUtf8Bytes(utf16_buff);
     byte_array ret(utf8_len + 1);
     utf16ToUtf8(utf16_buff, reinterpret_cast<char *>(ret.data()), utf8_len + 1, size());
     ret.resize(std::strlen(ret.data()));
 
-    printf("ustring::to_utf8 output <");
-    for (int i = 0; i < utf8_len; i ++) {
-        if (i > 0)
-          printf(" ");
-        printf("%02x", (unsigned char)ret[i]);
-    }
-    printf(">\n");
-
-#if 0
+#if 0xFFFFU != USHRT_MAX
     delete utf16_buff;
 #endif
     return ret;
@@ -290,24 +274,11 @@ ustring ustring::from_utf8(const char *str, int len)
         std::strcpy(str_bom_utf8_null, "\xEF\xBB\xBF");
     std::strncat(str_bom_utf8_null, str, len + 4);
 
-    printf("ustring::from_utf8 input<");
-    for (int i = 0; i < len + 4; i ++) {
-        printf("%02x", (unsigned char)str_bom_utf8_null[i]);
-    }
-    printf(">\n");
-
     int utf16_count = utf8CountUtf16CodeUnits((const char*)str_bom_utf8_null);
     ustring ret(utf16_count + 2, 0);
     utf8ToUtf16((const char*)str_bom_utf8_null,
                 (uint16_t *)reinterpret_cast<const uint16_t *>(ret.data()),
                  utf16_count + 2, len + 4);
-
-    printf("ustring::from_utf8 output(");
-    for (int i = 0; i < utf16_count; i ++) {
-        if (i > 0) printf(" ");
-        printf("\\u%04X", (unsigned short)ret[i]);
-    }
-    printf(")\n");
 
     return ret;
 }

@@ -64,9 +64,13 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
 
     int i = 0;
     bool is_unicode = false;
-
+    bool is_le = false;
     if ((data[0] & 0xff) == 0xfe && (len > 1 && (data[1] & 0xff) == 0xff)) {
         is_unicode = true;
+    } else
+    if ((data[0] & 0xff) == 0xff && (len > 1 && (data[1] & 0xff) == 0xfe)) {
+        is_unicode = true;
+        is_le = true;
     }
     ustring::size_type ret_len = len;
     if (is_unicode) {
@@ -78,10 +82,12 @@ ustring detail::unicode_GooString_to_ustring(const GooString *str)
     ustring ret(ret_len, 0);
     size_t ret_index = 0;
     ustring::value_type u;
-
     if (is_unicode) {
         while (i < len) {
-            u = ((data[i] & 0xff) << 8) | (data[i + 1] & 0xff);
+            if (!is_le)
+                u = ((data[i] & 0xff) << 8) | (data[i + 1] & 0xff);
+            else
+                u = ((data[i + 1] & 0xff) << 8) | (data[i] & 0xff);
             i += 2;
             ret[ret_index++] = u;
         }
