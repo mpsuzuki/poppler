@@ -1,12 +1,12 @@
 
-m4_define([poppler_version_major],m4_esyscmd_s([
-	sed -n '/POPPLER_MAJOR_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{print $NF}'
+m4_define([poppler_version_major],m4_esyscmd([
+	sed -n '/POPPLER_MAJOR_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{printf $NF}'
 ]))
-m4_define([poppler_version_minor],m4_esyscmd_s([
-	sed -n '/POPPLER_MINOR_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{print $NF}'
+m4_define([poppler_version_minor],m4_esyscmd([
+	sed -n '/POPPLER_MINOR_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{printf $NF}'
 ]))
-m4_define([poppler_version_micro],m4_esyscmd_s([
-	sed -n '/POPPLER_MICRO_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{print $NF}'
+m4_define([poppler_version_micro],m4_esyscmd([
+	sed -n '/POPPLER_MICRO_VERSION/s/[")]/ /gp' < CMakeLists.txt | head -1 | awk '{printf $NF}'
 ]))
 
 m4_define([poppler_version],[poppler_version_major.poppler_version_minor.poppler_version_micro])
