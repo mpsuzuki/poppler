@@ -71,6 +71,7 @@ void delete_all(const Collection &c)
     delete_all(c.begin(), c.end());
 }
 
+class font_info;
 struct text_box_data
 {
     ~text_box_data();
@@ -80,6 +81,15 @@ struct text_box_data
     int rotation;
     std::vector<rectf> char_bboxes;
     bool has_space_after;
+
+    std::vector<int> wmodes; 
+    double font_size;
+    /*
+     * The font_info instances are created and owned by
+     * the document object, no need to duplicate for each
+     * text box, just refer them.
+     */
+    std::vector<font_info*> font_infos;
 };
 
 }

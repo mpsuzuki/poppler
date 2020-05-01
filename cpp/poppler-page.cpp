@@ -32,6 +32,8 @@
 #include "poppler-document-private.h"
 #include "poppler-page-private.h"
 #include "poppler-private.h"
+#include "poppler-font-private.h"
+#include "poppler-font.h"
 
 #include "TextOutputDev.h"
 
@@ -52,6 +54,23 @@ page_private::page_private(document_private *_doc, int _index)
 page_private::~page_private()
 {
     delete transition;
+}
+
+size_t page_private::fill_font_info_cache()
+{
+    if (font_info_cache.size() > 0)
+	return font_info_cache.size();
+
+    poppler::font_iterator* font_iterator = new poppler::font_iterator(index, doc);
+
+    if (font_iterator->has_next()) {
+	/* do not trigger time-consuming substitution */
+	font_info_cache = font_iterator->next();
+    }
+
+    delete font_iterator;
+
+    return font_info_cache.size();
 }
 
 /**
@@ -334,8 +353,26 @@ bool text_box::has_space_after() const
     return m_data->has_space_after;
 }
 
+int text_box::get_wmode(int i) const
+{
+    return m_data->wmodes[i];
+}
+
+double text_box::get_font_size() const
+{
+    return m_data->font_size;
+}
+
+std::string text_box::get_font_name(int i) const
+{
+    return m_data->font_infos[i]->name();
+}
+
+
 std::vector<text_box> page::text_list() const
 {
+    d->fill_font_info_cache();
+
     std::vector<text_box>  output_list;
 
     /* config values are same with Qt5 Page::TextList() */
@@ -378,13 +415,27 @@ std::vector<text_box> page::text_list() const
                 {xMin, yMin, xMax-xMin, yMax-yMin},
                 word->getRotation(),
                 {},
-                word->hasSpaceAfter() == true
+                word->hasSpaceAfter() == true,
+                {},
+                word->getFontSize(),
+                {}
             }};
 
             tb.m_data->char_bboxes.reserve(word->getLength());
             for (int j = 0; j < word->getLength(); j ++) {
                 word->getCharBBox(j, &xMin, &yMin, &xMax, &yMax);
                 tb.m_data->char_bboxes.emplace_back(xMin, yMin, xMax-xMin, yMax-yMin);
+            }
+
+            tb.m_data->font_infos.reserve(word->getLength());
+            for (int j = 0; j < word->getLength(); j++) {
+                const TextFontInfo* text_font_info = word->getFontInfo(j);
+                tb.m_data->wmodes.push_back(text_font_info->getWMode()); 
+                for (unsigned int k = 0; k < d->font_info_cache.size(); k ++) {
+                    if (text_font_info->matches(&(d->font_info_cache[k].d->ref))) {
+                        tb.m_data->font_infos.push_back(&(d->font_info_cache[k]));
+                    }
+                }
             }
 
             output_list.push_back(std::move(tb));
